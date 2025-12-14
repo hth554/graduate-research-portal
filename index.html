@@ -10,6 +10,29 @@
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
 </head>
 <body>
+    <!-- 登录模态框 -->
+    <div id="login-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>管理员登录</h2>
+            <div class="login-options">
+                <div class="login-option">
+                    <h3>方式一：GitHub Token 登录</h3>
+                    <p>（推荐，可保存数据到 GitHub）</p>
+                    <input type="password" id="github-token-login" placeholder="输入 GitHub Token">
+                    <button onclick="loginWithGitHubToken()" class="btn btn-primary">GitHub Token 登录</button>
+                </div>
+                <div class="login-option">
+                    <h3>方式二：密码登录</h3>
+                    <p>（临时编辑，数据保存在本地）</p>
+                    <input type="password" id="password-login" placeholder="输入管理员密码">
+                    <button onclick="loginWithPassword()" class="btn btn-secondary">密码登录</button>
+                </div>
+            </div>
+            <div id="login-message"></div>
+        </div>
+    </div>
+
     <!-- 导航栏 -->
     <header class="header">
         <div class="container">
@@ -27,11 +50,22 @@
                     <li class="nav-item"><a href="#publications" class="nav-link">学术成果</a></li>
                     <li class="nav-item"><a href="#updates" class="nav-link">研究近况</a></li>
                     <li class="nav-item"><a href="#submit-section" class="nav-link">提交课题</a></li>
+                    <li class="nav-item" id="admin-nav-item" style="display: none;">
+                        <a href="#" class="nav-link" id="admin-toggle">
+                            <i class="fas fa-user-shield"></i> 管理
+                        </a>
+                    </li>
                 </ul>
                 
                 <div class="nav-actions">
                     <button class="btn btn-outline" id="theme-toggle">
                         <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="btn btn-outline" id="login-btn" style="display: block;">
+                        <i class="fas fa-sign-in-alt"></i> 登录
+                    </button>
+                    <button class="btn btn-outline" id="logout-btn" style="display: none;">
+                        <i class="fas fa-sign-out-alt"></i> 退出
                     </button>
                     <div class="hamburger" id="hamburger">
                         <span class="bar"></span>
@@ -70,6 +104,9 @@
             <div class="section-header">
                 <h2 class="section-title">课题展示区</h2>
                 <p class="section-subtitle">探索各学科领域的前沿研究方向与创新项目</p>
+                <button class="btn btn-outline" id="edit-projects-btn" style="display: none; margin-top: 10px;">
+                    <i class="fas fa-edit"></i> 编辑课题
+                </button>
             </div>
             
             <div class="filters">
@@ -80,7 +117,7 @@
                 <button class="filter-btn" data-filter="medical">医学健康</button>
             </div>
             
-            <div class="projects-grid">
+            <div class="projects-grid" id="projects-grid">
                 <!-- 课题卡片将通过JavaScript动态生成 -->
             </div>
         </div>
@@ -92,9 +129,12 @@
             <div class="section-header">
                 <h2 class="section-title">导师介绍</h2>
                 <p class="section-subtitle">认识我们的优秀导师团队</p>
+                <button class="btn btn-outline" id="edit-advisors-btn" style="display: none; margin-top: 10px;">
+                    <i class="fas fa-edit"></i> 编辑导师信息
+                </button>
             </div>
             
-            <div class="advisors-grid">
+            <div class="advisors-grid" id="advisors-grid">
                 <!-- 导师卡片将通过JavaScript动态生成 -->
             </div>
         </div>
@@ -106,9 +146,12 @@
             <div class="section-header">
                 <h2 class="section-title">学生介绍</h2>
                 <p class="section-subtitle">认识我们的优秀研究生团队</p>
+                <button class="btn btn-outline" id="edit-students-btn" style="display: none; margin-top: 10px;">
+                    <i class="fas fa-edit"></i> 编辑学生信息
+                </button>
             </div>
             
-            <div class="students-grid">
+            <div class="students-grid" id="students-grid">
                 <!-- 学生卡片将通过JavaScript动态生成 -->
             </div>
         </div>
@@ -120,9 +163,12 @@
             <div class="section-header">
                 <h2 class="section-title">学术成果</h2>
                 <p class="section-subtitle">最新发表的论文、专利与学术成果</p>
+                <button class="btn btn-outline" id="edit-publications-btn" style="display: none; margin-top: 10px;">
+                    <i class="fas fa-edit"></i> 编辑学术成果
+                </button>
             </div>
             
-            <div class="publications-grid">
+            <div class="publications-grid" id="publications-grid">
                 <!-- 学术成果卡片将通过JavaScript动态生成 -->
             </div>
         </div>
@@ -134,9 +180,12 @@
             <div class="section-header">
                 <h2 class="section-title">研究近况</h2>
                 <p class="section-subtitle">最新研究动态、项目进展与团队活动</p>
+                <button class="btn btn-outline" id="edit-updates-btn" style="display: none; margin-top: 10px;">
+                    <i class="fas fa-edit"></i> 编辑研究近况
+                </button>
             </div>
             
-            <div class="updates-grid">
+            <div class="updates-grid" id="updates-grid">
                 <!-- 近况卡片将通过JavaScript动态生成 -->
             </div>
         </div>
@@ -148,26 +197,6 @@
             <div class="section-header">
                 <h2 class="section-title">📝 提交新课题</h2>
                 <p class="section-subtitle">填写以下信息提交您的研究课题，审核通过后将在网站展示</p>
-            </div>
-            
-            <!-- Token 设置提示（首次使用显示） -->
-            <div id="token-alert" class="alert alert-info" style="display: none;">
-                <h4>🔑 首次使用需要设置 GitHub Token</h4>
-                <ol>
-                    <li>访问 <a href="https://github.com/settings/tokens" target="_blank" style="color: #2196f3; text-decoration: underline;">GitHub Token 页面</a></li>
-                    <li>点击 "Generate new token (classic)"</li>
-                    <li>Token 名称：<code>课题提交系统</code></li>
-                    <li>权限至少勾选：<code>repo</code>（完全控制仓库）</li>
-                    <li>点击 "Generate token" 并复制</li>
-                    <li>粘贴到下方输入框：</li>
-                </ol>
-                <div class="token-input" style="display: flex; gap: 10px; margin: 20px 0; align-items: center;">
-                    <input type="password" id="github-token-input" 
-                           placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" 
-                           style="flex: 1; padding: 12px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
-                    <button onclick="saveGitHubToken()" class="btn btn-primary">保存 Token</button>
-                </div>
-                <p><small>Token 仅存储在您的浏览器本地，不会上传到任何服务器。</small></p>
             </div>
             
             <!-- 提交表单 -->
@@ -277,6 +306,9 @@
             <div class="footer-bottom">
                 <p>&copy; 2023 学术研究门户. 版权所有.</p>
                 <p>本网站为研究生课题展示与管理平台，旨在促进学术交流与研究合作。</p>
+                <p id="admin-status" style="font-size: 12px; color: #aaa; margin-top: 10px;">
+                    <!-- 管理员状态显示 -->
+                </p>
             </div>
         </div>
     </footer>
@@ -286,8 +318,10 @@
         <i class="fas fa-chevron-up"></i>
     </button>
 
+    <!-- 加载 JavaScript 文件 -->
     <script src="js/script.js"></script>
-    <!-- 加载 GitHub Issues 相关 JavaScript 文件 -->
+    <script src="js/data-manager.js"></script>
+    <script src="js/admin-system.js"></script>
     <script src="js/github-issues.js"></script>
     <script src="js/form-handler.js"></script>
 </body>
