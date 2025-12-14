@@ -91,41 +91,42 @@ const advisorsData = [
     }
 ];
 
-const timelineData = [
+const studentsData = [
     {
         id: 1,
-        date: "2023-09",
-        title: "医学图像分割算法初步验证",
-        description: "完成深度学习模型在公开医学图像数据集上的初步验证，分割准确率达到92%。",
-        project: "基于深度学习的医学图像分割算法研究"
+        name: "李明",
+        degree: "博士研究生",
+        field: "计算机科学与技术",
+        supervisor: "张明教授",
+        research: "研究方向为医学图像处理与深度学习，主要研究基于注意力机制的医学图像分割算法。",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
     },
     {
         id: 2,
-        date: "2023-08",
-        title: "微电网控制策略仿真成功",
-        description: "成功仿真验证了提出的可再生能源微电网优化控制策略，系统稳定性提升15%。",
-        project: "可再生能源智能微电网优化控制策略"
+        name: "王芳",
+        degree: "硕士研究生",
+        field: "电气工程",
+        supervisor: "李华教授",
+        research: "研究方向为智能电网优化控制，主要研究可再生能源微电网的调度策略与稳定性分析。",
+        avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
     },
     {
         id: 3,
-        date: "2023-07",
-        title: "纳米材料合成方法优化",
-        description: "优化了新型纳米材料的合成方法，材料比表面积提升30%，污染物吸附能力显著增强。",
-        project: "新型纳米材料在环境污染物去除中的应用"
+        name: "张伟",
+        degree: "博士研究生",
+        field: "环境工程",
+        supervisor: "王静教授",
+        research: "研究方向为环境功能材料，主要研究新型纳米材料在水污染治理中的应用与机理。",
+        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
     },
     {
         id: 4,
-        date: "2023-06",
-        title: "金融风险预测模型构建完成",
-        description: "完成了基于深度学习的金融风险预测模型构建，在测试集上准确率达到88%。",
-        project: "人工智能辅助的金融风险预测模型"
-    },
-    {
-        id: 5,
-        date: "2023-05",
-        title: "企业数字化转型调研完成",
-        description: "完成对50家数字化转型企业的深度调研，收集了组织文化变迁的一手数据。",
-        project: "数字化转型对企业组织文化的影响研究"
+        name: "刘洋",
+        degree: "硕士研究生",
+        field: "金融工程",
+        supervisor: "赵伟教授",
+        research: "研究方向为金融科技与风险管理，主要研究基于深度学习的金融市场预测模型。",
+        avatar: "https://images.unsplash.com/photo-1507591064344-4c6ce005b128?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
     }
 ];
 
@@ -136,7 +137,7 @@ const publicationsData = [
         title: "基于注意力机制的医学图像分割算法研究",
         authors: "张明, 李雷, 韩梅梅",
         venue: "《中国医学影像学杂志》, 2023, 31(5): 12-18",
-        abstract: "本文提出了一种基于注意力机制的深度学习模型，用于医学图像中的器官分割..."
+        abstract: "本文提出了一种基于注意力机制的深度学习模型，用于医学图像中的器官分割，通过自注意力机制有效捕捉图像中的长距离依赖关系..."
     },
     {
         id: 2,
@@ -144,7 +145,7 @@ const publicationsData = [
         title: "可再生能源微电网的优化调度策略",
         authors: "李华, 王强, 张伟",
         venue: "IEEE电力与能源系统国际会议, 2023",
-        abstract: "本文提出了一种基于强化学习的微电网优化调度策略，有效提高了可再生能源的消纳能力..."
+        abstract: "本文提出了一种基于强化学习的微电网优化调度策略，有效提高了可再生能源的消纳能力，降低了系统运行成本..."
     },
     {
         id: 3,
@@ -152,7 +153,7 @@ const publicationsData = [
         title: "一种高效去除重金属离子的纳米复合材料制备方法",
         authors: "王静, 刘洋, 陈晨",
         venue: "中国发明专利, ZL202310123456.7, 2023",
-        abstract: "本发明公开了一种高效去除水中重金属离子的纳米复合材料及其制备方法..."
+        abstract: "本发明公开了一种高效去除水中重金属离子的纳米复合材料及其制备方法，该材料具有高吸附容量和良好的再生性能..."
     },
     {
         id: 4,
@@ -160,55 +161,67 @@ const publicationsData = [
         title: "数字化转型背景下组织文化变革路径研究",
         authors: "刘芳, 赵明, 孙丽",
         venue: "《管理科学学报》, 2023, 26(3): 45-56",
-        abstract: "本研究基于组织变革理论，探讨了数字化转型过程中企业组织文化的变革路径与影响因素..."
+        abstract: "本研究基于组织变革理论，探讨了数字化转型过程中企业组织文化的变革路径与影响因素，提出了适应数字时代的企业文化构建框架..."
     }
 ];
 
-const resourcesData = [
+const updatesData = [
     {
         id: 1,
-        icon: "fas fa-book",
-        title: "学术文献数据库",
-        description: "提供CNKI、Web of Science、IEEE Xplore等国内外知名学术数据库的访问指南与使用技巧。"
+        date: "2023-10-15",
+        title: "医学图像分割项目取得重要进展",
+        type: "项目进展",
+        content: "课题组在医学图像分割算法研究中取得重要突破，新提出的注意力机制模型在公开数据集上的分割准确率达到了95.2%，较现有方法提升了3.1%。",
+        project: "基于深度学习的医学图像分割算法研究"
     },
     {
         id: 2,
-        icon: "fas fa-tools",
-        title: "研究工具集",
-        description: "统计分析、文献管理、科研绘图等常用科研工具的使用教程与资源下载。"
+        date: "2023-10-08",
+        title: "课题组参加国际学术会议",
+        type: "学术活动",
+        content: "课题组三名研究生参加了在杭州举办的国际人工智能大会，展示了最新的研究成果，并与国内外同行进行了深入交流。",
+        project: "人工智能辅助的金融风险预测模型"
     },
     {
         id: 3,
-        icon: "fas fa-file-contract",
-        title: "论文写作指南",
-        description: "学术论文写作规范、投稿流程、审稿意见回复策略等实用指南与模板。"
+        date: "2023-09-25",
+        title: "纳米材料研究获得国家自然科学基金资助",
+        type: "科研资助",
+        content: "课题组申报的'新型纳米材料在环境污染物去除中的机理与应用研究'项目获得国家自然科学基金面上项目资助，资助金额80万元。",
+        project: "新型纳米材料在环境污染物去除中的应用"
     },
     {
         id: 4,
-        icon: "fas fa-chart-line",
-        title: "数据分析资源",
-        description: "Python、R、MATLAB等数据分析工具的学习资源与代码示例，助力科研数据分析。"
+        date: "2023-09-18",
+        title: "微电网控制策略实现现场应用",
+        type: "技术转化",
+        content: "课题组研发的可再生能源微电网优化控制策略在某工业园区实现现场应用，系统运行稳定性显著提升，能源利用率提高了18%。",
+        project: "可再生能源智能微电网优化控制策略"
     },
     {
         id: 5,
-        icon: "fas fa-graduation-cap",
-        title: "学术伦理指南",
-        description: "学术诚信、研究伦理、数据管理规范等重要的学术伦理指南与政策文件。"
+        title: "博士生李明获得优秀研究生称号",
+        date: "2023-09-10",
+        type: "学生荣誉",
+        content: "课题组博士生李明因在医学图像分割领域的突出研究成果，获得学校'优秀研究生'荣誉称号。",
+        project: "基于深度学习的医学图像分割算法研究"
     },
     {
         id: 6,
-        icon: "fas fa-comments",
-        title: "学术交流平台",
-        description: "国内外学术会议信息、研究生论坛、学术沙龙等学术交流机会与平台。"
+        title: "课题组与企业签订合作研究协议",
+        date: "2023-09-05",
+        type: "产学研合作",
+        content: "课题组与某知名金融科技公司签订合作研究协议，共同开展金融风险智能预警系统的研发与应用。",
+        project: "人工智能辅助的金融风险预测模型"
     }
 ];
 
 // DOM元素
 const projectsGrid = document.querySelector('.projects-grid');
 const advisorsGrid = document.querySelector('.advisors-grid');
-const timeline = document.querySelector('.timeline');
+const studentsGrid = document.querySelector('.students-grid');
 const publicationsGrid = document.querySelector('.publications-grid');
-const resourcesGrid = document.querySelector('.resources-grid');
+const updatesGrid = document.querySelector('.updates-grid');
 const filterButtons = document.querySelectorAll('.filter-btn');
 const themeToggle = document.getElementById('theme-toggle');
 const hamburger = document.getElementById('hamburger');
@@ -220,9 +233,9 @@ const navLinks = document.querySelectorAll('.nav-link');
 document.addEventListener('DOMContentLoaded', function() {
     renderProjects('all');
     renderAdvisors();
-    renderTimeline();
+    renderStudents();
     renderPublications();
-    renderResources();
+    renderUpdates();
     
     // 设置活动导航链接
     setActiveNavLink();
@@ -314,28 +327,31 @@ function renderAdvisors() {
     });
 }
 
-// 渲染时间轴
-function renderTimeline() {
-    timeline.innerHTML = '';
+// 渲染学生卡片
+function renderStudents() {
+    studentsGrid.innerHTML = '';
     
-    timelineData.forEach((item, index) => {
-        const timelineItem = document.createElement('div');
-        timelineItem.className = `timeline-item ${index % 2 === 0 ? 'odd' : 'even'}`;
+    studentsData.forEach(student => {
+        const studentCard = document.createElement('div');
+        studentCard.className = 'student-card';
         
-        timelineItem.innerHTML = `
-            <div class="timeline-marker"></div>
-            <div class="timeline-content">
-                <span class="timeline-date">${item.date}</span>
-                <h3 class="timeline-title">${item.title}</h3>
-                <p class="timeline-description">${item.description}</p>
-                <div class="timeline-project">
-                    <i class="fas fa-project-diagram"></i>
-                    <span>${item.project}</span>
-                </div>
+        studentCard.innerHTML = `
+            <div class="student-avatar">
+                <img src="${student.avatar}" alt="${student.name}">
+            </div>
+            <h3 class="student-name">${student.name}</h3>
+            <p class="student-degree">${student.degree}</p>
+            <p class="student-field">${student.field}</p>
+            <p class="student-supervisor">导师：${student.supervisor}</p>
+            <p class="student-research">${student.research}</p>
+            <div class="student-contact">
+                <a href="#"><i class="fas fa-envelope"></i></a>
+                <a href="#"><i class="fab fa-github"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
             </div>
         `;
         
-        timeline.appendChild(timelineItem);
+        studentsGrid.appendChild(studentCard);
     });
 }
 
@@ -362,16 +378,6 @@ function renderPublications() {
             </div>
             <div class="publication-body">
                 <p class="publication-abstract">${publication.abstract}</p>
-                <div class="publication-links">
-                    <a href="#" class="publication-link">
-                        <i class="fas fa-file-pdf"></i>
-                        <span>全文下载</span>
-                    </a>
-                    <a href="#" class="publication-link">
-                        <i class="fas fa-quote-right"></i>
-                        <span>引用</span>
-                    </a>
-                </div>
             </div>
         `;
         
@@ -379,27 +385,39 @@ function renderPublications() {
     });
 }
 
-// 渲染研究资源
-function renderResources() {
-    resourcesGrid.innerHTML = '';
+// 渲染研究近况
+function renderUpdates() {
+    updatesGrid.innerHTML = '';
     
-    resourcesData.forEach(resource => {
-        const resourceCard = document.createElement('div');
-        resourceCard.className = 'resource-card';
+    updatesData.forEach(update => {
+        const updateCard = document.createElement('div');
+        updateCard.className = 'update-card';
         
-        resourceCard.innerHTML = `
-            <div class="resource-icon">
-                <i class="${resource.icon}"></i>
+        // 根据类型设置颜色
+        let typeColor = '#3498db'; // 默认蓝色
+        if (update.type === '项目进展') typeColor = '#2ecc71'; // 绿色
+        if (update.type === '学术活动') typeColor = '#9b59b6'; // 紫色
+        if (update.type === '科研资助') typeColor = '#e74c3c'; // 红色
+        if (update.type === '技术转化') typeColor = '#f39c12'; // 橙色
+        if (update.type === '学生荣誉') typeColor = '#1abc9c'; // 青色
+        if (update.type === '产学研合作') typeColor = '#34495e'; // 深蓝
+        
+        updateCard.innerHTML = `
+            <div class="update-header">
+                <span class="update-date" style="background-color: ${typeColor}20; color: ${typeColor}">${update.date}</span>
+                <h3 class="update-title">${update.title}</h3>
+                <p class="update-type" style="color: ${typeColor}">${update.type}</p>
             </div>
-            <h3 class="resource-title">${resource.title}</h3>
-            <p class="resource-description">${resource.description}</p>
-            <a href="#" class="resource-link">
-                <span>访问资源</span>
-                <i class="fas fa-arrow-right"></i>
-            </a>
+            <div class="update-body">
+                <p class="update-content">${update.content}</p>
+                <div class="update-project">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>${update.project}</span>
+                </div>
+            </div>
         `;
         
-        resourcesGrid.appendChild(resourceCard);
+        updatesGrid.appendChild(updateCard);
     });
 }
 
