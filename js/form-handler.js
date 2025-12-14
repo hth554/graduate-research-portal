@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const projectsList = document.getElementById('projects-list');
 
     // 初始化：检查 Token 并显示提示
-    if (!manager.hasValidToken()) {
+    if (!manager.hasValidToken() && tokenAlert) {
         tokenAlert.style.display = 'block';
     }
 
@@ -25,12 +25,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (manager.setToken(token)) {
-            tokenAlert.innerHTML = `
-                <div class="alert alert-success">
-                    <h4>✅ Token 设置成功！</h4>
-                    <p>现在可以提交课题了。Token 已安全保存在您的浏览器中。</p>
-                </div>
-            `;
+            if (tokenAlert) {
+                tokenAlert.innerHTML = `
+                    <div class="alert alert-success">
+                        <h4>✅ Token 设置成功！</h4>
+                        <p>现在可以提交课题了。Token 已安全保存在您的浏览器中。</p>
+                    </div>
+                `;
+            }
             loadProjects(); // 加载已有课题
         } else {
             alert('Token 格式不正确，请检查！');
@@ -43,13 +45,17 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             
             if (!manager.hasValidToken()) {
-                formMessage.innerHTML = `
-                    <div class="alert alert-warning">
-                        <h4>⚠️ 需要设置 Token</h4>
-                        <p>请先在上方设置 GitHub Token 以提交课题。</p>
-                    </div>
-                `;
-                tokenAlert.style.display = 'block';
+                if (formMessage) {
+                    formMessage.innerHTML = `
+                        <div class="alert alert-warning">
+                            <h4>⚠️ 需要设置 Token</h4>
+                            <p>请先在上方设置 GitHub Token 以提交课题。</p>
+                        </div>
+                    `;
+                }
+                if (tokenAlert) {
+                    tokenAlert.style.display = 'block';
+                }
                 return;
             }
 
@@ -64,34 +70,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // 验证必填字段
             if (!formData.title || !formData.description) {
-                formMessage.innerHTML = `
-                    <div class="alert alert-warning">
-                        <h4>⚠️ 请填写完整</h4>
-                        <p>课题名称和描述是必填项。</p>
-                    </div>
-                `;
+                if (formMessage) {
+                    formMessage.innerHTML = `
+                        <div class="alert alert-warning">
+                            <h4>⚠️ 请填写完整</h4>
+                            <p>课题名称和描述是必填项。</p>
+                        </div>
+                    `;
+                }
                 return;
             }
 
             // 显示加载状态
-            submitText.style.display = 'none';
-            submitLoading.style.display = 'inline';
-            submitBtn.disabled = true;
+            if (submitText) submitText.style.display = 'none';
+            if (submitLoading) submitLoading.style.display = 'inline';
+            if (submitBtn) submitBtn.disabled = true;
 
             try {
                 // 提交到 GitHub Issues
                 const result = await manager.submitNewProject(formData);
                 
                 // 显示成功消息
-                formMessage.innerHTML = `
-                    <div class="alert alert-success">
-                        <h4>🎉 提交成功！</h4>
-                        <p><strong>${formData.title}</strong> 已提交审核。</p>
-                        <p>Issue 编号: <a href="${result.issueUrl}" target="_blank">#${result.issueNumber}</a></p>
-                        <p>审核通过后将在网站展示，您可以在 GitHub 上跟踪审核进度。</p>
-                        <button onclick="loadProjects()" class="btn">刷新课题列表</button>
-                    </div>
-                `;
+                if (formMessage) {
+                    formMessage.innerHTML = `
+                        <div class="alert alert-success">
+                            <h4>🎉 提交成功！</h4>
+                            <p><strong>${formData.title}</strong> 已提交审核。</p>
+                            <p>Issue 编号: <a href="${result.issueUrl}" target="_blank" style="color: #155724; font-weight: bold;">#${result.issueNumber}</a></p>
+                            <p>审核通过后将在网站展示，您可以在 GitHub 上跟踪审核进度。</p>
+                            <button onclick="loadProjects()" class="btn btn-primary" style="margin-top: 15px;">刷新课题列表</button>
+                        </div>
+                    `;
+                }
                 
                 // 清空表单
                 projectForm.reset();
@@ -101,26 +111,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             } catch (error) {
                 // 显示错误消息
-                formMessage.innerHTML = `
-                    <div class="alert alert-error">
-                        <h4>❌ 提交失败</h4>
-                        <p><strong>错误信息：</strong> ${error.message}</p>
-                        <p>可能的原因：</p>
-                        <ul>
-                            <li>Token 无效或已过期</li>
-                            <li>网络连接问题</li>
-                            <li>GitHub API 限制</li>
-                        </ul>
-                        <p>请检查 Token 设置或稍后重试。</p>
-                    </div>
-                `;
+                if (formMessage) {
+                    formMessage.innerHTML = `
+                        <div class="alert alert-error">
+                            <h4>❌ 提交失败</h4>
+                            <p><strong>错误信息：</strong> ${error.message}</p>
+                            <p>可能的原因：</p>
+                            <ul>
+                                <li>Token 无效或已过期</li>
+                                <li>网络连接问题</li>
+                                <li>GitHub API 限制</li>
+                            </ul>
+                            <p>请检查 Token 设置或稍后重试。</p>
+                        </div>
+                    `;
+                }
                 console.error('提交错误:', error);
                 
             } finally {
                 // 恢复按钮状态
-                submitText.style.display = 'inline';
-                submitLoading.style.display = 'none';
-                submitBtn.disabled = false;
+                if (submitText) submitText.style.display = 'inline';
+                if (submitLoading) submitLoading.style.display = 'none';
+                if (submitBtn) submitBtn.disabled = false;
             }
         });
     }
@@ -163,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="project-meta">
                         <span>👨‍🎓 ${project.student}</span>
                         <span>👨‍🏫 ${project.supervisor}</span>
-                        <span class="project-date">${project.createdAt}</span>
+                        <span class="project-date">📅 ${project.createdAt}</span>
                     </div>
                     <div class="project-tags">
                         ${project.tags.split(',').map(tag => 
@@ -214,4 +226,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (manager.hasValidToken()) {
         loadProjects();
     }
+
+    // 使 loadProjects 在全局可用
+    window.loadProjects = loadProjects;
 });
