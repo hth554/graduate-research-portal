@@ -26,6 +26,7 @@
                     <li class="nav-item"><a href="#students" class="nav-link">学生介绍</a></li>
                     <li class="nav-item"><a href="#publications" class="nav-link">学术成果</a></li>
                     <li class="nav-item"><a href="#updates" class="nav-link">研究近况</a></li>
+                    <li class="nav-item"><a href="#submit-section" class="nav-link">提交课题</a></li>
                 </ul>
                 
                 <div class="nav-actions">
@@ -54,7 +55,7 @@
                 </p>
                 <div class="hero-actions">
                     <a href="#projects" class="btn btn-primary">探索课题</a>
-                    <a href="#updates" class="btn btn-secondary">研究近况</a>
+                    <a href="#submit-section" class="btn btn-secondary">提交课题</a>
                 </div>
             </div>
             <div class="hero-image">
@@ -141,6 +142,88 @@
         </div>
     </section>
 
+    <!-- 提交新课题部分 -->
+    <section class="section submit-section" id="submit-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">📝 提交新课题</h2>
+                <p class="section-subtitle">填写以下信息提交您的研究课题，审核通过后将在网站展示</p>
+            </div>
+            
+            <!-- Token 设置提示（首次使用显示） -->
+            <div id="token-alert" class="alert alert-info" style="display: none;">
+                <h4>🔑 首次使用需要设置 GitHub Token</h4>
+                <ol>
+                    <li>访问 <a href="https://github.com/settings/tokens" target="_blank" style="color: #2196f3; text-decoration: underline;">GitHub Token 页面</a></li>
+                    <li>点击 "Generate new token (classic)"</li>
+                    <li>Token 名称：<code>课题提交系统</code></li>
+                    <li>权限至少勾选：<code>repo</code>（完全控制仓库）</li>
+                    <li>点击 "Generate token" 并复制</li>
+                    <li>粘贴到下方输入框：</li>
+                </ol>
+                <div class="token-input" style="display: flex; gap: 10px; margin: 20px 0; align-items: center;">
+                    <input type="password" id="github-token-input" 
+                           placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" 
+                           style="flex: 1; padding: 12px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
+                    <button onclick="saveGitHubToken()" class="btn btn-primary">保存 Token</button>
+                </div>
+                <p><small>Token 仅存储在您的浏览器本地，不会上传到任何服务器。</small></p>
+            </div>
+            
+            <!-- 提交表单 -->
+            <form id="project-form" class="project-form">
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="project-title">课题名称 *</label>
+                        <input type="text" id="project-title" name="title" required 
+                               placeholder="例如：基于深度学习的人脸识别系统研究">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="project-description">课题描述 *</label>
+                    <textarea id="project-description" name="description" rows="6" required
+                              placeholder="请详细描述研究背景、目标、方法、预期成果等..."></textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="student-name">研究生姓名</label>
+                        <input type="text" id="student-name" name="student" 
+                               placeholder="张三">
+                    </div>
+                    <div class="form-group">
+                        <label for="supervisor-name">指导老师</label>
+                        <input type="text" id="supervisor-name" name="supervisor" 
+                               placeholder="李四教授">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="project-tags">研究标签（用逗号分隔）</label>
+                    <input type="text" id="project-tags" name="tags" 
+                           placeholder="人工智能, 深度学习, 计算机视觉">
+                </div>
+                
+                <button type="submit" class="btn btn-primary submit-btn" id="submit-btn">
+                    <span id="submit-text">提交课题</span>
+                    <span id="submit-loading" style="display: none;">提交中...</span>
+                </button>
+            </form>
+            
+            <!-- 提交结果消息 -->
+            <div id="form-message" style="margin-top: 30px;"></div>
+            
+            <!-- 已提交课题展示 -->
+            <div id="submitted-projects" style="margin-top: 60px; padding-top: 40px; border-top: 2px solid #eee;">
+                <h3 style="font-size: 1.8rem; font-weight: 600; margin-bottom: 25px; color: #333;">📋 已提交的课题</h3>
+                <div id="projects-list" class="projects-grid" style="margin-top: 20px;">
+                    <!-- 动态加载课题 -->
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- 页脚 -->
     <footer class="footer">
         <div class="container">
@@ -176,7 +259,7 @@
                     <ul class="footer-links">
                         <li><a href="#publications">学术成果</a></li>
                         <li><a href="#updates">研究近况</a></li>
-                        <li><a href="#">研究指南</a></li>
+                        <li><a href="#submit-section">提交课题</a></li>
                         <li><a href="#">投稿指南</a></li>
                     </ul>
                 </div>
@@ -204,5 +287,8 @@
     </button>
 
     <script src="js/script.js"></script>
+    <!-- 加载 GitHub Issues 相关 JavaScript 文件 -->
+    <script src="js/github-issues.js"></script>
+    <script src="js/form-handler.js"></script>
 </body>
 </html>
