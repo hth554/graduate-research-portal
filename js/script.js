@@ -357,7 +357,19 @@ const DOM = {
     navMenu: document.querySelector('.nav-menu'),
     backToTop: document.getElementById('backToTop'),
     navLinks: document.querySelectorAll('.nav-link'),
-    projectForm: document.getElementById('projectForm')
+    projectForm: document.getElementById('projectForm'),
+    // 新增的DOM元素
+    addPersonBtn: document.getElementById('addPersonBtn'),
+    addPersonModal: document.getElementById('addPersonModal'),
+    closeModal: document.getElementById('closeModal'),
+    cancelBtn: document.getElementById('cancelBtn'),
+    personTypeTabs: document.querySelectorAll('.person-type-tab'),
+    teacherForm: document.getElementById('teacherForm'),
+    studentForm: document.getElementById('studentForm'),
+    submitBtn: document.getElementById('submitBtn'),
+    avatarInput: document.getElementById('avatarInput'),
+    avatarPreview: document.getElementById('avatarPreview'),
+    removeAvatar: document.getElementById('removeAvatar')
 };
 
 // ============================
@@ -525,6 +537,23 @@ function throttle(func, limit) {
     };
 }
 
+/**
+ * 验证邮箱格式
+ */
+function validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
+
+/**
+ * 验证URL格式
+ */
+function validateURL(url) {
+    if (!url) return true; // 空URL视为有效
+    const re = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+    return re.test(url);
+}
+
 // ============================
 // CRUD 操作函数
 // ============================
@@ -674,6 +703,126 @@ function deleteStudent(studentId) {
         return true;
     }
     return false;
+}
+
+// ============================
+// 新增：人员添加功能
+// ============================
+
+/**
+ * 添加人员（老师或学生）
+ */
+function addPerson(personData, type) {
+    if (type === 'teacher') {
+        return addAdvisor(personData);
+    } else if (type === 'student') {
+        return addStudent(personData);
+    }
+    return null;
+}
+
+/**
+ * 收集表单数据
+ */
+function collectFormData(form, type) {
+    const formData = new FormData(form);
+    const data = {};
+    
+    // 收集所有表单字段
+    for (const [key, value] of formData.entries()) {
+        data[key] = value.trim();
+    }
+    
+    // 为不同类型添加特定字段
+    if (type === 'teacher') {
+        return {
+            name: data.name || '',
+            title: data.title || '教授',
+            field: data.field || '',
+            bio: data.bio || '',
+            avatar: data.avatar || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+            email: data.email || '',
+            website: data.website || ''
+        };
+    } else if (type === 'student') {
+        return {
+            name: data.name || '',
+            degree: data.degree || '硕士研究生',
+            field: data.field || '',
+            supervisor: data.supervisor || '',
+            research: data.research || '',
+            avatar: data.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+            email: data.email || '',
+            github: data.github || ''
+        };
+    }
+    
+    return data;
+}
+
+/**
+ * 验证表单数据
+ */
+function validateFormData(data, type) {
+    // 基本验证
+    if (!data.name || data.name.trim() === '') {
+        showToast('请填写姓名', 'error');
+        return false;
+    }
+    
+    if (type === 'teacher') {
+        if (!data.title || data.title.trim() === '') {
+            showToast('请填写职称', 'error');
+            return false;
+        }
+        if (!data.field || data.field.trim() === '') {
+            showToast('请填写研究领域', 'error');
+            return false;
+        }
+        if (!data.bio || data.bio.trim() === '') {
+            showToast('请填写个人简介', 'error');
+            return false;
+        }
+        
+        // 验证邮箱
+        if (data.email && !validateEmail(data.email)) {
+            showToast('邮箱格式不正确', 'error');
+            return false;
+        }
+        
+        // 验证网站
+        if (data.website && !validateURL(data.website)) {
+            showToast('网站链接格式不正确', 'error');
+            return false;
+        }
+    } else if (type === 'student') {
+        if (!data.field || data.field.trim() === '') {
+            showToast('请填写专业领域', 'error');
+            return false;
+        }
+        if (!data.supervisor || data.supervisor.trim() === '') {
+            showToast('请填写指导老师', 'error');
+            return false;
+        }
+        if (!data.research || data.research.trim() === '') {
+            showToast('请填写研究方向', 'error');
+            return false;
+        }
+        
+        // 验证邮箱
+        if (data.email && !validateEmail(data.email)) {
+            showToast('邮箱格式不正确', 'error');
+            return false;
+        }
+        
+        // 验证GitHub链接
+        if (data.github && !validateURL(data.github)) {
+            showToast('GitHub链接格式不正确', 'error');
+            return false;
+        }
+    }
+    
+    return true;
 }
 
 // ============================
@@ -1004,6 +1153,286 @@ function renderUpdates() {
                 scrollToProject(projectId);
             }
         });
+    });
+}
+
+// ============================
+// 新增：添加人员模态框功能
+// ============================
+
+/**
+ * 打开添加人员模态框
+ */
+function openAddPersonModal() {
+    if (DOM.addPersonModal) {
+        DOM.addPersonModal.classList.add('active');
+        document.body.style.overflow = 'hidden'; // 防止背景滚动
+        
+        // 重置表单
+        DOM.teacherForm.reset();
+        DOM.studentForm.reset();
+        
+        // 重置头像预览
+        if (DOM.avatarPreview) {
+            DOM.avatarPreview.innerHTML = '<div class="default-avatar"><i class="fas fa-user"></i></div>';
+        }
+        
+        // 重置标签页到老师
+        DOM.personTypeTabs.forEach(tab => tab.classList.remove('active'));
+        DOM.personTypeTabs[0].classList.add('active');
+        DOM.teacherForm.classList.add('active');
+        DOM.studentForm.classList.remove('active');
+    }
+}
+
+/**
+ * 关闭添加人员模态框
+ */
+function closeAddPersonModal() {
+    if (DOM.addPersonModal) {
+        DOM.addPersonModal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+/**
+ * 设置添加人员模态框事件
+ */
+function setupAddPersonModal() {
+    if (!DOM.addPersonBtn || !DOM.addPersonModal) return;
+    
+    // 打开模态框
+    DOM.addPersonBtn.addEventListener('click', openAddPersonModal);
+    
+    // 关闭模态框
+    if (DOM.closeModal) {
+        DOM.closeModal.addEventListener('click', closeAddPersonModal);
+    }
+    
+    if (DOM.cancelBtn) {
+        DOM.cancelBtn.addEventListener('click', closeAddPersonModal);
+    }
+    
+    // 点击背景关闭
+    DOM.addPersonModal.addEventListener('click', (e) => {
+        if (e.target === DOM.addPersonModal) {
+            closeAddPersonModal();
+        }
+    });
+    
+    // 标签页切换
+    if (DOM.personTypeTabs && DOM.personTypeTabs.length > 0) {
+        DOM.personTypeTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const type = this.getAttribute('data-type');
+                
+                // 更新激活的标签
+                DOM.personTypeTabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // 显示对应的表单
+                DOM.teacherForm.classList.remove('active');
+                DOM.studentForm.classList.remove('active');
+                if (type === 'teacher') {
+                    DOM.teacherForm.classList.add('active');
+                } else {
+                    DOM.studentForm.classList.add('active');
+                }
+            });
+        });
+    }
+    
+    // 头像上传功能
+    setupAvatarUpload();
+    
+    // 动态标签功能
+    setupTagsInput();
+    
+    // 表单提交
+    setupPersonFormSubmit();
+}
+
+/**
+ * 设置头像上传功能
+ */
+function setupAvatarUpload() {
+    if (!DOM.avatarInput || !DOM.avatarPreview) return;
+    
+    DOM.avatarInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // 检查文件类型
+            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                showToast('请选择有效的图片文件（JPEG、PNG、GIF、WebP）', 'error');
+                this.value = '';
+                return;
+            }
+            
+            // 检查文件大小（限制为5MB）
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            if (file.size > maxSize) {
+                showToast('图片大小不能超过5MB', 'error');
+                this.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                DOM.avatarPreview.innerHTML = `<img src="${e.target.result}" alt="头像预览">`;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // 移除头像
+    if (DOM.removeAvatar) {
+        DOM.removeAvatar.addEventListener('click', function() {
+            DOM.avatarInput.value = '';
+            DOM.avatarPreview.innerHTML = '<div class="default-avatar"><i class="fas fa-user"></i></div>';
+        });
+    }
+}
+
+/**
+ * 设置动态标签输入
+ */
+function setupTagsInput() {
+    const tagsInputs = document.querySelectorAll('.tags-input input');
+    
+    tagsInputs.forEach(input => {
+        const container = input.parentElement;
+        
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                const tagText = this.value.trim();
+                if (tagText) {
+                    addTag(container, tagText);
+                    this.value = '';
+                }
+            }
+        });
+        
+        // 失去焦点时也添加标签
+        input.addEventListener('blur', function() {
+            const tagText = this.value.trim();
+            if (tagText) {
+                addTag(container, tagText);
+                this.value = '';
+            }
+        });
+    });
+}
+
+/**
+ * 添加标签
+ */
+function addTag(container, text) {
+    if (!text) return;
+    
+    // 检查是否已存在相同标签
+    const existingTags = container.querySelectorAll('.tag-item');
+    for (const tag of existingTags) {
+        if (tag.textContent.includes(text)) {
+            return;
+        }
+    }
+    
+    const tag = document.createElement('div');
+    tag.className = 'tag-item';
+    tag.innerHTML = `
+        ${text}
+        <button type="button" class="remove-tag">&times;</button>
+    `;
+    
+    const input = container.querySelector('input');
+    container.insertBefore(tag, input);
+    
+    tag.querySelector('.remove-tag').addEventListener('click', function() {
+        tag.remove();
+    });
+}
+
+/**
+ * 设置表单提交
+ */
+function setupPersonFormSubmit() {
+    if (!DOM.submitBtn) return;
+    
+    DOM.submitBtn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        
+        const activeForm = document.querySelector('.person-form.active');
+        const activeTab = document.querySelector('.person-type-tab.active');
+        
+        if (!activeForm || !activeTab) return;
+        
+        const type = activeTab.getAttribute('data-type');
+        
+        // 收集表单数据
+        const formData = collectFormData(activeForm, type);
+        
+        // 验证表单数据
+        if (!validateFormData(formData, type)) {
+            return;
+        }
+        
+        // 禁用按钮，显示加载状态
+        this.disabled = true;
+        const originalHTML = this.innerHTML;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 提交中...';
+        
+        try {
+            // 添加人员
+            const newPerson = addPerson(formData, type);
+            
+            if (newPerson) {
+                // 显示成功消息
+                showToast(`${type === 'teacher' ? '老师' : '学生'}添加成功！`, 'success');
+                
+                // 延迟关闭模态框，让用户看到成功消息
+                setTimeout(() => {
+                    // 重置表单
+                    activeForm.reset();
+                    
+                    // 重置头像预览
+                    if (DOM.avatarPreview) {
+                        DOM.avatarPreview.innerHTML = '<div class="default-avatar"><i class="fas fa-user"></i></div>';
+                    }
+                    
+                    // 清空标签
+                    const tagsContainer = activeForm.querySelector('.tags-input');
+                    if (tagsContainer) {
+                        const tags = tagsContainer.querySelectorAll('.tag-item');
+                        tags.forEach(tag => tag.remove());
+                    }
+                    
+                    // 关闭模态框
+                    closeAddPersonModal();
+                    
+                    // 重新渲染对应部分
+                    if (type === 'teacher') {
+                        renderAdvisors();
+                    } else {
+                        renderStudents();
+                    }
+                    
+                    // 恢复按钮状态
+                    this.disabled = false;
+                    this.innerHTML = originalHTML;
+                }, 1500);
+            } else {
+                throw new Error('添加失败');
+            }
+        } catch (error) {
+            console.error('添加失败:', error);
+            showToast('添加失败，请重试', 'error');
+            
+            // 恢复按钮状态
+            this.disabled = false;
+            this.innerHTML = originalHTML;
+        }
     });
 }
 
@@ -1968,6 +2397,35 @@ function addAdminButton() {
 }
 
 // ============================
+// 新增：为现有管理面板添加添加按钮
+// ============================
+
+/**
+ * 添加添加按钮到页面
+ */
+function addAddPersonButton() {
+    const navActions = document.querySelector('.nav-actions');
+    if (!navActions) return;
+    
+    // 检查是否已存在添加人员按钮
+    if (navActions.querySelector('#addPersonBtn')) return;
+    
+    const addBtn = document.createElement('button');
+    addBtn.className = 'add-person-btn';
+    addBtn.id = 'addPersonBtn';
+    addBtn.innerHTML = '<i class="fas fa-user-plus"></i> 添加人员';
+    addBtn.title = '添加老师或学生';
+    
+    // 插入到管理按钮之后
+    const adminBtn = navActions.querySelector('.admin-btn');
+    if (adminBtn) {
+        navActions.insertBefore(addBtn, adminBtn);
+    } else {
+        navActions.insertBefore(addBtn, navActions.firstChild);
+    }
+}
+
+// ============================
 // 初始化
 // ============================
 
@@ -1993,11 +2451,17 @@ function init() {
     setupSmoothScroll();
     setupProjectForm();
     
+    // 初始化新增的人员添加功能
+    setupAddPersonModal();
+    
     // 初始化状态
     initTheme();
     
     // 添加管理按钮
     addAdminButton();
+    
+    // 添加添加人员按钮
+    addAddPersonButton();
     
     // 添加CSS样式
     addModalStyles();
@@ -2484,6 +2948,9 @@ window.labWebsite = {
     addStudent,
     updateStudent,
     deleteStudent,
+    
+    // 新增的人员添加功能
+    addPerson,
     
     // 界面操作
     showEditProjectForm,
