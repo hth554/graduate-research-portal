@@ -10,7 +10,7 @@ class GitHubIssuesManager {
 
     // 设置 Token
     setToken(token) {
-        if (token && token.startsWith('ghp_') || token.startsWith('github_pat_')) {
+        if (token && (token.startsWith('ghp_') || token.startsWith('github_pat_'))) {
             this.token = token;
             localStorage.setItem('github_pat_token', token);
             console.log('Token 已保存到本地存储');
