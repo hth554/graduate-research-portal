@@ -1,4 +1,4 @@
-// js/github-issues.js - GitHub Issues 集成处理
+// js/github-issues.js - GitHub Issues 集成处理（新增写 JSON 能力）
 class GitHubIssuesManager {
     constructor() {
         this.owner = 'HTH554';
@@ -8,7 +8,7 @@ class GitHubIssuesManager {
         this.token = localStorage.getItem('github_pat_token');
     }
 
-    // 设置 Token
+    /* ========== 原有功能保持不变 ========== */
     setToken(token) {
         if (token && (token.startsWith('ghp_') || token.startsWith('github_pat_'))) {
             this.token = token;
@@ -19,21 +19,16 @@ class GitHubIssuesManager {
         return false;
     }
 
-    // 检查是否有有效 Token
     hasValidToken() {
         return !!this.token && this.token.length > 30;
     }
 
-    // 提交新课题 Issue
-    async submitNewProject(projectData) {
+    async submitNewProject(projectData) { /* 原封不动 */ 
         if (!this.hasValidToken()) {
             throw new Error('请先设置有效的 GitHub Token');
         }
-
-        // 构建 Issue 内容
         const issueTitle = `[课题提交] ${projectData.title.substring(0, 100)}`;
         const issueBody = this.formatIssueBody(projectData);
-
         try {
             const response = await fetch(this.issuesUrl, {
                 method: 'POST',
@@ -52,12 +47,10 @@ class GitHubIssuesManager {
                     ].filter(Boolean)
                 })
             });
-
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(`GitHub API 错误: ${response.status} - ${errorText}`);
             }
-
             const result = await response.json();
             return {
                 success: true,
@@ -66,61 +59,23 @@ class GitHubIssuesManager {
                 title: result.title,
                 createdAt: new Date(result.created_at).toLocaleString()
             };
-
         } catch (error) {
             console.error('提交失败:', error);
             throw error;
         }
     }
 
-    // 格式化 Issue 内容为 Markdown
-    formatIssueBody(data) {
-        return `## 课题基本信息
-
-**课题名称：** ${data.title}
-
-**研究生：** ${data.student || '未填写'}
-
-**指导老师：** ${data.supervisor || '未填写'}
-
-**研究标签：** ${data.tags || '未分类'}
-
----
-
-## 课题描述
-${data.description}
-
----
-
-## 提交信息
-- **提交时间：** ${new Date().toLocaleString()}
-- **状态：** 待审核
-- **审核意见：** 
-
----
-
-## 审核清单
-- [ ] 格式检查
-- [ ] 内容审核
-- [ ] 导师确认
-- [ ] 网站发布
-
----
-*此 Issue 由研究生课题门户网站自动生成*`;
+    formatIssueBody(data) { /* 原封不动 */ 
+        return `## 课题基本信息\n\n**课题名称：** ${data.title}\n\n**研究生：** ${data.student || '未填写'}\n\n**指导老师：** ${data.supervisor || '未填写'}\n\n**研究标签：** ${data.tags || '未分类'}\n\n---\n\n## 课题描述\n${data.description}\n\n---\n\n## 提交信息\n- **提交时间：** ${new Date().toLocaleString()}\n- **状态：** 待审核\n- **审核意见：** \n\n---\n\n## 审核清单\n- [ ] 格式检查\n- [ ] 内容审核\n- [ ] 导师确认\n- [ ] 网站发布\n\n---\n*此 Issue 由研究生课题门户网站自动生成*`;
     }
 
-    // 获取所有课题 Issues
-    async getAllProjects() {
+    async getAllProjects() { /* 原封不动 */ 
         try {
             const response = await fetch(`${this.issuesUrl}?labels=课题提交&per_page=20&sort=created&direction=desc`);
-            
             if (!response.ok) {
                 throw new Error(`获取失败: ${response.status}`);
             }
-
             const issues = await response.json();
-            
-            // 解析 Issue 为课题数据
             return issues.map(issue => ({
                 id: issue.id,
                 number: issue.number,
@@ -134,30 +89,26 @@ ${data.description}
                 url: issue.html_url,
                 state: issue.state
             }));
-
         } catch (error) {
             console.error('获取课题列表失败:', error);
             return [];
         }
     }
 
-    // 从 Issue body 提取描述
-    extractDescription(body) {
+    extractDescription(body) { /* 原封不动 */ 
         if (!body) return '暂无描述';
         const match = body.match(/## 课题描述\s*\n([\s\S]*?)\n\s*---/);
         return match ? match[1].trim() : body.substring(0, 200) + '...';
     }
 
-    // 从 Issue body 提取字段
-    extractField(body, fieldName) {
+    extractField(body, fieldName) { /* 原封不动 */ 
         if (!body) return '未知';
         const regex = new RegExp(`\\*\\*${fieldName}\\*\\*\\s*(.+?)\\s*\\n`);
         const match = body.match(regex);
         return match ? match[1].trim() : '未知';
     }
 
-    // 从标签获取状态
-    getStatusFromLabels(labels) {
+    getStatusFromLabels(labels) { /* 原封不动 */ 
         const labelNames = labels.map(l => l.name);
         if (labelNames.includes('已发布')) return '已发布';
         if (labelNames.includes('审核通过')) return '审核通过';
@@ -166,12 +117,67 @@ ${data.description}
         return labelNames[0] || '新提交';
     }
 
-    // 清除 Token
-    clearToken() {
+    clearToken() { /* 原封不动 */ 
         this.token = null;
         localStorage.removeItem('github_pat_token');
     }
+
+    /* ========== 新增：写任意 JSON 文件到仓库 ========== */
+    async writeJsonFile(filename, dataObj) {
+        if (!this.hasValidToken()) throw new Error('无有效 GitHub Token');
+
+        const path = `data/${filename}`;                       // 固定放在 data/ 目录
+        const url = `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${path}`;
+
+        // 1. 拿当前文件的 SHA（文件不存在会 404，此时 sha 保持 null 即可新建）
+        let sha = null;
+        try {
+            const getResp = await fetch(url, {
+                headers: { Authorization: `Bearer ${this.token}` }
+            });
+            if (getResp.ok) sha = (await getResp.json()).sha;
+        } catch {}
+
+        // 2. 提交新内容
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(dataObj, null, 2))));
+        const body = JSON.stringify({
+            message: `portal: 更新 ${filename} (${new Date().toLocaleString('zh-CN')})`,
+            content,
+            sha
+        });
+
+        const putResp = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                Authorization: `Bearer ${this.token}`,
+                'Content-Type': 'application/json'
+            },
+            body
+        });
+
+        if (!putResp.ok) {
+            const txt = await putResp.text();
+            throw new Error(`写入 GitHub 失败 ${putResp.status}: ${txt}`);
+        }
+        return putResp.json();   // 返回 GitHub 响应，方便调用方查看 commit 等信息
+    }
+
+    /* ========== 新增：读任意 JSON 文件 ========== */
+    async readJsonFile(filename) {
+        if (!this.hasValidToken()) throw new Error('无有效 GitHub Token');
+
+        const path = `data/${filename}`;
+        const url = `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${path}`;
+
+        const resp = await fetch(url, {
+            headers: { Authorization: `Bearer ${this.token}` }
+        });
+        if (!resp.ok) throw new Error(`读取 ${filename} 失败 ${resp.status}`);
+
+        const { content } = await resp.json(); // base64
+        return JSON.parse(decodeURIComponent(escape(atob(content))));
+    }
 }
 
-// 创建全局实例
+/* ========== 全局实例 ========== */
 window.githubIssuesManager = new GitHubIssuesManager();
