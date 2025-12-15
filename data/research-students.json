@@ -8,6 +8,19 @@
     "email": "wangfang@example.com",
     "github": "https://github.com/wangfang",
     "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    "id": "_nxxuga7je",
+    "createdAt": "2025-12-15",
+    "updatedAt": "2025-12-15"
+  },
+  {
+    "name": "王芳",
+    "degree": "硕士研究生",
+    "field": "电气工程",
+    "supervisor": "李华教授",
+    "research": "1\n",
+    "email": "wangfang@example.com",
+    "github": "https://github.com/wangfang",
+    "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
     "id": "_see2437ly",
     "createdAt": "2025-12-15",
     "updatedAt": "2025-12-15"
