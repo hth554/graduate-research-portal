@@ -89,21 +89,21 @@ function getCurrentTimestamp() {
 }
 
 /**
- * 检查并初始化 GitHub Token
+ * 检查并初始化 GitHub Token（仅用于写入操作）
  */
 async function initializeGitHubToken() {
     if (!window.githubIssuesManager || !window.githubIssuesManager.hasValidToken()) {
-        const token = prompt('请输入 GitHub Personal Access Token (ghp_ 或 github_pat_ 开头):');
+        const token = prompt('请输入 GitHub Personal Access Token (ghp_ 或 github_pat_ 开头):\n\n提示：如果您只想浏览数据，不需要 Token。只有编辑数据时才需要 Token。\n\n您可以在 GitHub -> Settings -> Developer settings -> Personal access tokens 创建 Token，需要 repo 权限。');
         if (token) {
             if (window.githubIssuesManager.setToken(token)) {
-                alert('GitHub Token 设置成功！');
+                showToast('GitHub Token 设置成功！您现在可以编辑数据了。', 'success');
                 return true;
             } else {
-                alert('Token 格式不正确！');
+                showToast('Token 格式不正确！', 'error');
                 return false;
             }
         } else {
-            alert('需要 GitHub Token 才能使用数据存储功能！');
+            showToast('需要 GitHub Token 才能编辑数据！您仍然可以浏览数据。', 'warning');
             return false;
         }
     }
@@ -111,46 +111,95 @@ async function initializeGitHubToken() {
 }
 
 /**
- * 从 GitHub 加载所有数据
+ * 从 GitHub 加载所有数据（支持公开读取）
  */
 async function loadAllDataFromGitHub() {
     try {
-        // 检查 Token
-        if (!await initializeGitHubToken()) {
-            return false;
+        console.log('开始从 GitHub 加载数据...');
+        
+        // 检查仓库状态
+        try {
+            const visibility = await window.githubIssuesManager.checkRepositoryVisibility();
+            console.log(`仓库可见性: ${visibility.visibility}, 公开: ${visibility.isPublic}`);
+            
+            if (!visibility.isPublic) {
+                console.warn('仓库是私有的，普通访客将无法看到最新数据');
+            }
+        } catch (visibilityError) {
+            console.warn('检查仓库状态失败:', visibilityError);
         }
-
+        
+        // 定义加载单个文件的函数
+        const loadFile = async (filename, getDefaultData) => {
+            try {
+                // 尝试从 GitHub 读取（支持公开读取）
+                const data = await window.githubIssuesManager.readJsonFile(filename);
+                if (data && Array.isArray(data) && data.length > 0) {
+                    console.log(`${filename}: 从 GitHub 加载成功，${data.length} 条记录`);
+                    return data;
+                } else if (data === null) {
+                    // 文件不存在
+                    console.log(`${filename}: GitHub 上不存在，使用默认数据`);
+                    return getDefaultData();
+                } else {
+                    // 空数组
+                    console.log(`${filename}: GitHub 数据为空，使用默认数据`);
+                    return getDefaultData();
+                }
+            } catch (error) {
+                console.log(`${filename}: 从 GitHub 加载失败: ${error.message}，使用默认数据`);
+                
+                // 检查是否为权限错误
+                if (error.message.includes('公开') || error.message.includes('Token')) {
+                    console.log(`${filename}: 权限不足，可能仓库是私有的且没有 Token`);
+                }
+                
+                return getDefaultData();
+            }
+        };
+        
         // 并行加载所有数据
-        const [projects, advisors, students, publications, updates] = await Promise.allSettled([
-            window.githubIssuesManager.readJsonFile(GITHUB_FILES.PROJECTS).catch(() => []),
-            window.githubIssuesManager.readJsonFile(GITHUB_FILES.ADVISORS).catch(() => []),
-            window.githubIssuesManager.readJsonFile(GITHUB_FILES.STUDENTS).catch(() => []),
-            window.githubIssuesManager.readJsonFile(GITHUB_FILES.PUBLICATIONS).catch(() => []),
-            window.githubIssuesManager.readJsonFile(GITHUB_FILES.UPDATES).catch(() => [])
+        const [projects, advisors, students, publications, updates] = await Promise.all([
+            loadFile(GITHUB_FILES.PROJECTS, getDefaultProjects),
+            loadFile(GITHUB_FILES.ADVISORS, getDefaultAdvisors),
+            loadFile(GITHUB_FILES.STUDENTS, getDefaultStudents),
+            loadFile(GITHUB_FILES.PUBLICATIONS, getDefaultPublications),
+            loadFile(GITHUB_FILES.UPDATES, getDefaultUpdates)
         ]);
-
-        // 设置数据，如果文件不存在则使用默认数据
-        projectsData = projects.status === 'fulfilled' ? projects.value : getDefaultProjects();
-        advisorsData = advisors.status === 'fulfilled' ? advisors.value : getDefaultAdvisors();
-        studentsData = students.status === 'fulfilled' ? students.value : getDefaultStudents();
-        publicationsData = publications.status === 'fulfilled' ? publications.value : getDefaultPublications();
-        updatesData = updates.status === 'fulfilled' ? updates.value : getDefaultUpdates();
-
+        
+        // 设置数据
+        projectsData = projects;
+        advisorsData = advisors;
+        studentsData = students;
+        publicationsData = publications;
+        updatesData = updates;
+        
+        console.log('所有数据加载完成');
         return true;
+        
     } catch (error) {
-        console.error('从 GitHub 加载数据失败:', error);
+        console.error('加载数据失败:', error);
+        
         // 使用默认数据作为回退
         projectsData = getDefaultProjects();
         advisorsData = getDefaultAdvisors();
         studentsData = getDefaultStudents();
         publicationsData = getDefaultPublications();
         updatesData = getDefaultUpdates();
+        
+        // 如果仓库是私有的，给用户提示
+        if (error.message.includes('公开') || error.message.includes('Token')) {
+            setTimeout(() => {
+                showToast('提示：如需看到最新数据，请设置 GitHub Token 或确保仓库是公开的', 'info', 8000);
+            }, 2000);
+        }
+        
         return false;
     }
 }
 
 /**
- * 保存所有数据到 GitHub
+ * 保存所有数据到 GitHub（需要 Token）
  */
 async function saveAllDataToGitHub() {
     try {
@@ -178,7 +227,7 @@ async function saveAllDataToGitHub() {
 }
 
 /**
- * 保存单个数据到 GitHub
+ * 保存单个数据到 GitHub（需要 Token）
  */
 async function saveDataToGitHub(filename, data) {
     try {
@@ -547,7 +596,7 @@ function getCategoryName(category) {
 /**
  * 显示Toast消息
  */
-function showToast(message, type = 'success') {
+function showToast(message, type = 'success', duration = 3000) {
     // 移除现有的toast
     const existingToast = document.querySelector('.toast');
     if (existingToast) {
@@ -577,7 +626,7 @@ function showToast(message, type = 'success') {
                 toast.parentNode.removeChild(toast);
             }
         }, 300);
-    }, 3000);
+    }, duration);
     
     // 手动关闭
     toast.querySelector('.toast-close').addEventListener('click', () => {
@@ -662,9 +711,13 @@ async function addProject(projectData) {
     };
     
     projectsData.unshift(newProject); // 添加到数组开头
-    await saveDataToGitHub(GITHUB_FILES.PROJECTS, projectsData);
-    renderProjects(currentFilter);
-    showToast('课题添加成功！', 'success');
+    const saved = await saveDataToGitHub(GITHUB_FILES.PROJECTS, projectsData);
+    if (saved) {
+        renderProjects(currentFilter);
+        showToast('课题添加成功并保存到 GitHub！', 'success');
+    } else {
+        showToast('课题添加成功，但保存到 GitHub 失败', 'warning');
+    }
     return newProject;
 }
 
@@ -679,9 +732,13 @@ async function updateProject(projectId, updatedData) {
             ...updatedData,
             updatedAt: getCurrentTimestamp()
         };
-        await saveDataToGitHub(GITHUB_FILES.PROJECTS, projectsData);
+        const saved = await saveDataToGitHub(GITHUB_FILES.PROJECTS, projectsData);
         renderProjects(currentFilter);
-        showToast('课题更新成功！', 'success');
+        if (saved) {
+            showToast('课题更新成功并保存到 GitHub！', 'success');
+        } else {
+            showToast('课题更新成功，但保存到 GitHub 失败', 'warning');
+        }
         return projectsData[index];
     }
     return null;
@@ -694,9 +751,13 @@ async function deleteProject(projectId) {
     const index = projectsData.findIndex(p => p.id == projectId);
     if (index !== -1) {
         projectsData.splice(index, 1);
-        await saveDataToGitHub(GITHUB_FILES.PROJECTS, projectsData);
+        const saved = await saveDataToGitHub(GITHUB_FILES.PROJECTS, projectsData);
         renderProjects(currentFilter);
-        showToast('课题已删除', 'success');
+        if (saved) {
+            showToast('课题已删除并从 GitHub 移除', 'success');
+        } else {
+            showToast('课题已删除，但 GitHub 同步失败', 'warning');
+        }
         return true;
     }
     return false;
@@ -714,9 +775,13 @@ async function addAdvisor(advisorData) {
     };
     
     advisorsData.unshift(newAdvisor);
-    await saveDataToGitHub(GITHUB_FILES.ADVISORS, advisorsData);
+    const saved = await saveDataToGitHub(GITHUB_FILES.ADVISORS, advisorsData);
     renderAdvisors();
-    showToast('导师添加成功！', 'success');
+    if (saved) {
+        showToast('导师添加成功并保存到 GitHub！', 'success');
+    } else {
+        showToast('导师添加成功，但保存到 GitHub 失败', 'warning');
+    }
     return newAdvisor;
 }
 
@@ -731,9 +796,13 @@ async function updateAdvisor(advisorId, updatedData) {
             ...updatedData,
             updatedAt: getCurrentTimestamp()
         };
-        await saveDataToGitHub(GITHUB_FILES.ADVISORS, advisorsData);
+        const saved = await saveDataToGitHub(GITHUB_FILES.ADVISORS, advisorsData);
         renderAdvisors();
-        showToast('导师信息更新成功！', 'success');
+        if (saved) {
+            showToast('导师信息更新成功并保存到 GitHub！', 'success');
+        } else {
+            showToast('导师信息更新成功，但保存到 GitHub 失败', 'warning');
+        }
         return advisorsData[index];
     }
     return null;
@@ -746,9 +815,13 @@ async function deleteAdvisor(advisorId) {
     const index = advisorsData.findIndex(a => a.id == advisorId);
     if (index !== -1) {
         advisorsData.splice(index, 1);
-        await saveDataToGitHub(GITHUB_FILES.ADVISORS, advisorsData);
+        const saved = await saveDataToGitHub(GITHUB_FILES.ADVISORS, advisorsData);
         renderAdvisors();
-        showToast('导师已删除', 'success');
+        if (saved) {
+            showToast('导师已删除并从 GitHub 移除', 'success');
+        } else {
+            showToast('导师已删除，但 GitHub 同步失败', 'warning');
+        }
         return true;
     }
     return false;
@@ -766,9 +839,13 @@ async function addStudent(studentData) {
     };
     
     studentsData.unshift(newStudent);
-    await saveDataToGitHub(GITHUB_FILES.STUDENTS, studentsData);
+    const saved = await saveDataToGitHub(GITHUB_FILES.STUDENTS, studentsData);
     renderStudents();
-    showToast('学生添加成功！', 'success');
+    if (saved) {
+        showToast('学生添加成功并保存到 GitHub！', 'success');
+    } else {
+        showToast('学生添加成功，但保存到 GitHub 失败', 'warning');
+    }
     return newStudent;
 }
 
@@ -783,9 +860,13 @@ async function updateStudent(studentId, updatedData) {
             ...updatedData,
             updatedAt: getCurrentTimestamp()
         };
-        await saveDataToGitHub(GITHUB_FILES.STUDENTS, studentsData);
+        const saved = await saveDataToGitHub(GITHUB_FILES.STUDENTS, studentsData);
         renderStudents();
-        showToast('学生信息更新成功！', 'success');
+        if (saved) {
+            showToast('学生信息更新成功并保存到 GitHub！', 'success');
+        } else {
+            showToast('学生信息更新成功，但保存到 GitHub 失败', 'warning');
+        }
         return studentsData[index];
     }
     return null;
@@ -798,9 +879,13 @@ async function deleteStudent(studentId) {
     const index = studentsData.findIndex(s => s.id == studentId);
     if (index !== -1) {
         studentsData.splice(index, 1);
-        await saveDataToGitHub(GITHUB_FILES.STUDENTS, studentsData);
+        const saved = await saveDataToGitHub(GITHUB_FILES.STUDENTS, studentsData);
         renderStudents();
-        showToast('学生已删除', 'success');
+        if (saved) {
+            showToast('学生已删除并从 GitHub 移除', 'success');
+        } else {
+            showToast('学生已删除，但 GitHub 同步失败', 'warning');
+        }
         return true;
     }
     return false;
@@ -1145,6 +1230,12 @@ function renderUpdates() {
  * 显示项目编辑表单
  */
 function showEditProjectForm(projectId = null) {
+    // 检查是否有编辑权限
+    if (!window.githubIssuesManager.hasValidToken()) {
+        showToast('需要 GitHub Token 才能编辑数据，请在管理面板中设置', 'warning');
+        return;
+    }
+    
     const project = projectId ? 
         projectsData.find(p => p.id == projectId) : 
         {
@@ -1276,6 +1367,12 @@ function showEditProjectForm(projectId = null) {
  * 显示导师编辑表单
  */
 function showEditAdvisorForm(advisorId = null) {
+    // 检查是否有编辑权限
+    if (!window.githubIssuesManager.hasValidToken()) {
+        showToast('需要 GitHub Token 才能编辑数据，请在管理面板中设置', 'warning');
+        return;
+    }
+    
     const advisor = advisorId ? 
         advisorsData.find(a => a.id == advisorId) : 
         {
@@ -1397,6 +1494,12 @@ function showEditAdvisorForm(advisorId = null) {
  * 显示学生编辑表单
  */
 function showEditStudentForm(studentId = null) {
+    // 检查是否有编辑权限
+    if (!window.githubIssuesManager.hasValidToken()) {
+        showToast('需要 GitHub Token 才能编辑数据，请在管理面板中设置', 'warning');
+        return;
+    }
+    
     const student = studentId ? 
         studentsData.find(s => s.id == studentId) : 
         {
@@ -1533,6 +1636,8 @@ function showEditStudentForm(studentId = null) {
  * 显示管理面板
  */
 function showAdminPanel() {
+    const hasToken = window.githubIssuesManager.hasValidToken();
+    
     const modal = createModal();
     modal.innerHTML = `
         <div class="modal-content admin-panel">
@@ -1541,6 +1646,18 @@ function showAdminPanel() {
                 <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="admin-status">
+                    <div class="status-indicator ${hasToken ? 'status-active' : 'status-inactive'}">
+                        <i class="fas ${hasToken ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                        <span>GitHub Token 状态: ${hasToken ? '已设置' : '未设置'}</span>
+                    </div>
+                    ${!hasToken ? `
+                        <p class="status-help">
+                            <small>需要 GitHub Token 才能编辑数据。您可以在 GitHub -> Settings -> Developer settings -> Personal access tokens 创建 Token，需要 repo 权限。</small>
+                        </p>
+                    ` : ''}
+                </div>
+                
                 <div class="admin-stats">
                     <div class="stat-card">
                         <h4>${projectsData.length}</h4>
@@ -1561,29 +1678,37 @@ function showAdminPanel() {
                 </div>
                 
                 <div class="admin-actions">
-                    <h4>快速操作</h4>
+                    <h4>数据操作</h4>
                     <div class="action-buttons">
-                        <button class="btn btn-primary" id="addProjectBtn">
+                        <button class="btn btn-primary" id="addProjectBtn" ${!hasToken ? 'disabled title="需要 Token"' : ''}>
                             <i class="fas fa-plus"></i> 添加新课题
                         </button>
-                        <button class="btn btn-primary" id="addAdvisorBtn">
+                        <button class="btn btn-primary" id="addAdvisorBtn" ${!hasToken ? 'disabled title="需要 Token"' : ''}>
                             <i class="fas fa-user-plus"></i> 添加新导师
                         </button>
-                        <button class="btn btn-primary" id="addStudentBtn">
+                        <button class="btn btn-primary" id="addStudentBtn" ${!hasToken ? 'disabled title="需要 Token"' : ''}>
                             <i class="fas fa-user-graduate"></i> 添加研究生
                         </button>
                     </div>
                 </div>
                 
                 <div class="admin-tools">
-                    <h4>数据管理</h4>
+                    <h4>管理工具</h4>
                     <div class="tool-buttons">
+                        <button class="btn btn-secondary" id="refreshDataBtn">
+                            <i class="fas fa-sync"></i> 刷新数据
+                        </button>
+                        <button class="btn btn-secondary" id="setTokenBtn">
+                            <i class="fas fa-key"></i> ${hasToken ? '更新 Token' : '设置 Token'}
+                        </button>
                         <button class="btn btn-secondary" id="exportDataBtn">
                             <i class="fas fa-download"></i> 导出数据
                         </button>
-                        <button class="btn btn-danger" id="resetDataBtn">
-                            <i class="fas fa-redo"></i> 重置为默认数据
-                        </button>
+                        ${hasToken ? `
+                            <button class="btn btn-danger" id="resetDataBtn">
+                                <i class="fas fa-redo"></i> 重置为默认数据
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
             </div>
@@ -1595,22 +1720,57 @@ function showAdminPanel() {
     
     // 添加按钮事件
     modal.querySelector('#addProjectBtn').addEventListener('click', () => {
-        closeModal(modal);
-        setTimeout(() => showEditProjectForm(), 100);
+        if (hasToken) {
+            closeModal(modal);
+            setTimeout(() => showEditProjectForm(), 100);
+        } else {
+            showToast('需要 GitHub Token 才能编辑数据', 'warning');
+        }
     });
     
     modal.querySelector('#addAdvisorBtn').addEventListener('click', () => {
-        closeModal(modal);
-        setTimeout(() => showEditAdvisorForm(), 100);
+        if (hasToken) {
+            closeModal(modal);
+            setTimeout(() => showEditAdvisorForm(), 100);
+        } else {
+            showToast('需要 GitHub Token 才能编辑数据', 'warning');
+        }
     });
     
     modal.querySelector('#addStudentBtn').addEventListener('click', () => {
+        if (hasToken) {
+            closeModal(modal);
+            setTimeout(() => showEditStudentForm(), 100);
+        } else {
+            showToast('需要 GitHub Token 才能编辑数据', 'warning');
+        }
+    });
+    
+    modal.querySelector('#refreshDataBtn').addEventListener('click', async () => {
+        showToast('正在刷新数据...', 'info');
+        await loadAllDataFromGitHub();
+        renderProjects(currentFilter);
+        renderAdvisors();
+        renderStudents();
+        renderPublications();
+        renderUpdates();
+        showToast('数据刷新完成', 'success');
+    });
+    
+    modal.querySelector('#setTokenBtn').addEventListener('click', async () => {
         closeModal(modal);
-        setTimeout(() => showEditStudentForm(), 100);
+        setTimeout(async () => {
+            await initializeGitHubToken();
+            // 重新打开管理面板
+            setTimeout(() => showAdminPanel(), 500);
+        }, 100);
     });
     
     modal.querySelector('#exportDataBtn').addEventListener('click', exportAllData);
-    modal.querySelector('#resetDataBtn').addEventListener('click', resetDataToDefault);
+    
+    if (hasToken) {
+        modal.querySelector('#resetDataBtn').addEventListener('click', resetDataToDefault);
+    }
     
     setupModalClose(modal);
 }
@@ -1625,13 +1785,14 @@ function exportAllData() {
         students: studentsData,
         publications: publicationsData,
         updates: updatesData,
-        exportDate: new Date().toISOString()
+        exportDate: new Date().toISOString(),
+        exportFrom: '研究生研究门户网站'
     };
     
     const dataStr = JSON.stringify(allData, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     
-    const exportFileDefaultName = `lab_data_${new Date().toISOString().split('T')[0]}.json`;
+    const exportFileDefaultName = `research_portal_data_${new Date().toISOString().split('T')[0]}.json`;
     
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
@@ -1645,7 +1806,7 @@ function exportAllData() {
  * 重置数据为默认值
  */
 async function resetDataToDefault() {
-    if (confirm('确定要重置所有数据为默认值吗？此操作不可撤销。')) {
+    if (confirm('确定要重置所有数据为默认值吗？此操作将覆盖 GitHub 仓库中的数据，不可撤销。')) {
         try {
             // 设置为默认数据
             projectsData = getDefaultProjects();
@@ -1655,7 +1816,7 @@ async function resetDataToDefault() {
             updatesData = getDefaultUpdates();
             
             // 保存到 GitHub
-            await saveAllDataToGitHub();
+            const saved = await saveAllDataToGitHub();
             
             // 重新渲染
             renderProjects(currentFilter);
@@ -1664,7 +1825,11 @@ async function resetDataToDefault() {
             renderPublications();
             renderUpdates();
             
-            showToast('数据已重置为默认值并保存到 GitHub', 'success');
+            if (saved) {
+                showToast('数据已重置为默认值并保存到 GitHub', 'success');
+            } else {
+                showToast('数据已重置为默认值，但保存到 GitHub 失败', 'warning');
+            }
         } catch (error) {
             console.error('重置数据失败:', error);
             showToast('重置数据失败', 'error');
@@ -2057,7 +2222,7 @@ function addAdminButton() {
  */
 async function init() {
     try {
-        // 加载 GitHub 数据
+        // 加载 GitHub 数据（支持公开读取）
         const loaded = await loadAllDataFromGitHub();
         
         if (loaded) {
@@ -2091,6 +2256,25 @@ async function init() {
         addModalStyles();
         addToastStyles();
         addAdminStyles();
+        
+        // 检查 Token 状态，如果没有 Token 但可以公开读取，给出提示
+        setTimeout(() => {
+            const hasToken = window.githubIssuesManager.hasValidToken();
+            if (!hasToken) {
+                // 尝试检查是否能够访问公开数据
+                window.githubIssuesManager.checkRepositoryVisibility()
+                    .then(visibility => {
+                        if (visibility.isPublic) {
+                            showToast('您正在浏览公开数据。如需编辑数据，请点击右上角"管理"按钮设置 GitHub Token。', 'info', 8000);
+                        } else {
+                            showToast('仓库是私有的，您看到的是默认数据。如需看到最新数据，请设置 GitHub Token。', 'warning', 8000);
+                        }
+                    })
+                    .catch(() => {
+                        // 忽略错误
+                    });
+            }
+        }, 3000);
         
         console.log('实验室网站初始化完成');
     } catch (error) {
@@ -2384,6 +2568,33 @@ function addAdminStyles() {
     style.textContent = `
         .admin-panel .modal-content {
             max-width: 800px;
+        }
+        
+        .admin-status {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+        
+        .status-active {
+            color: #28a745;
+        }
+        
+        .status-inactive {
+            color: #dc3545;
+        }
+        
+        .status-help {
+            margin: 5px 0 0 0;
+            color: #6c757d;
         }
         
         .admin-stats {
