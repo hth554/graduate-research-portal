@@ -2,317 +2,27 @@
 // 数据模型与配置
 // ============================
 
-// 存储键名
-const STORAGE_KEYS = {
-    PROJECTS: 'lab_projects',
-    ADVISORS: 'lab_advisors',
-    STUDENTS: 'lab_students',
-    PUBLICATIONS: 'lab_publications',
-    UPDATES: 'lab_updates',
+// GitHub 数据文件名
+const GITHUB_FILES = {
+    PROJECTS: 'research-projects.json',
+    ADVISORS: 'research-advisors.json',
+    STUDENTS: 'research-students.json',
+    PUBLICATIONS: 'research-publications.json',
+    UPDATES: 'research-updates.json'
+};
+
+// 本地存储键名（仅用于主题和过滤状态等用户偏好设置）
+const LOCAL_STORAGE_KEYS = {
     THEME: 'lab_theme_preference',
     PROJECT_FILTER: 'project_filter_state'
 };
 
-// 初始化数据 - 如果本地存储没有数据，则使用默认数据
-let projectsData = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROJECTS)) || [
-    {
-        id: 1,
-        title: "基于深度学习的医学图像分割算法研究",
-        category: "medical",
-        description: "本研究旨在开发一种高效的深度学习算法，用于医学图像中的器官与病变区域自动分割，提高诊断准确性与效率。",
-        advisor: "张明教授",
-        status: "进行中",
-        statusType: "in-progress",
-        image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-        createdAt: "2023-01-15",
-        updatedAt: "2023-10-20"
-    },
-    {
-        id: 2,
-        title: "可再生能源智能微电网优化控制策略",
-        category: "engineering",
-        description: "研究微电网中太阳能、风能等可再生能源的集成优化控制策略，提高能源利用效率与系统稳定性。",
-        advisor: "李华教授",
-        status: "进行中",
-        statusType: "in-progress",
-        image: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-        createdAt: "2023-02-10",
-        updatedAt: "2023-09-18"
-    },
-    {
-        id: 3,
-        title: "新型纳米材料在环境污染物去除中的应用",
-        category: "science",
-        description: "探索新型纳米材料在废水处理与空气净化中的应用潜力，开发高效、低成本的环境修复技术。",
-        advisor: "王静教授",
-        status: "已完成",
-        statusType: "completed",
-        image: "https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-        createdAt: "2022-11-05",
-        updatedAt: "2023-08-30"
-    },
-    {
-        id: 4,
-        title: "人工智能辅助的金融风险预测模型",
-        category: "science",
-        description: "构建基于机器学习与深度学习的金融风险预测模型，提高金融机构的风险识别与防范能力。",
-        advisor: "赵伟教授",
-        status: "进行中",
-        statusType: "in-progress",
-        image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-        createdAt: "2023-03-20",
-        updatedAt: "2023-10-15"
-    },
-    {
-        id: 5,
-        title: "数字化转型对企业组织文化的影响研究",
-        category: "humanities",
-        description: "探究数字化转型过程中企业组织文化的变迁机制，为企业数字化转型提供管理策略建议。",
-        advisor: "刘芳教授",
-        status: "进行中",
-        statusType: "in-progress",
-        image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-        createdAt: "2023-04-12",
-        updatedAt: "2023-10-10"
-    },
-    {
-        id: 6,
-        title: "新型肿瘤靶向药物递送系统研究",
-        category: "medical",
-        description: "开发基于纳米技术的肿瘤靶向药物递送系统，提高抗癌药物在肿瘤部位的富集与疗效。",
-        advisor: "陈晨教授",
-        status: "筹备中",
-        statusType: "preparation",
-        image: "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-        createdAt: "2023-09-01",
-        updatedAt: "2023-09-01"
-    }
-];
-
-let advisorsData = JSON.parse(localStorage.getItem(STORAGE_KEYS.ADVISORS)) || [
-    {
-        id: 1,
-        name: "刘曙光",
-        title: "教授，博士生导师",
-        field: "碳循环、水循环、生态系统功能和服务",
-        bio: "国家海外引进高级人才、中组部 '千人计划' 入选者，与中科院合作证实成熟森林土壤可累积碳，推翻经典理论，成果发表于《SCIENCE》并入选 '中国科学10大进展'；研发 GEMS 生物地球化学循环模型、SkyCenterESM 生态系统服务核算模型，主导完成美国全域生态系统固碳与减排潜力评估。",
-        avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-        email: "liusg@example.com",
-        website: "https://example.com/liusg",
-        createdAt: "2022-01-10",
-        updatedAt: "2023-10-20"
-    },
-    {
-        id: 2,
-        name: "赵淑清",
-        title: "教授，博士生导师",
-        field: "城市生态学",
-        bio: "创新性建立了城市化对植被生长影响的理论与定量方法，在 PNAS 发文证实城市环境对植被生长的普遍促进作用，该成果被学界广泛验证应用；提出解释城市化生物多样性梯度的 '热促进和胁迫平衡假说'，构建了我国城市生态系统有机碳储量评估体系，还搭建了北京城乡生态梯度长期研究平台（BES）。",
-        avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-        email: "zhaosq@example.com",
-        website: "https://example.com/zhaosq",
-        createdAt: "2022-02-15",
-        updatedAt: "2023-09-15"
-    },
-    {
-        id: 3,
-        name: "王静",
-        title: "教授，博士生导师",
-        field: "环境工程，纳米材料",
-        bio: "浙江大学环境学院教授，长江学者特聘教授，致力于环境功能材料与污染控制技术研究，在国际知名期刊发表论文150余篇，获国家科技进步二等奖2项。",
-        avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-        email: "wangjing@example.com",
-        website: "https://example.com/wangjing",
-        createdAt: "2021-11-20",
-        updatedAt: "2023-08-25"
-    },
-    {
-        id: 4,
-        name: "赵伟",
-        title: "教授，博士生导师",
-        field: "金融工程，人工智能",
-        bio: "上海交通大学安泰经济与管理学院教授，研究方向为金融科技、风险管理与人工智能，主持国家自然科学基金重点项目3项，出版专著5部。",
-        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-        email: "zhaowei@example.com",
-        website: "https://example.com/zhaowei",
-        createdAt: "2022-03-05",
-        updatedAt: "2023-10-05"
-    }
-];
-
-let studentsData = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS)) || [
-    {
-        id: 1,
-        name: "李明",
-        degree: "博士研究生",
-        field: "计算机科学与技术",
-        supervisor: "张明教授",
-        research: "研究方向为医学图像处理与深度学习，主要研究基于注意力机制的医学图像分割算法。",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-        email: "liming@example.com",
-        github: "https://github.com/liming",
-        createdAt: "2022-09-01",
-        updatedAt: "2023-10-15"
-    },
-    {
-        id: 2,
-        name: "王芳",
-        degree: "硕士研究生",
-        field: "电气工程",
-        supervisor: "李华教授",
-        research: "研究方向为智能电网优化控制，主要研究可再生能源微电网的调度策略与稳定性分析。",
-        avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-        email: "wangfang@example.com",
-        github: "https://github.com/wangfang",
-        createdAt: "2023-03-10",
-        updatedAt: "2023-09-20"
-    },
-    {
-        id: 3,
-        name: "张伟",
-        degree: "博士研究生",
-        field: "环境工程",
-        supervisor: "王静教授",
-        research: "研究方向为环境功能材料，主要研究新型纳米材料在水污染治理中的应用与机理。",
-        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-        email: "zhangwei@example.com",
-        github: "https://github.com/zhangwei",
-        createdAt: "2021-11-15",
-        updatedAt: "2023-08-30"
-    },
-    {
-        id: 4,
-        name: "刘洋",
-        degree: "硕士研究生",
-        field: "金融工程",
-        supervisor: "赵伟教授",
-        research: "研究方向为金融科技与风险管理，主要研究基于深度学习的金融市场预测模型。",
-        avatar: "https://images.unsplash.com/photo-1507591064344-4c6ce005b128?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-        email: "liuyang@example.com",
-        github: "https://github.com/liuyang",
-        createdAt: "2023-02-20",
-        updatedAt: "2023-10-10"
-    }
-];
-
-let publicationsData = JSON.parse(localStorage.getItem(STORAGE_KEYS.PUBLICATIONS)) || [
-    {
-        id: 1,
-        type: "期刊论文",
-        title: "基于注意力机制的医学图像分割算法研究",
-        authors: "张明, 李雷, 韩梅梅",
-        venue: "《中国医学影像学杂志》, 2023, 31(5): 12-18",
-        abstract: "本文提出了一种基于注意力机制的深度学习模型，用于医学图像中的器官分割，通过自注意力机制有效捕捉图像中的长距离依赖关系，在多个公开数据集上取得了最优性能。",
-        doi: "10.1234/j.issn.1000-1234.2023.05.002",
-        link: "https://example.com/paper1",
-        createdAt: "2023-05-15",
-        updatedAt: "2023-10-20"
-    },
-    {
-        id: 2,
-        type: "会议论文",
-        title: "可再生能源微电网的优化调度策略",
-        authors: "李华, 王强, 张伟",
-        venue: "IEEE电力与能源系统国际会议, 2023",
-        abstract: "本文提出了一种基于强化学习的微电网优化调度策略，有效提高了可再生能源的消纳能力，降低了系统运行成本，并通过仿真验证了其有效性。",
-        doi: "10.1109/ICPES.2023.1234567",
-        link: "https://example.com/paper2",
-        createdAt: "2023-08-10",
-        updatedAt: "2023-10-15"
-    },
-    {
-        id: 3,
-        type: "专利",
-        title: "一种高效去除重金属离子的纳米复合材料制备方法",
-        authors: "王静, 刘洋, 陈晨",
-        venue: "中国发明专利, ZL202310123456.7, 2023",
-        abstract: "本发明公开了一种高效去除水中重金属离子的纳米复合材料及其制备方法，该材料具有高吸附容量和良好的再生性能，适用于工业废水处理。",
-        link: "https://example.com/patent1",
-        createdAt: "2023-06-20",
-        updatedAt: "2023-09-25"
-    },
-    {
-        id: 4,
-        type: "期刊论文",
-        title: "数字化转型背景下组织文化变革路径研究",
-        authors: "刘芳, 赵明, 孙丽",
-        venue: "《管理科学学报》, 2023, 26(3): 45-56",
-        abstract: "本研究基于组织变革理论，探讨了数字化转型过程中企业组织文化的变革路径与影响因素，提出了适应数字时代的企业文化构建框架。",
-        doi: "10.1234/j.cnki.1671-9301.2023.03.005",
-        link: "https://example.com/paper3",
-        createdAt: "2023-03-30",
-        updatedAt: "2023-10-05"
-    }
-];
-
-let updatesData = JSON.parse(localStorage.getItem(STORAGE_KEYS.UPDATES)) || [
-    {
-        id: 1,
-        date: "2023-10-15",
-        title: "医学图像分割项目取得重要进展",
-        type: "项目进展",
-        content: "课题组在医学图像分割算法研究中取得重要突破，新提出的注意力机制模型在公开数据集上的分割准确率达到了95.2%，较现有方法提升了3.1%。",
-        project: "基于深度学习的医学图像分割算法研究",
-        projectId: 1,
-        createdAt: "2023-10-15",
-        updatedAt: "2023-10-15"
-    },
-    {
-        id: 2,
-        date: "2023-10-08",
-        title: "课题组参加国际学术会议",
-        type: "学术活动",
-        content: "课题组三名研究生参加了在杭州举办的国际人工智能大会，展示了最新的研究成果，并与国内外同行进行了深入交流。",
-        project: "人工智能辅助的金融风险预测模型",
-        projectId: 4,
-        createdAt: "2023-10-08",
-        updatedAt: "2023-10-08"
-    },
-    {
-        id: 3,
-        date: "2023-09-25",
-        title: "纳米材料研究获得国家自然科学基金资助",
-        type: "科研资助",
-        content: "课题组申报的'新型纳米材料在环境污染物去除中的机理与应用研究'项目获得国家自然科学基金面上项目资助，资助金额80万元。",
-        project: "新型纳米材料在环境污染物去除中的应用",
-        projectId: 3,
-        createdAt: "2023-09-25",
-        updatedAt: "2023-09-25"
-    },
-    {
-        id: 4,
-        date: "2023-09-18",
-        title: "微电网控制策略实现现场应用",
-        type: "技术转化",
-        content: "课题组研发的可再生能源微电网优化控制策略在某工业园区实现现场应用，系统运行稳定性显著提升，能源利用率提高了18%。",
-        project: "可再生能源智能微电网优化控制策略",
-        projectId: 2,
-        createdAt: "2023-09-18",
-        updatedAt: "2023-09-18"
-    },
-    {
-        id: 5,
-        title: "博士生李明获得优秀研究生称号",
-        date: "2023-09-10",
-        type: "学生荣誉",
-        content: "课题组博士生李明因在医学图像分割领域的突出研究成果，获得学校'优秀研究生'荣誉称号。",
-        project: "基于深度学习的医学图像分割算法研究",
-        projectId: 1,
-        createdAt: "2023-09-10",
-        updatedAt: "2023-09-10"
-    },
-    {
-        id: 6,
-        title: "课题组与企业签订合作研究协议",
-        date: "2023-09-05",
-        type: "产学研合作",
-        content: "课题组与某知名金融科技公司签订合作研究协议，共同开展金融风险智能预警系统的研发与应用。",
-        project: "人工智能辅助的金融风险预测模型",
-        projectId: 4,
-        createdAt: "2023-09-05",
-        updatedAt: "2023-09-05"
-    }
-];
+// 初始化数据
+let projectsData = [];
+let advisorsData = [];
+let studentsData = [];
+let publicationsData = [];
+let updatesData = [];
 
 // 当前筛选状态
 let currentFilter = 'all';
@@ -357,19 +67,7 @@ const DOM = {
     navMenu: document.querySelector('.nav-menu'),
     backToTop: document.getElementById('backToTop'),
     navLinks: document.querySelectorAll('.nav-link'),
-    projectForm: document.getElementById('projectForm'),
-    // 新增的DOM元素
-    addPersonBtn: document.getElementById('addPersonBtn'),
-    addPersonModal: document.getElementById('addPersonModal'),
-    closeModal: document.getElementById('closeModal'),
-    cancelBtn: document.getElementById('cancelBtn'),
-    personTypeTabs: document.querySelectorAll('.person-type-tab'),
-    teacherForm: document.getElementById('teacherForm'),
-    studentForm: document.getElementById('studentForm'),
-    submitBtn: document.getElementById('submitBtn'),
-    avatarInput: document.getElementById('avatarInput'),
-    avatarPreview: document.getElementById('avatarPreview'),
-    removeAvatar: document.getElementById('removeAvatar')
+    projectForm: document.getElementById('projectForm')
 };
 
 // ============================
@@ -391,23 +89,434 @@ function getCurrentTimestamp() {
 }
 
 /**
- * 保存数据到本地存储
+ * 检查并初始化 GitHub Token
  */
-function saveDataToLocalStorage() {
-    localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projectsData));
-    localStorage.setItem(STORAGE_KEYS.ADVISORS, JSON.stringify(advisorsData));
-    localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(studentsData));
-    localStorage.setItem(STORAGE_KEYS.PUBLICATIONS, JSON.stringify(publicationsData));
-    localStorage.setItem(STORAGE_KEYS.UPDATES, JSON.stringify(updatesData));
+async function initializeGitHubToken() {
+    if (!window.githubIssuesManager || !window.githubIssuesManager.hasValidToken()) {
+        const token = prompt('请输入 GitHub Personal Access Token (ghp_ 或 github_pat_ 开头):');
+        if (token) {
+            if (window.githubIssuesManager.setToken(token)) {
+                alert('GitHub Token 设置成功！');
+                return true;
+            } else {
+                alert('Token 格式不正确！');
+                return false;
+            }
+        } else {
+            alert('需要 GitHub Token 才能使用数据存储功能！');
+            return false;
+        }
+    }
+    return true;
 }
 
 /**
- * 初始化本地存储
+ * 从 GitHub 加载所有数据
  */
-function initializeLocalStorage() {
-    if (!localStorage.getItem(STORAGE_KEYS.PROJECTS)) {
-        saveDataToLocalStorage();
+async function loadAllDataFromGitHub() {
+    try {
+        // 检查 Token
+        if (!await initializeGitHubToken()) {
+            return false;
+        }
+
+        // 并行加载所有数据
+        const [projects, advisors, students, publications, updates] = await Promise.allSettled([
+            window.githubIssuesManager.readJsonFile(GITHUB_FILES.PROJECTS).catch(() => []),
+            window.githubIssuesManager.readJsonFile(GITHUB_FILES.ADVISORS).catch(() => []),
+            window.githubIssuesManager.readJsonFile(GITHUB_FILES.STUDENTS).catch(() => []),
+            window.githubIssuesManager.readJsonFile(GITHUB_FILES.PUBLICATIONS).catch(() => []),
+            window.githubIssuesManager.readJsonFile(GITHUB_FILES.UPDATES).catch(() => [])
+        ]);
+
+        // 设置数据，如果文件不存在则使用默认数据
+        projectsData = projects.status === 'fulfilled' ? projects.value : getDefaultProjects();
+        advisorsData = advisors.status === 'fulfilled' ? advisors.value : getDefaultAdvisors();
+        studentsData = students.status === 'fulfilled' ? students.value : getDefaultStudents();
+        publicationsData = publications.status === 'fulfilled' ? publications.value : getDefaultPublications();
+        updatesData = updates.status === 'fulfilled' ? updates.value : getDefaultUpdates();
+
+        return true;
+    } catch (error) {
+        console.error('从 GitHub 加载数据失败:', error);
+        // 使用默认数据作为回退
+        projectsData = getDefaultProjects();
+        advisorsData = getDefaultAdvisors();
+        studentsData = getDefaultStudents();
+        publicationsData = getDefaultPublications();
+        updatesData = getDefaultUpdates();
+        return false;
     }
+}
+
+/**
+ * 保存所有数据到 GitHub
+ */
+async function saveAllDataToGitHub() {
+    try {
+        // 检查 Token
+        if (!await initializeGitHubToken()) {
+            return false;
+        }
+
+        // 并行保存所有数据
+        await Promise.all([
+            window.githubIssuesManager.writeJsonFile(GITHUB_FILES.PROJECTS, projectsData),
+            window.githubIssuesManager.writeJsonFile(GITHUB_FILES.ADVISORS, advisorsData),
+            window.githubIssuesManager.writeJsonFile(GITHUB_FILES.STUDENTS, studentsData),
+            window.githubIssuesManager.writeJsonFile(GITHUB_FILES.PUBLICATIONS, publicationsData),
+            window.githubIssuesManager.writeJsonFile(GITHUB_FILES.UPDATES, updatesData)
+        ]);
+
+        console.log('所有数据已保存到 GitHub');
+        return true;
+    } catch (error) {
+        console.error('保存到 GitHub 失败:', error);
+        showToast('数据保存失败，请检查网络连接和 Token 权限', 'error');
+        return false;
+    }
+}
+
+/**
+ * 保存单个数据到 GitHub
+ */
+async function saveDataToGitHub(filename, data) {
+    try {
+        if (!await initializeGitHubToken()) {
+            return false;
+        }
+
+        await window.githubIssuesManager.writeJsonFile(filename, data);
+        return true;
+    } catch (error) {
+        console.error(`保存 ${filename} 到 GitHub 失败:`, error);
+        return false;
+    }
+}
+
+/**
+ * 获取默认项目数据
+ */
+function getDefaultProjects() {
+    return [
+        {
+            id: 1,
+            title: "基于深度学习的医学图像分割算法研究",
+            category: "medical",
+            description: "本研究旨在开发一种高效的深度学习算法，用于医学图像中的器官与病变区域自动分割，提高诊断准确性与效率。",
+            advisor: "张明教授",
+            status: "进行中",
+            statusType: "in-progress",
+            image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+            createdAt: "2023-01-15",
+            updatedAt: "2023-10-20"
+        },
+        {
+            id: 2,
+            title: "可再生能源智能微电网优化控制策略",
+            category: "engineering",
+            description: "研究微电网中太阳能、风能等可再生能源的集成优化控制策略，提高能源利用效率与系统稳定性。",
+            advisor: "李华教授",
+            status: "进行中",
+            statusType: "in-progress",
+            image: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+            createdAt: "2023-02-10",
+            updatedAt: "2023-09-18"
+        },
+        {
+            id: 3,
+            title: "新型纳米材料在环境污染物去除中的应用",
+            category: "science",
+            description: "探索新型纳米材料在废水处理与空气净化中的应用潜力，开发高效、低成本的环境修复技术。",
+            advisor: "王静教授",
+            status: "已完成",
+            statusType: "completed",
+            image: "https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+            createdAt: "2022-11-05",
+            updatedAt: "2023-08-30"
+        },
+        {
+            id: 4,
+            title: "人工智能辅助的金融风险预测模型",
+            category: "science",
+            description: "构建基于机器学习与深度学习的金融风险预测模型，提高金融机构的风险识别与防范能力。",
+            advisor: "赵伟教授",
+            status: "进行中",
+            statusType: "in-progress",
+            image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+            createdAt: "2023-03-20",
+            updatedAt: "2023-10-15"
+        },
+        {
+            id: 5,
+            title: "数字化转型对企业组织文化的影响研究",
+            category: "humanities",
+            description: "探究数字化转型过程中企业组织文化的变迁机制，为企业数字化转型提供管理策略建议。",
+            advisor: "刘芳教授",
+            status: "进行中",
+            statusType: "in-progress",
+            image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+            createdAt: "2023-04-12",
+            updatedAt: "2023-10-10"
+        },
+        {
+            id: 6,
+            title: "新型肿瘤靶向药物递送系统研究",
+            category: "medical",
+            description: "开发基于纳米技术的肿瘤靶向药物递送系统，提高抗癌药物在肿瘤部位的富集与疗效。",
+            advisor: "陈晨教授",
+            status: "筹备中",
+            statusType: "preparation",
+            image: "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+            createdAt: "2023-09-01",
+            updatedAt: "2023-09-01"
+        }
+    ];
+}
+
+/**
+ * 获取默认导师数据
+ */
+function getDefaultAdvisors() {
+    return [
+        {
+            id: 1,
+            name: "刘曙光",
+            title: "教授，博士生导师",
+            field: "碳循环、水循环、生态系统功能和服务",
+            bio: "国家海外引进高级人才、中组部 '千人计划' 入选者，与中科院合作证实成熟森林土壤可累积碳，推翻经典理论，成果发表于《SCIENCE》并入选 '中国科学10大进展'；研发 GEMS 生物地球化学循环模型、SkyCenterESM 生态系统服务核算模型，主导完成美国全域生态系统固碳与减排潜力评估。",
+            avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            email: "liusg@example.com",
+            website: "https://example.com/liusg",
+            createdAt: "2022-01-10",
+            updatedAt: "2023-10-20"
+        },
+        {
+            id: 2,
+            name: "赵淑清",
+            title: "教授，博士生导师",
+            field: "城市生态学",
+            bio: "创新性建立了城市化对植被生长影响的理论与定量方法，在 PNAS 发文证实城市环境对植被生长的普遍促进作用，该成果被学界广泛验证应用；提出解释城市化生物多样性梯度的 '热促进和胁迫平衡假说'，构建了我国城市生态系统有机碳储量评估体系，还搭建了北京城乡生态梯度长期研究平台（BES）。",
+            avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            email: "zhaosq@example.com",
+            website: "https://example.com/zhaosq",
+            createdAt: "2022-02-15",
+            updatedAt: "2023-09-15"
+        },
+        {
+            id: 3,
+            name: "王静",
+            title: "教授，博士生导师",
+            field: "环境工程，纳米材料",
+            bio: "浙江大学环境学院教授，长江学者特聘教授，致力于环境功能材料与污染控制技术研究，在国际知名期刊发表论文150余篇，获国家科技进步二等奖2项。",
+            avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            email: "wangjing@example.com",
+            website: "https://example.com/wangjing",
+            createdAt: "2021-11-20",
+            updatedAt: "2023-08-25"
+        },
+        {
+            id: 4,
+            name: "赵伟",
+            title: "教授，博士生导师",
+            field: "金融工程，人工智能",
+            bio: "上海交通大学安泰经济与管理学院教授，研究方向为金融科技、风险管理与人工智能，主持国家自然科学基金重点项目3项，出版专著5部。",
+            avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            email: "zhaowei@example.com",
+            website: "https://example.com/zhaowei",
+            createdAt: "2022-03-05",
+            updatedAt: "2023-10-05"
+        }
+    ];
+}
+
+/**
+ * 获取默认学生数据
+ */
+function getDefaultStudents() {
+    return [
+        {
+            id: 1,
+            name: "李明",
+            degree: "博士研究生",
+            field: "计算机科学与技术",
+            supervisor: "张明教授",
+            research: "研究方向为医学图像处理与深度学习，主要研究基于注意力机制的医学图像分割算法。",
+            avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            email: "liming@example.com",
+            github: "https://github.com/liming",
+            createdAt: "2022-09-01",
+            updatedAt: "2023-10-15"
+        },
+        {
+            id: 2,
+            name: "王芳",
+            degree: "硕士研究生",
+            field: "电气工程",
+            supervisor: "李华教授",
+            research: "研究方向为智能电网优化控制，主要研究可再生能源微电网的调度策略与稳定性分析。",
+            avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            email: "wangfang@example.com",
+            github: "https://github.com/wangfang",
+            createdAt: "2023-03-10",
+            updatedAt: "2023-09-20"
+        },
+        {
+            id: 3,
+            name: "张伟",
+            degree: "博士研究生",
+            field: "环境工程",
+            supervisor: "王静教授",
+            research: "研究方向为环境功能材料，主要研究新型纳米材料在水污染治理中的应用与机理。",
+            avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            email: "zhangwei@example.com",
+            github: "https://github.com/zhangwei",
+            createdAt: "2021-11-15",
+            updatedAt: "2023-08-30"
+        },
+        {
+            id: 4,
+            name: "刘洋",
+            degree: "硕士研究生",
+            field: "金融工程",
+            supervisor: "赵伟教授",
+            research: "研究方向为金融科技与风险管理，主要研究基于深度学习的金融市场预测模型。",
+            avatar: "https://images.unsplash.com/photo-1507591064344-4c6ce005b128?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            email: "liuyang@example.com",
+            github: "https://github.com/liuyang",
+            createdAt: "2023-02-20",
+            updatedAt: "2023-10-10"
+        }
+    ];
+}
+
+/**
+ * 获取默认出版物数据
+ */
+function getDefaultPublications() {
+    return [
+        {
+            id: 1,
+            type: "期刊论文",
+            title: "基于注意力机制的医学图像分割算法研究",
+            authors: "张明, 李雷, 韩梅梅",
+            venue: "《中国医学影像学杂志》, 2023, 31(5): 12-18",
+            abstract: "本文提出了一种基于注意力机制的深度学习模型，用于医学图像中的器官分割，通过自注意力机制有效捕捉图像中的长距离依赖关系，在多个公开数据集上取得了最优性能。",
+            doi: "10.1234/j.issn.1000-1234.2023.05.002",
+            link: "https://example.com/paper1",
+            createdAt: "2023-05-15",
+            updatedAt: "2023-10-20"
+        },
+        {
+            id: 2,
+            type: "会议论文",
+            title: "可再生能源微电网的优化调度策略",
+            authors: "李华, 王强, 张伟",
+            venue: "IEEE电力与能源系统国际会议, 2023",
+            abstract: "本文提出了一种基于强化学习的微电网优化调度策略，有效提高了可再生能源的消纳能力，降低了系统运行成本，并通过仿真验证了其有效性。",
+            doi: "10.1109/ICPES.2023.1234567",
+            link: "https://example.com/paper2",
+            createdAt: "2023-08-10",
+            updatedAt: "2023-10-15"
+        },
+        {
+            id: 3,
+            type: "专利",
+            title: "一种高效去除重金属离子的纳米复合材料制备方法",
+            authors: "王静, 刘洋, 陈晨",
+            venue: "中国发明专利, ZL202310123456.7, 2023",
+            abstract: "本发明公开了一种高效去除水中重金属离子的纳米复合材料及其制备方法，该材料具有高吸附容量和良好的再生性能，适用于工业废水处理。",
+            link: "https://example.com/patent1",
+            createdAt: "2023-06-20",
+            updatedAt: "2023-09-25"
+        },
+        {
+            id: 4,
+            type: "期刊论文",
+            title: "数字化转型背景下组织文化变革路径研究",
+            authors: "刘芳, 赵明, 孙丽",
+            venue: "《管理科学学报》, 2023, 26(3): 45-56",
+            abstract: "本研究基于组织变革理论，探讨了数字化转型过程中企业组织文化的变革路径与影响因素，提出了适应数字时代的企业文化构建框架。",
+            doi: "10.1234/j.cnki.1671-9301.2023.03.005",
+            link: "https://example.com/paper3",
+            createdAt: "2023-03-30",
+            updatedAt: "2023-10-05"
+        }
+    ];
+}
+
+/**
+ * 获取默认更新数据
+ */
+function getDefaultUpdates() {
+    return [
+        {
+            id: 1,
+            date: "2023-10-15",
+            title: "医学图像分割项目取得重要进展",
+            type: "项目进展",
+            content: "课题组在医学图像分割算法研究中取得重要突破，新提出的注意力机制模型在公开数据集上的分割准确率达到了95.2%，较现有方法提升了3.1%。",
+            project: "基于深度学习的医学图像分割算法研究",
+            projectId: 1,
+            createdAt: "2023-10-15",
+            updatedAt: "2023-10-15"
+        },
+        {
+            id: 2,
+            date: "2023-10-08",
+            title: "课题组参加国际学术会议",
+            type: "学术活动",
+            content: "课题组三名研究生参加了在杭州举办的国际人工智能大会，展示了最新的研究成果，并与国内外同行进行了深入交流。",
+            project: "人工智能辅助的金融风险预测模型",
+            projectId: 4,
+            createdAt: "2023-10-08",
+            updatedAt: "2023-10-08"
+        },
+        {
+            id: 3,
+            date: "2023-09-25",
+            title: "纳米材料研究获得国家自然科学基金资助",
+            type: "科研资助",
+            content: "课题组申报的'新型纳米材料在环境污染物去除中的机理与应用研究'项目获得国家自然科学基金面上项目资助，资助金额80万元。",
+            project: "新型纳米材料在环境污染物去除中的应用",
+            projectId: 3,
+            createdAt: "2023-09-25",
+            updatedAt: "2023-09-25"
+        },
+        {
+            id: 4,
+            date: "2023-09-18",
+            title: "微电网控制策略实现现场应用",
+            type: "技术转化",
+            content: "课题组研发的可再生能源微电网优化控制策略在某工业园区实现现场应用，系统运行稳定性显著提升，能源利用率提高了18%。",
+            project: "可再生能源智能微电网优化控制策略",
+            projectId: 2,
+            createdAt: "2023-09-18",
+            updatedAt: "2023-09-18"
+        },
+        {
+            id: 5,
+            title: "博士生李明获得优秀研究生称号",
+            date: "2023-09-10",
+            type: "学生荣誉",
+            content: "课题组博士生李明因在医学图像分割领域的突出研究成果，获得学校'优秀研究生'荣誉称号。",
+            project: "基于深度学习的医学图像分割算法研究",
+            projectId: 1,
+            createdAt: "2023-09-10",
+            updatedAt: "2023-09-10"
+        },
+        {
+            id: 6,
+            title: "课题组与企业签订合作研究协议",
+            date: "2023-09-05",
+            type: "产学研合作",
+            content: "课题组与某知名金融科技公司签订合作研究协议，共同开展金融风险智能预警系统的研发与应用。",
+            project: "人工智能辅助的金融风险预测模型",
+            projectId: 4,
+            createdAt: "2023-09-05",
+            updatedAt: "2023-09-05"
+        }
+    ];
 }
 
 /**
@@ -537,31 +646,14 @@ function throttle(func, limit) {
     };
 }
 
-/**
- * 验证邮箱格式
- */
-function validateEmail(email) {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-}
-
-/**
- * 验证URL格式
- */
-function validateURL(url) {
-    if (!url) return true; // 空URL视为有效
-    const re = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
-    return re.test(url);
-}
-
 // ============================
-// CRUD 操作函数
+// CRUD 操作函数（已修改为使用 GitHub）
 // ============================
 
 /**
  * 添加新项目
  */
-function addProject(projectData) {
+async function addProject(projectData) {
     const newProject = {
         ...projectData,
         id: generateId(),
@@ -570,15 +662,16 @@ function addProject(projectData) {
     };
     
     projectsData.unshift(newProject); // 添加到数组开头
-    saveDataToLocalStorage();
+    await saveDataToGitHub(GITHUB_FILES.PROJECTS, projectsData);
     renderProjects(currentFilter);
+    showToast('课题添加成功！', 'success');
     return newProject;
 }
 
 /**
  * 更新项目
  */
-function updateProject(projectId, updatedData) {
+async function updateProject(projectId, updatedData) {
     const index = projectsData.findIndex(p => p.id == projectId);
     if (index !== -1) {
         projectsData[index] = {
@@ -586,8 +679,9 @@ function updateProject(projectId, updatedData) {
             ...updatedData,
             updatedAt: getCurrentTimestamp()
         };
-        saveDataToLocalStorage();
+        await saveDataToGitHub(GITHUB_FILES.PROJECTS, projectsData);
         renderProjects(currentFilter);
+        showToast('课题更新成功！', 'success');
         return projectsData[index];
     }
     return null;
@@ -596,12 +690,13 @@ function updateProject(projectId, updatedData) {
 /**
  * 删除项目
  */
-function deleteProject(projectId) {
+async function deleteProject(projectId) {
     const index = projectsData.findIndex(p => p.id == projectId);
     if (index !== -1) {
         projectsData.splice(index, 1);
-        saveDataToLocalStorage();
+        await saveDataToGitHub(GITHUB_FILES.PROJECTS, projectsData);
         renderProjects(currentFilter);
+        showToast('课题已删除', 'success');
         return true;
     }
     return false;
@@ -610,7 +705,7 @@ function deleteProject(projectId) {
 /**
  * 添加新导师
  */
-function addAdvisor(advisorData) {
+async function addAdvisor(advisorData) {
     const newAdvisor = {
         ...advisorData,
         id: generateId(),
@@ -619,15 +714,16 @@ function addAdvisor(advisorData) {
     };
     
     advisorsData.unshift(newAdvisor);
-    saveDataToLocalStorage();
+    await saveDataToGitHub(GITHUB_FILES.ADVISORS, advisorsData);
     renderAdvisors();
+    showToast('导师添加成功！', 'success');
     return newAdvisor;
 }
 
 /**
  * 更新导师信息
  */
-function updateAdvisor(advisorId, updatedData) {
+async function updateAdvisor(advisorId, updatedData) {
     const index = advisorsData.findIndex(a => a.id == advisorId);
     if (index !== -1) {
         advisorsData[index] = {
@@ -635,8 +731,9 @@ function updateAdvisor(advisorId, updatedData) {
             ...updatedData,
             updatedAt: getCurrentTimestamp()
         };
-        saveDataToLocalStorage();
+        await saveDataToGitHub(GITHUB_FILES.ADVISORS, advisorsData);
         renderAdvisors();
+        showToast('导师信息更新成功！', 'success');
         return advisorsData[index];
     }
     return null;
@@ -645,12 +742,13 @@ function updateAdvisor(advisorId, updatedData) {
 /**
  * 删除导师
  */
-function deleteAdvisor(advisorId) {
+async function deleteAdvisor(advisorId) {
     const index = advisorsData.findIndex(a => a.id == advisorId);
     if (index !== -1) {
         advisorsData.splice(index, 1);
-        saveDataToLocalStorage();
+        await saveDataToGitHub(GITHUB_FILES.ADVISORS, advisorsData);
         renderAdvisors();
+        showToast('导师已删除', 'success');
         return true;
     }
     return false;
@@ -659,7 +757,7 @@ function deleteAdvisor(advisorId) {
 /**
  * 添加新学生
  */
-function addStudent(studentData) {
+async function addStudent(studentData) {
     const newStudent = {
         ...studentData,
         id: generateId(),
@@ -668,15 +766,16 @@ function addStudent(studentData) {
     };
     
     studentsData.unshift(newStudent);
-    saveDataToLocalStorage();
+    await saveDataToGitHub(GITHUB_FILES.STUDENTS, studentsData);
     renderStudents();
+    showToast('学生添加成功！', 'success');
     return newStudent;
 }
 
 /**
  * 更新学生信息
  */
-function updateStudent(studentId, updatedData) {
+async function updateStudent(studentId, updatedData) {
     const index = studentsData.findIndex(s => s.id == studentId);
     if (index !== -1) {
         studentsData[index] = {
@@ -684,8 +783,9 @@ function updateStudent(studentId, updatedData) {
             ...updatedData,
             updatedAt: getCurrentTimestamp()
         };
-        saveDataToLocalStorage();
+        await saveDataToGitHub(GITHUB_FILES.STUDENTS, studentsData);
         renderStudents();
+        showToast('学生信息更新成功！', 'success');
         return studentsData[index];
     }
     return null;
@@ -694,139 +794,20 @@ function updateStudent(studentId, updatedData) {
 /**
  * 删除学生
  */
-function deleteStudent(studentId) {
+async function deleteStudent(studentId) {
     const index = studentsData.findIndex(s => s.id == studentId);
     if (index !== -1) {
         studentsData.splice(index, 1);
-        saveDataToLocalStorage();
+        await saveDataToGitHub(GITHUB_FILES.STUDENTS, studentsData);
         renderStudents();
+        showToast('学生已删除', 'success');
         return true;
     }
     return false;
 }
 
 // ============================
-// 新增：人员添加功能
-// ============================
-
-/**
- * 添加人员（老师或学生）
- */
-function addPerson(personData, type) {
-    if (type === 'teacher') {
-        return addAdvisor(personData);
-    } else if (type === 'student') {
-        return addStudent(personData);
-    }
-    return null;
-}
-
-/**
- * 收集表单数据
- */
-function collectFormData(form, type) {
-    const formData = new FormData(form);
-    const data = {};
-    
-    // 收集所有表单字段
-    for (const [key, value] of formData.entries()) {
-        data[key] = value.trim();
-    }
-    
-    // 为不同类型添加特定字段
-    if (type === 'teacher') {
-        return {
-            name: data.name || '',
-            title: data.title || '教授',
-            field: data.field || '',
-            bio: data.bio || '',
-            avatar: data.avatar || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-            email: data.email || '',
-            website: data.website || ''
-        };
-    } else if (type === 'student') {
-        return {
-            name: data.name || '',
-            degree: data.degree || '硕士研究生',
-            field: data.field || '',
-            supervisor: data.supervisor || '',
-            research: data.research || '',
-            avatar: data.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-            email: data.email || '',
-            github: data.github || ''
-        };
-    }
-    
-    return data;
-}
-
-/**
- * 验证表单数据
- */
-function validateFormData(data, type) {
-    // 基本验证
-    if (!data.name || data.name.trim() === '') {
-        showToast('请填写姓名', 'error');
-        return false;
-    }
-    
-    if (type === 'teacher') {
-        if (!data.title || data.title.trim() === '') {
-            showToast('请填写职称', 'error');
-            return false;
-        }
-        if (!data.field || data.field.trim() === '') {
-            showToast('请填写研究领域', 'error');
-            return false;
-        }
-        if (!data.bio || data.bio.trim() === '') {
-            showToast('请填写个人简介', 'error');
-            return false;
-        }
-        
-        // 验证邮箱
-        if (data.email && !validateEmail(data.email)) {
-            showToast('邮箱格式不正确', 'error');
-            return false;
-        }
-        
-        // 验证网站
-        if (data.website && !validateURL(data.website)) {
-            showToast('网站链接格式不正确', 'error');
-            return false;
-        }
-    } else if (type === 'student') {
-        if (!data.field || data.field.trim() === '') {
-            showToast('请填写专业领域', 'error');
-            return false;
-        }
-        if (!data.supervisor || data.supervisor.trim() === '') {
-            showToast('请填写指导老师', 'error');
-            return false;
-        }
-        if (!data.research || data.research.trim() === '') {
-            showToast('请填写研究方向', 'error');
-            return false;
-        }
-        
-        // 验证邮箱
-        if (data.email && !validateEmail(data.email)) {
-            showToast('邮箱格式不正确', 'error');
-            return false;
-        }
-        
-        // 验证GitHub链接
-        if (data.github && !validateURL(data.github)) {
-            showToast('GitHub链接格式不正确', 'error');
-            return false;
-        }
-    }
-    
-    return true;
-}
-
-// ============================
-// 渲染函数（带编辑按钮）
+// 渲染函数（带编辑按钮）保持不变
 // ============================
 
 /**
@@ -1157,287 +1138,7 @@ function renderUpdates() {
 }
 
 // ============================
-// 新增：添加人员模态框功能
-// ============================
-
-/**
- * 打开添加人员模态框
- */
-function openAddPersonModal() {
-    if (DOM.addPersonModal) {
-        DOM.addPersonModal.classList.add('active');
-        document.body.style.overflow = 'hidden'; // 防止背景滚动
-        
-        // 重置表单
-        DOM.teacherForm.reset();
-        DOM.studentForm.reset();
-        
-        // 重置头像预览
-        if (DOM.avatarPreview) {
-            DOM.avatarPreview.innerHTML = '<div class="default-avatar"><i class="fas fa-user"></i></div>';
-        }
-        
-        // 重置标签页到老师
-        DOM.personTypeTabs.forEach(tab => tab.classList.remove('active'));
-        DOM.personTypeTabs[0].classList.add('active');
-        DOM.teacherForm.classList.add('active');
-        DOM.studentForm.classList.remove('active');
-    }
-}
-
-/**
- * 关闭添加人员模态框
- */
-function closeAddPersonModal() {
-    if (DOM.addPersonModal) {
-        DOM.addPersonModal.classList.remove('active');
-        document.body.style.overflow = 'auto';
-    }
-}
-
-/**
- * 设置添加人员模态框事件
- */
-function setupAddPersonModal() {
-    if (!DOM.addPersonBtn || !DOM.addPersonModal) return;
-    
-    // 打开模态框
-    DOM.addPersonBtn.addEventListener('click', openAddPersonModal);
-    
-    // 关闭模态框
-    if (DOM.closeModal) {
-        DOM.closeModal.addEventListener('click', closeAddPersonModal);
-    }
-    
-    if (DOM.cancelBtn) {
-        DOM.cancelBtn.addEventListener('click', closeAddPersonModal);
-    }
-    
-    // 点击背景关闭
-    DOM.addPersonModal.addEventListener('click', (e) => {
-        if (e.target === DOM.addPersonModal) {
-            closeAddPersonModal();
-        }
-    });
-    
-    // 标签页切换
-    if (DOM.personTypeTabs && DOM.personTypeTabs.length > 0) {
-        DOM.personTypeTabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                const type = this.getAttribute('data-type');
-                
-                // 更新激活的标签
-                DOM.personTypeTabs.forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-                
-                // 显示对应的表单
-                DOM.teacherForm.classList.remove('active');
-                DOM.studentForm.classList.remove('active');
-                if (type === 'teacher') {
-                    DOM.teacherForm.classList.add('active');
-                } else {
-                    DOM.studentForm.classList.add('active');
-                }
-            });
-        });
-    }
-    
-    // 头像上传功能
-    setupAvatarUpload();
-    
-    // 动态标签功能
-    setupTagsInput();
-    
-    // 表单提交
-    setupPersonFormSubmit();
-}
-
-/**
- * 设置头像上传功能
- */
-function setupAvatarUpload() {
-    if (!DOM.avatarInput || !DOM.avatarPreview) return;
-    
-    DOM.avatarInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            // 检查文件类型
-            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-            if (!validTypes.includes(file.type)) {
-                showToast('请选择有效的图片文件（JPEG、PNG、GIF、WebP）', 'error');
-                this.value = '';
-                return;
-            }
-            
-            // 检查文件大小（限制为5MB）
-            const maxSize = 5 * 1024 * 1024; // 5MB
-            if (file.size > maxSize) {
-                showToast('图片大小不能超过5MB', 'error');
-                this.value = '';
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                DOM.avatarPreview.innerHTML = `<img src="${e.target.result}" alt="头像预览">`;
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-    
-    // 移除头像
-    if (DOM.removeAvatar) {
-        DOM.removeAvatar.addEventListener('click', function() {
-            DOM.avatarInput.value = '';
-            DOM.avatarPreview.innerHTML = '<div class="default-avatar"><i class="fas fa-user"></i></div>';
-        });
-    }
-}
-
-/**
- * 设置动态标签输入
- */
-function setupTagsInput() {
-    const tagsInputs = document.querySelectorAll('.tags-input input');
-    
-    tagsInputs.forEach(input => {
-        const container = input.parentElement;
-        
-        input.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ',') {
-                e.preventDefault();
-                const tagText = this.value.trim();
-                if (tagText) {
-                    addTag(container, tagText);
-                    this.value = '';
-                }
-            }
-        });
-        
-        // 失去焦点时也添加标签
-        input.addEventListener('blur', function() {
-            const tagText = this.value.trim();
-            if (tagText) {
-                addTag(container, tagText);
-                this.value = '';
-            }
-        });
-    });
-}
-
-/**
- * 添加标签
- */
-function addTag(container, text) {
-    if (!text) return;
-    
-    // 检查是否已存在相同标签
-    const existingTags = container.querySelectorAll('.tag-item');
-    for (const tag of existingTags) {
-        if (tag.textContent.includes(text)) {
-            return;
-        }
-    }
-    
-    const tag = document.createElement('div');
-    tag.className = 'tag-item';
-    tag.innerHTML = `
-        ${text}
-        <button type="button" class="remove-tag">&times;</button>
-    `;
-    
-    const input = container.querySelector('input');
-    container.insertBefore(tag, input);
-    
-    tag.querySelector('.remove-tag').addEventListener('click', function() {
-        tag.remove();
-    });
-}
-
-/**
- * 设置表单提交
- */
-function setupPersonFormSubmit() {
-    if (!DOM.submitBtn) return;
-    
-    DOM.submitBtn.addEventListener('click', async function(e) {
-        e.preventDefault();
-        
-        const activeForm = document.querySelector('.person-form.active');
-        const activeTab = document.querySelector('.person-type-tab.active');
-        
-        if (!activeForm || !activeTab) return;
-        
-        const type = activeTab.getAttribute('data-type');
-        
-        // 收集表单数据
-        const formData = collectFormData(activeForm, type);
-        
-        // 验证表单数据
-        if (!validateFormData(formData, type)) {
-            return;
-        }
-        
-        // 禁用按钮，显示加载状态
-        this.disabled = true;
-        const originalHTML = this.innerHTML;
-        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 提交中...';
-        
-        try {
-            // 添加人员
-            const newPerson = addPerson(formData, type);
-            
-            if (newPerson) {
-                // 显示成功消息
-                showToast(`${type === 'teacher' ? '老师' : '学生'}添加成功！`, 'success');
-                
-                // 延迟关闭模态框，让用户看到成功消息
-                setTimeout(() => {
-                    // 重置表单
-                    activeForm.reset();
-                    
-                    // 重置头像预览
-                    if (DOM.avatarPreview) {
-                        DOM.avatarPreview.innerHTML = '<div class="default-avatar"><i class="fas fa-user"></i></div>';
-                    }
-                    
-                    // 清空标签
-                    const tagsContainer = activeForm.querySelector('.tags-input');
-                    if (tagsContainer) {
-                        const tags = tagsContainer.querySelectorAll('.tag-item');
-                        tags.forEach(tag => tag.remove());
-                    }
-                    
-                    // 关闭模态框
-                    closeAddPersonModal();
-                    
-                    // 重新渲染对应部分
-                    if (type === 'teacher') {
-                        renderAdvisors();
-                    } else {
-                        renderStudents();
-                    }
-                    
-                    // 恢复按钮状态
-                    this.disabled = false;
-                    this.innerHTML = originalHTML;
-                }, 1500);
-            } else {
-                throw new Error('添加失败');
-            }
-        } catch (error) {
-            console.error('添加失败:', error);
-            showToast('添加失败，请重试', 'error');
-            
-            // 恢复按钮状态
-            this.disabled = false;
-            this.innerHTML = originalHTML;
-        }
-    });
-}
-
-// ============================
-// 编辑界面函数
+// 编辑界面函数保持不变
 // ============================
 
 /**
@@ -1532,7 +1233,7 @@ function showEditProjectForm(projectId = null) {
     
     // 表单提交事件
     const form = modal.querySelector('#editProjectForm');
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const formData = {
@@ -1546,11 +1247,9 @@ function showEditProjectForm(projectId = null) {
         };
         
         if (isEditMode) {
-            updateProject(projectId, formData);
-            showToast('课题更新成功！', 'success');
+            await updateProject(projectId, formData);
         } else {
-            addProject(formData);
-            showToast('课题添加成功！', 'success');
+            await addProject(formData);
         }
         
         closeModal(modal);
@@ -1558,10 +1257,9 @@ function showEditProjectForm(projectId = null) {
     
     // 删除按钮事件
     if (isEditMode) {
-        modal.querySelector('.delete-btn').addEventListener('click', function() {
+        modal.querySelector('.delete-btn').addEventListener('click', async function() {
             if (confirm('确定要删除这个课题吗？此操作不可撤销。')) {
-                deleteProject(projectId);
-                showToast('课题已删除', 'success');
+                await deleteProject(projectId);
                 closeModal(modal);
             }
         });
@@ -1660,7 +1358,7 @@ function showEditAdvisorForm(advisorId = null) {
     setTimeout(() => modal.classList.add('show'), 10);
     
     const form = modal.querySelector('#editAdvisorForm');
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const formData = {
@@ -1674,21 +1372,18 @@ function showEditAdvisorForm(advisorId = null) {
         };
         
         if (isEditMode) {
-            updateAdvisor(advisorId, formData);
-            showToast('导师信息更新成功！', 'success');
+            await updateAdvisor(advisorId, formData);
         } else {
-            addAdvisor(formData);
-            showToast('导师添加成功！', 'success');
+            await addAdvisor(formData);
         }
         
         closeModal(modal);
     });
     
     if (isEditMode) {
-        modal.querySelector('.delete-btn').addEventListener('click', function() {
+        modal.querySelector('.delete-btn').addEventListener('click', async function() {
             if (confirm('确定要删除这位导师吗？此操作不可撤销。')) {
-                deleteAdvisor(advisorId);
-                showToast('导师已删除', 'success');
+                await deleteAdvisor(advisorId);
                 closeModal(modal);
             }
         });
@@ -1794,7 +1489,7 @@ function showEditStudentForm(studentId = null) {
     setTimeout(() => modal.classList.add('show'), 10);
     
     const form = modal.querySelector('#editStudentForm');
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const formData = {
@@ -1809,21 +1504,18 @@ function showEditStudentForm(studentId = null) {
         };
         
         if (isEditMode) {
-            updateStudent(studentId, formData);
-            showToast('学生信息更新成功！', 'success');
+            await updateStudent(studentId, formData);
         } else {
-            addStudent(formData);
-            showToast('学生添加成功！', 'success');
+            await addStudent(formData);
         }
         
         closeModal(modal);
     });
     
     if (isEditMode) {
-        modal.querySelector('.delete-btn').addEventListener('click', function() {
+        modal.querySelector('.delete-btn').addEventListener('click', async function() {
             if (confirm('确定要删除这位学生吗？此操作不可撤销。')) {
-                deleteStudent(studentId);
-                showToast('学生已删除', 'success');
+                await deleteStudent(studentId);
                 closeModal(modal);
             }
         });
@@ -1834,7 +1526,7 @@ function showEditStudentForm(studentId = null) {
 }
 
 // ============================
-// 管理面板功能
+// 管理面板功能（已修改为使用 GitHub）
 // ============================
 
 /**
@@ -1889,9 +1581,6 @@ function showAdminPanel() {
                         <button class="btn btn-secondary" id="exportDataBtn">
                             <i class="fas fa-download"></i> 导出数据
                         </button>
-                        <button class="btn btn-secondary" id="importDataBtn">
-                            <i class="fas fa-upload"></i> 导入数据
-                        </button>
                         <button class="btn btn-danger" id="resetDataBtn">
                             <i class="fas fa-redo"></i> 重置为默认数据
                         </button>
@@ -1921,7 +1610,6 @@ function showAdminPanel() {
     });
     
     modal.querySelector('#exportDataBtn').addEventListener('click', exportAllData);
-    modal.querySelector('#importDataBtn').addEventListener('click', showImportDataDialog);
     modal.querySelector('#resetDataBtn').addEventListener('click', resetDataToDefault);
     
     setupModalClose(modal);
@@ -1954,74 +1642,38 @@ function exportAllData() {
 }
 
 /**
- * 导入数据
- */
-function showImportDataDialog() {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.json';
-    
-    fileInput.onchange = function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const data = JSON.parse(e.target.result);
-                
-                if (confirm('导入数据将覆盖现有数据，确定要继续吗？')) {
-                    // 验证数据格式
-                    if (data.projects && Array.isArray(data.projects)) {
-                        projectsData = data.projects;
-                        advisorsData = data.advisors || advisorsData;
-                        studentsData = data.students || studentsData;
-                        publicationsData = data.publications || publicationsData;
-                        updatesData = data.updates || updatesData;
-                        
-                        saveDataToLocalStorage();
-                        
-                        // 重新渲染所有组件
-                        renderProjects(currentFilter);
-                        renderAdvisors();
-                        renderStudents();
-                        renderPublications();
-                        renderUpdates();
-                        
-                        showToast('数据导入成功！', 'success');
-                    } else {
-                        showToast('数据格式不正确', 'error');
-                    }
-                }
-            } catch (error) {
-                showToast('导入失败：文件格式错误', 'error');
-            }
-        };
-        reader.readAsText(file);
-    };
-    
-    fileInput.click();
-}
-
-/**
  * 重置数据为默认值
  */
-function resetDataToDefault() {
+async function resetDataToDefault() {
     if (confirm('确定要重置所有数据为默认值吗？此操作不可撤销。')) {
-        // 清除本地存储
-        localStorage.removeItem(STORAGE_KEYS.PROJECTS);
-        localStorage.removeItem(STORAGE_KEYS.ADVISORS);
-        localStorage.removeItem(STORAGE_KEYS.STUDENTS);
-        localStorage.removeItem(STORAGE_KEYS.PUBLICATIONS);
-        localStorage.removeItem(STORAGE_KEYS.UPDATES);
-        
-        // 重新加载页面
-        location.reload();
+        try {
+            // 设置为默认数据
+            projectsData = getDefaultProjects();
+            advisorsData = getDefaultAdvisors();
+            studentsData = getDefaultStudents();
+            publicationsData = getDefaultPublications();
+            updatesData = getDefaultUpdates();
+            
+            // 保存到 GitHub
+            await saveAllDataToGitHub();
+            
+            // 重新渲染
+            renderProjects(currentFilter);
+            renderAdvisors();
+            renderStudents();
+            renderPublications();
+            renderUpdates();
+            
+            showToast('数据已重置为默认值并保存到 GitHub', 'success');
+        } catch (error) {
+            console.error('重置数据失败:', error);
+            showToast('重置数据失败', 'error');
+        }
     }
 }
 
 // ============================
-// 模态框辅助函数
+// 模态框辅助函数保持不变
 // ============================
 
 /**
@@ -2149,7 +1801,7 @@ function setupFilterButtons() {
             const filter = this.getAttribute('data-filter');
             
             // 保存过滤状态到本地存储
-            localStorage.setItem(STORAGE_KEYS.PROJECT_FILTER, filter);
+            localStorage.setItem(LOCAL_STORAGE_KEYS.PROJECT_FILTER, filter);
             
             // 渲染过滤后的课题
             renderProjects(filter);
@@ -2174,11 +1826,11 @@ function setupThemeToggle() {
         const isDarkMode = document.body.classList.toggle('dark-mode');
         
         if (isDarkMode) {
-            localStorage.setItem(STORAGE_KEYS.THEME, 'dark');
+            localStorage.setItem(LOCAL_STORAGE_KEYS.THEME, 'dark');
             this.innerHTML = '<i class="fas fa-sun"></i>';
             this.setAttribute('title', '切换到浅色模式');
         } else {
-            localStorage.setItem(STORAGE_KEYS.THEME, 'light');
+            localStorage.setItem(LOCAL_STORAGE_KEYS.THEME, 'light');
             this.innerHTML = '<i class="fas fa-moon"></i>';
             this.setAttribute('title', '切换到深色模式');
         }
@@ -2189,7 +1841,7 @@ function setupThemeToggle() {
  * 初始化主题
  */
 function initTheme() {
-    const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
+    const savedTheme = localStorage.getItem(LOCAL_STORAGE_KEYS.THEME);
     
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-mode');
@@ -2272,7 +1924,7 @@ function setupSmoothScroll() {
  * 初始化过滤器状态
  */
 function initFilterState() {
-    const savedFilter = localStorage.getItem(STORAGE_KEYS.PROJECT_FILTER) || 'all';
+    const savedFilter = localStorage.getItem(LOCAL_STORAGE_KEYS.PROJECT_FILTER) || 'all';
     
     // 设置活动按钮
     DOM.filterButtons.forEach(btn => {
@@ -2397,78 +2049,54 @@ function addAdminButton() {
 }
 
 // ============================
-// 新增：为现有管理面板添加添加按钮
-// ============================
-
-/**
- * 添加添加按钮到页面
- */
-function addAddPersonButton() {
-    const navActions = document.querySelector('.nav-actions');
-    if (!navActions) return;
-    
-    // 检查是否已存在添加人员按钮
-    if (navActions.querySelector('#addPersonBtn')) return;
-    
-    const addBtn = document.createElement('button');
-    addBtn.className = 'add-person-btn';
-    addBtn.id = 'addPersonBtn';
-    addBtn.innerHTML = '<i class="fas fa-user-plus"></i> 添加人员';
-    addBtn.title = '添加老师或学生';
-    
-    // 插入到管理按钮之后
-    const adminBtn = navActions.querySelector('.admin-btn');
-    if (adminBtn) {
-        navActions.insertBefore(addBtn, adminBtn);
-    } else {
-        navActions.insertBefore(addBtn, navActions.firstChild);
-    }
-}
-
-// ============================
 // 初始化
 // ============================
 
 /**
  * 初始化所有功能
  */
-function init() {
-    // 初始化本地存储
-    initializeLocalStorage();
-    
-    // 渲染所有数据
-    initFilterState();
-    renderAdvisors();
-    renderStudents();
-    renderPublications();
-    renderUpdates();
-    
-    // 设置事件监听
-    setupFilterButtons();
-    setupThemeToggle();
-    setupMobileMenu();
-    setupBackToTop();
-    setupSmoothScroll();
-    setupProjectForm();
-    
-    // 初始化新增的人员添加功能
-    setupAddPersonModal();
-    
-    // 初始化状态
-    initTheme();
-    
-    // 添加管理按钮
-    addAdminButton();
-    
-    // 添加添加人员按钮
-    addAddPersonButton();
-    
-    // 添加CSS样式
-    addModalStyles();
-    addToastStyles();
-    addAdminStyles();
-    
-    console.log('实验室网站初始化完成');
+async function init() {
+    try {
+        // 加载 GitHub 数据
+        const loaded = await loadAllDataFromGitHub();
+        
+        if (loaded) {
+            console.log('从 GitHub 加载数据成功');
+        } else {
+            console.log('使用默认数据');
+        }
+        
+        // 渲染所有数据
+        initFilterState();
+        renderAdvisors();
+        renderStudents();
+        renderPublications();
+        renderUpdates();
+        
+        // 设置事件监听
+        setupFilterButtons();
+        setupThemeToggle();
+        setupMobileMenu();
+        setupBackToTop();
+        setupSmoothScroll();
+        setupProjectForm();
+        
+        // 初始化状态
+        initTheme();
+        
+        // 添加管理按钮
+        addAdminButton();
+        
+        // 添加CSS样式
+        addModalStyles();
+        addToastStyles();
+        addAdminStyles();
+        
+        console.log('实验室网站初始化完成');
+    } catch (error) {
+        console.error('初始化失败:', error);
+        showToast('初始化失败，请刷新页面重试', 'error');
+    }
 }
 
 /**
@@ -2949,9 +2577,6 @@ window.labWebsite = {
     updateStudent,
     deleteStudent,
     
-    // 新增的人员添加功能
-    addPerson,
-    
     // 界面操作
     showEditProjectForm,
     showEditAdvisorForm,
@@ -2959,6 +2584,6 @@ window.labWebsite = {
     showAdminPanel,
     
     // 工具函数
-    saveDataToLocalStorage,
+    saveAllDataToGitHub,
     exportAllData
 };
