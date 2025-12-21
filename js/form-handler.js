@@ -1,6 +1,6 @@
 // js/form-handler.js - 表单处理逻辑
 document.addEventListener('DOMContentLoaded', function() {
-    const manager = window.githubIssuesManager;
+    const manager = window.githubManager; // 修复：统一全局变量名
     const projectForm = document.getElementById('project-form');
     const formMessage = document.getElementById('form-message');
     const tokenAlert = document.getElementById('token-alert');
@@ -8,12 +8,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitText = document.getElementById('submit-text');
     const submitLoading = document.getElementById('submit-loading');
     const projectsList = document.getElementById('projects-list');
-
-    // 初始化：检查 Token 并显示提示
-    if (!manager.hasValidToken() && tokenAlert) {
+    
+    // 初始化：检查 Token 并显示提示（修复：判断 manager 存在）
+    if (manager && !manager.hasValidToken() && tokenAlert) {
         tokenAlert.style.display = 'block';
     }
-
+    
     // 全局保存 Token 函数
     window.saveGitHubToken = function() {
         const tokenInput = document.getElementById('github-token-input');
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        if (manager.setToken(token)) {
+        if (manager && manager.setToken(token)) {
             if (tokenAlert) {
                 tokenAlert.innerHTML = `
                     <div class="alert alert-success">
@@ -38,9 +38,9 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Token 格式不正确，请检查！');
         }
     };
-
+    
     // 表单提交处理
-    if (projectForm) {
+    if (projectForm && manager) { // 修复：增加 manager 存在判断
         projectForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 return;
             }
-
+            
             // 收集表单数据
             const formData = {
                 title: document.getElementById('project-title').value.trim(),
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 supervisor: document.getElementById('supervisor-name').value.trim(),
                 tags: document.getElementById('project-tags').value.trim()
             };
-
+            
             // 验证必填字段
             if (!formData.title || !formData.description) {
                 if (formMessage) {
@@ -80,14 +80,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 return;
             }
-
+            
             // 显示加载状态
             if (submitText) submitText.style.display = 'none';
             if (submitLoading) submitLoading.style.display = 'inline';
             if (submitBtn) submitBtn.disabled = true;
-
+            
             try {
-                // 提交到 GitHub Issues
+                // 提交到 GitHub Issues（使用修复后的 manager 方法）
                 const result = await manager.submitNewProject(formData);
                 
                 // 显示成功消息
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <p><strong>错误信息：</strong> ${error.message}</p>
                             <p>可能的原因：</p>
                             <ul>
-                                <li>Token 无效或已过期</li>
+                                <li>Token 无效或已过期（需 repo 权限）</li>
                                 <li>网络连接问题</li>
                                 <li>GitHub API 限制</li>
                             </ul>
@@ -136,10 +136,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
+    
     // 加载并显示课题列表
     async function loadProjects() {
-        if (!projectsList) return;
+        if (!projectsList || !manager) return;
         
         projectsList.innerHTML = `
             <div class="loading-spinner">
@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         }
     }
-
+    
     // 辅助函数：获取状态图标
     function getStatusIcon(status) {
         const icons = {
@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         return icons[status] || '📄';
     }
-
+    
     // 辅助函数：获取状态 CSS 类
     function getStatusClass(status) {
         const classes = {
@@ -221,12 +221,12 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         return classes[status] || 'status-default';
     }
-
+    
     // 页面加载时获取课题列表
-    if (manager.hasValidToken()) {
+    if (manager && manager.hasValidToken()) {
         loadProjects();
     }
-
+    
     // 使 loadProjects 在全局可用
     window.loadProjects = loadProjects;
 });
