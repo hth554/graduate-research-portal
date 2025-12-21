@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "title": "基于深度学习的人脸识别系统",
+    "category": "engineering",
+    "description": "本项目研究基于深度学习的人脸识别算法，旨在提高识别准确率和实时性。",
+    "advisor": "李四教授",
+    "status": "进行中",
+    "student": "张三"
+  },
+  {
+    "id": 2,
+    "title": "量子计算在密码学中的应用",
+    "category": "science",
+    "description": "探索量子计算对现代密码学的影响及量子安全加密方案。",
+    "advisor": "赵六教授",
+    "status": "已完成",
+    "student": "王五"
+  }
+]
