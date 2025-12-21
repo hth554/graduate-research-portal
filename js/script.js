@@ -14,7 +14,9 @@ const GITHUB_FILES = {
 // 本地存储键名（仅用于主题和过滤状态等用户偏好设置）
 const LOCAL_STORAGE_KEYS = {
     THEME: 'lab_theme_preference',
-    PROJECT_FILTER: 'project_filter_state'
+    PROJECT_FILTER: 'project_filter_state',
+    PUBLIC_DATA_CACHE: 'public_data_cache',
+    PUBLIC_DATA_CACHE_TIME: 'public_data_cache_time'
 };
 
 // 初始化数据
@@ -30,6 +32,13 @@ let isReadOnlyMode = true; // 默认只读模式
 
 // 当前筛选状态
 let currentFilter = 'all';
+
+// 数据源信息
+let dataSourceInfo = {
+    type: 'default', // 'github', 'cache', 'default'
+    timestamp: null,
+    live: false
+};
 
 // ============================
 // 配置常量
@@ -108,12 +117,116 @@ async function checkAuthentication() {
     } else {
         isAuthenticated = false;
         isReadOnlyMode = true;
-        console.log('👤 游客模式，只能查看示例数据');
-        showPermissionStatus('👤 游客模式 | 使用示例数据', 'guest');
+        console.log('👤 游客模式，只能查看数据');
+        showPermissionStatus('👤 游客模式，只能查看数据', 'guest');
         
-        // 使用默认数据
-        loadDefaultData();
+        // 使用公共数据
+        await loadPublicData();
         return false;
+    }
+}
+
+/**
+ * 加载公共数据（游客模式）
+ */
+async function loadPublicData() {
+    console.log('正在加载公共数据...');
+    
+    const cacheKey = LOCAL_STORAGE_KEYS.PUBLIC_DATA_CACHE;
+    const cacheTimeKey = LOCAL_STORAGE_KEYS.PUBLIC_DATA_CACHE_TIME;
+    const cacheExpiry = 30 * 60 * 1000; // 30分钟缓存
+    
+    // 检查缓存是否存在且未过期
+    const cachedData = localStorage.getItem(cacheKey);
+    const cacheTime = localStorage.getItem(cacheTimeKey);
+    
+    if (cachedData && cacheTime && (Date.now() - parseInt(cacheTime)) < cacheExpiry) {
+        // 使用缓存数据
+        console.log('使用缓存的公共数据');
+        const data = JSON.parse(cachedData);
+        applyPublicData(data);
+        dataSourceInfo = {
+            type: 'cache',
+            timestamp: new Date(parseInt(cacheTime)),
+            live: false
+        };
+        showToast('使用缓存数据（30分钟更新）', 'info');
+        return;
+    }
+    
+    // 缓存过期或不存在，从GitHub获取
+    try {
+        const data = await fetchPublicDataFromGitHub();
+        applyPublicData(data);
+        
+        // 更新缓存
+        localStorage.setItem(cacheKey, JSON.stringify(data));
+        localStorage.setItem(cacheTimeKey, Date.now().toString());
+        dataSourceInfo = {
+            type: 'github',
+            timestamp: new Date(),
+            live: true
+        };
+        showToast('已获取最新数据', 'success');
+    } catch (error) {
+        console.error('获取公共数据失败:', error);
+        showToast('无法加载最新数据，使用示例数据', 'warning');
+        // 使用默认数据作为后备
+        loadDefaultData();
+        dataSourceInfo = {
+            type: 'default',
+            timestamp: new Date(),
+            live: false
+        };
+    }
+}
+
+/**
+ * 从GitHub获取公共数据
+ */
+async function fetchPublicDataFromGitHub() {
+    // 这里需要替换为实际的GitHub公开数据URL
+    const PUBLIC_DATA_BASE_URL = 'https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/data/';
+    
+    console.log('从GitHub获取公共数据...');
+    
+    // 并行获取所有数据文件
+    const [projects, advisors, students, publications, updates] = await Promise.allSettled([
+        fetch(`${PUBLIC_DATA_BASE_URL}${GITHUB_FILES.PROJECTS}`).then(r => r.ok ? r.json() : null),
+        fetch(`${PUBLIC_DATA_BASE_URL}${GITHUB_FILES.ADVISORS}`).then(r => r.ok ? r.json() : null),
+        fetch(`${PUBLIC_DATA_BASE_URL}${GITHUB_FILES.STUDENTS}`).then(r => r.ok ? r.json() : null),
+        fetch(`${PUBLIC_DATA_BASE_URL}${GITHUB_FILES.PUBLICATIONS}`).then(r => r.ok ? r.json() : null),
+        fetch(`${PUBLIC_DATA_BASE_URL}${GITHUB_FILES.UPDATES}`).then(r => r.ok ? r.json() : null)
+    ]);
+    
+    // 构建完整的数据对象
+    const data = {
+        projects: projects.status === 'fulfilled' && projects.value ? projects.value : getDefaultProjects(),
+        advisors: advisors.status === 'fulfilled' && advisors.value ? advisors.value : getDefaultAdvisors(),
+        students: students.status === 'fulfilled' && students.value ? students.value : getDefaultStudents(),
+        publications: publications.status === 'fulfilled' && publications.value ? publications.value : getDefaultPublications(),
+        updates: updates.status === 'fulfilled' && updates.value ? updates.value : getDefaultUpdates()
+    };
+    
+    return data;
+}
+
+/**
+ * 应用公共数据到页面
+ */
+function applyPublicData(data) {
+    if (data && data.projects) {
+        projectsData = data.projects || getDefaultProjects();
+        advisorsData = data.advisors || getDefaultAdvisors();
+        studentsData = data.students || getDefaultStudents();
+        publicationsData = data.publications || getDefaultPublications();
+        updatesData = data.updates || getDefaultUpdates();
+        
+        // 保存到本地存储（作为缓存）
+        saveToLocalStorage();
+        
+        // 渲染数据
+        renderAllData();
     }
 }
 
@@ -216,11 +329,11 @@ function clearAuthentication() {
         isAuthenticated = false;
         isReadOnlyMode = true;
         
-        // 切换到默认数据
-        loadDefaultData();
+        // 切换到公共数据
+        loadPublicData();
         
         // 更新UI
-        showPermissionStatus('👤 游客模式 | 使用示例数据', 'guest');
+        showPermissionStatus('👤 游客模式，只能查看数据', 'guest');
         
         // 退出管理员模式
         if (window.adminSystem && window.adminSystem.isAdmin) {
@@ -239,13 +352,19 @@ function clearAuthentication() {
  * 加载默认数据（游客模式）
  */
 function loadDefaultData() {
-    console.log('加载默认数据（游客模式）...');
+    console.log('加载默认数据...');
     
     projectsData = getDefaultProjects();
     advisorsData = getDefaultAdvisors();
     studentsData = getDefaultStudents();
     publicationsData = getDefaultPublications();
     updatesData = getDefaultUpdates();
+    
+    dataSourceInfo = {
+        type: 'default',
+        timestamp: new Date(),
+        live: false
+    };
     
     // 保存到本地存储
     saveToLocalStorage();
@@ -933,6 +1052,32 @@ function getStatusText(statusType) {
 }
 
 /**
+ * 获取数据源提示文本
+ */
+function getDataSourceHint() {
+    if (!dataSourceInfo.timestamp) return '';
+    
+    const time = formatDate(dataSourceInfo.timestamp);
+    let hint = '';
+    
+    switch (dataSourceInfo.type) {
+        case 'github':
+            hint = `<div class="data-source-hint live">🔄 实时数据 | 更新于: ${time}</div>`;
+            break;
+        case 'cache':
+            hint = `<div class="data-source-hint cached">💾 缓存数据 | 更新于: ${time}</div>`;
+            break;
+        case 'default':
+            hint = `<div class="data-source-hint default">📋 示例数据 | 更新于: ${time}</div>`;
+            break;
+        default:
+            hint = `<div class="data-source-hint">📊 数据 | 更新于: ${time}</div>`;
+    }
+    
+    return hint;
+}
+
+/**
  * 防抖函数
  */
 function debounce(func, wait) {
@@ -1386,6 +1531,9 @@ function renderProjects(filter = 'all') {
                               window.adminSystem && 
                               window.adminSystem.editMode;
         
+        // 获取数据源提示
+        const dataSourceHint = getDataSourceHint();
+        
         const projectCard = document.createElement('div');
         projectCard.className = 'project-card';
         projectCard.setAttribute('data-category', project.category);
@@ -1421,6 +1569,10 @@ function renderProjects(filter = 'all') {
                         <button class="btn btn-outline project-edit-btn" data-id="${project.id}" title="编辑课题">
                             <i class="fas fa-edit"></i>
                         </button>
+                    ` : isReadOnlyMode ? `
+                        <button class="btn btn-outline project-edit-btn disabled" title="需要登录才能编辑">
+                            <i class="fas fa-edit"></i> 编辑 (需要登录)
+                        </button>
                     ` : ''}
                 </div>
                 <div class="project-meta-footer">
@@ -1428,6 +1580,8 @@ function renderProjects(filter = 'all') {
                         更新于: ${formatDate(project.updatedAt)}
                     </small>
                 </div>
+                <!-- 数据来源提示 -->
+                ${dataSourceHint}
             </div>
         `;
         
@@ -1494,6 +1648,10 @@ function renderAdvisors() {
                     <button class="advisor-edit-btn" data-id="${advisor.id}" title="编辑导师信息">
                         <i class="fas fa-edit"></i>
                     </button>
+                ` : isReadOnlyMode ? `
+                    <button class="advisor-edit-btn disabled" title="需要登录才能编辑">
+                        <i class="fas fa-edit"></i> (需要登录)
+                    </button>
                 ` : ''}
             </div>
             <div class="advisor-meta-footer">
@@ -1558,6 +1716,10 @@ function renderStudents() {
                 ${showEditButton ? `
                     <button class="student-edit-btn" data-id="${student.id}" title="编辑学生信息">
                         <i class="fas fa-edit"></i>
+                    </button>
+                ` : isReadOnlyMode ? `
+                    <button class="student-edit-btn disabled" title="需要登录才能编辑">
+                        <i class="fas fa-edit"></i> (需要登录)
                     </button>
                 ` : ''}
             </div>
@@ -1642,6 +1804,10 @@ function renderPublications() {
                         <button class="btn btn-outline delete-publication-btn" data-id="${publication.id}">
                             <i class="fas fa-trash"></i> 删除
                         </button>
+                    ` : isReadOnlyMode ? `
+                        <button class="btn btn-outline disabled" title="需要登录才能编辑">
+                            <i class="fas fa-edit"></i> 编辑 (需要登录)
+                        </button>
                     ` : ''}
                 </div>
             </div>
@@ -1722,6 +1888,12 @@ function renderUpdates() {
                             </button>
                             <button class="btn btn-outline delete-update-btn" data-id="${update.id}">
                                 <i class="fas fa-trash"></i> 删除
+                            </button>
+                        </div>
+                    ` : isReadOnlyMode ? `
+                        <div class="update-actions">
+                            <button class="btn btn-outline disabled" title="需要登录才能编辑">
+                                <i class="fas fa-edit"></i> 编辑 (需要登录)
                             </button>
                         </div>
                     ` : ''}
@@ -2377,6 +2549,7 @@ async function init() {
         addToastStyles();
         addAdminStyles();
         addPermissionStyles();
+        addDataSourceStyles();
         
         // 监听管理员模式变化
         document.addEventListener('adminModeChanged', function(event) {
@@ -2454,6 +2627,83 @@ async function init() {
 }
 
 /**
+ * 添加数据源样式
+ */
+function addDataSourceStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .data-source-hint {
+            font-size: 0.75em;
+            padding: 6px 10px;
+            border-radius: 6px;
+            margin-top: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+            font-weight: 500;
+        }
+        
+        .data-source-hint.live {
+            background-color: rgba(34, 197, 94, 0.1);
+            color: #16a34a;
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+        
+        .data-source-hint.cached {
+            background-color: rgba(107, 114, 128, 0.1);
+            color: #6b7280;
+            border-color: rgba(107, 114, 128, 0.3);
+        }
+        
+        .data-source-hint.default {
+            background-color: rgba(249, 115, 22, 0.1);
+            color: #f97316;
+            border-color: rgba(249, 115, 22, 0.3);
+        }
+        
+        .btn.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: #9ca3af;
+            border-color: #9ca3af;
+            position: relative;
+        }
+        
+        .btn.disabled:hover::after {
+            content: "需要登录才能编辑";
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #374151;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            white-space: nowrap;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .advisor-edit-btn.disabled,
+        .student-edit-btn.disabled {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #9ca3af;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.85em;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+/**
  * 添加权限相关样式
  */
 function addPermissionStyles() {
@@ -2471,9 +2721,14 @@ function addPermissionStyles() {
         }
         
         .status-guest {
-            background: #fff3cd;
-            color: #856404;
-            border-bottom-color: #ffeaa7;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border-bottom-color: #1d4ed8;
+        }
+        
+        .status-guest::before {
+            content: "👁️ ";
+            margin-right: 6px;
         }
         
         .status-authenticated {
@@ -2524,9 +2779,9 @@ function addPermissionStyles() {
         }
         
         .auth-badge.guest {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: 1px solid #1d4ed8;
         }
         
         body.dark-mode .permission-status {
@@ -2534,9 +2789,9 @@ function addPermissionStyles() {
         }
         
         body.dark-mode .status-guest {
-            background: #664d03;
-            color: #fff3cd;
-            border-bottom-color: #523e02;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border-bottom-color: #1d4ed8;
         }
         
         body.dark-mode .status-authenticated {
@@ -2556,9 +2811,9 @@ function addPermissionStyles() {
         }
         
         body.dark-mode .auth-badge.guest {
-            background: #664d03;
-            color: #fff3cd;
-            border-color: #523e02;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border-color: #1d4ed8;
         }
     `;
     document.head.appendChild(style);
@@ -2982,7 +3237,7 @@ function addAdminStyles() {
         }
         
         body.dark-mode .stat-card {
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%;
         }
         
         body.dark-mode .edit-form label {
@@ -3047,6 +3302,11 @@ window.labWebsite = {
     addUpdate,
     updateUpdate,
     deleteUpdate,
+    
+    // 新增加的公共数据函数
+    loadPublicData,
+    fetchPublicDataFromGitHub,
+    applyPublicData,
     
     // 界面操作
     showEditProjectForm,
