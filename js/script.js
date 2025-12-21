@@ -92,79 +92,176 @@ function getCurrentTimestamp() {
  * 检查并初始化 GitHub Token
  */
 async function initializeGitHubToken() {
-    if (!window.githubIssuesManager || !window.githubIssuesManager.hasValidToken()) {
-        const token = prompt('请输入 GitHub Personal Access Token (ghp_ 或 github_pat_ 开头):');
-        if (token) {
-            if (window.githubIssuesManager.setToken(token)) {
-                alert('GitHub Token 设置成功！');
-                return true;
-            } else {
-                alert('Token 格式不正确！');
-                return false;
-            }
-        } else {
-            alert('需要 GitHub Token 才能使用数据存储功能！');
+    console.log('初始化 GitHub Token...');
+    
+    // 检查 githubIssuesManager 是否已加载
+    if (!window.githubIssuesManager) {
+        console.error('❌ githubIssuesManager 未加载！');
+        alert('系统错误：GitHub 管理器未正确加载，请刷新页面重试。');
+        return false;
+    }
+    
+    // 如果已有有效 Token，直接返回
+    if (window.githubIssuesManager.hasValidToken()) {
+        console.log('✅ 已存在有效 Token');
+        return true;
+    }
+    
+    // 尝试从 localStorage 恢复
+    const savedToken = localStorage.getItem('github_pat_token');
+    if (savedToken && (savedToken.startsWith('ghp_') || savedToken.startsWith('github_pat_'))) {
+        console.log('🔑 从本地存储恢复 Token');
+        window.githubIssuesManager.setToken(savedToken);
+        
+        // 如果 dataManager 存在，也同步 Token
+        if (window.dataManager) {
+            window.dataManager.setGitHubToken(savedToken);
+        }
+        
+        return true;
+    }
+    
+    // 提示用户输入 Token
+    console.log('⚠️ 需要用户输入 Token');
+    const token = prompt(
+        '请输入 GitHub Personal Access Token：\n\n' +
+        '格式要求：以 "ghp_" 或 "github_pat_" 开头\n' +
+        'Token 需要以下权限：repo, workflow\n\n' +
+        '（Token 将安全保存在您的浏览器本地）',
+        ''
+    );
+    
+    if (token && token.trim()) {
+        const trimmedToken = token.trim();
+        
+        // 验证 Token 格式
+        if (!trimmedToken.startsWith('ghp_') && !trimmedToken.startsWith('github_pat_')) {
+            alert('❌ Token 格式不正确！\n必须以 "ghp_" 或 "github_pat_" 开头。');
             return false;
         }
+        
+        // 保存到 githubIssuesManager
+        const success = window.githubIssuesManager.setToken(trimmedToken);
+        
+        if (success) {
+            // 保存到 dataManager（如果存在）
+            if (window.dataManager) {
+                window.dataManager.setGitHubToken(trimmedToken);
+            }
+            
+            // 保存到 localStorage（备用）
+            localStorage.setItem('github_pat_token', trimmedToken);
+            localStorage.setItem('github_admin_token', trimmedToken);
+            
+            alert('✅ GitHub Token 设置成功！\n现在可以管理数据了。');
+            console.log('✅ Token 设置成功');
+            
+            // 触发数据加载
+            if (window.dataManager) {
+                await window.dataManager.syncFromGitHub();
+            }
+            
+            return true;
+        }
+    } else if (token === null) {
+        // 用户点击了取消
+        console.log('用户取消输入 Token');
+    } else {
+        alert('❌ Token 不能为空！');
     }
-    return true;
+    
+    return false;
 }
 
 /**
  * 从 GitHub 加载所有数据
  */
 async function loadAllDataFromGitHub() {
+    console.log('开始从 GitHub 加载数据...');
+    
     try {
-        // 首先尝试从本地存储加载
-        const savedData = localStorage.getItem('research_portal_data');
-        if (savedData) {
-            try {
-                const data = JSON.parse(savedData);
-                projectsData = data.projects || getDefaultProjects();
-                advisorsData = data.advisors || getDefaultAdvisors();
-                studentsData = data.students || getDefaultStudents();
-                publicationsData = data.publications || getDefaultPublications();
-                updatesData = data.updates || getDefaultUpdates();
-                console.log('从本地存储加载数据成功');
-                return true;
-            } catch (e) {
-                console.error('本地存储数据解析失败:', e);
-            }
+        // 检查管理器是否可用
+        if (!window.githubIssuesManager) {
+            console.error('❌ githubIssuesManager 不可用');
+            throw new Error('GitHub 管理器未正确初始化');
         }
-
+        
         // 检查 Token
-        if (!await initializeGitHubToken()) {
+        const hasToken = await initializeGitHubToken();
+        if (!hasToken) {
+            console.log('⚠️ 没有有效 Token，使用默认数据');
             // 使用默认数据作为回退
             projectsData = getDefaultProjects();
             advisorsData = getDefaultAdvisors();
             studentsData = getDefaultStudents();
             publicationsData = getDefaultPublications();
             updatesData = getDefaultUpdates();
+            saveToLocalStorage();
             return false;
         }
-
+        
+        // 检查仓库连接
+        console.log('🔗 检查 GitHub 仓库连接...');
+        try {
+            const repoInfo = await window.githubIssuesManager.checkRepositoryVisibility();
+            console.log('仓库信息:', repoInfo);
+            
+            if (!repoInfo.isPublic && !window.githubIssuesManager.hasValidToken()) {
+                alert('⚠️ 仓库是私有的，需要 Token 才能访问数据');
+                return false;
+            }
+        } catch (repoError) {
+            console.warn('检查仓库失败:', repoError);
+        }
+        
         // 并行加载所有数据
+        console.log('📥 从 GitHub 加载数据文件...');
         const [projects, advisors, students, publications, updates] = await Promise.allSettled([
-            window.githubIssuesManager.readJsonFile(GITHUB_FILES.PROJECTS).catch(() => []),
-            window.githubIssuesManager.readJsonFile(GITHUB_FILES.ADVISORS).catch(() => []),
-            window.githubIssuesManager.readJsonFile(GITHUB_FILES.STUDENTS).catch(() => []),
-            window.githubIssuesManager.readJsonFile(GITHUB_FILES.PUBLICATIONS).catch(() => []),
-            window.githubIssuesManager.readJsonFile(GITHUB_FILES.UPDATES).catch(() => [])
+            window.githubIssuesManager.readJsonFile(GITHUB_FILES.PROJECTS).catch(err => {
+                console.warn(`读取 ${GITHUB_FILES.PROJECTS} 失败:`, err.message);
+                return getDefaultProjects();
+            }),
+            window.githubIssuesManager.readJsonFile(GITHUB_FILES.ADVISORS).catch(err => {
+                console.warn(`读取 ${GITHUB_FILES.ADVISORS} 失败:`, err.message);
+                return getDefaultAdvisors();
+            }),
+            window.githubIssuesManager.readJsonFile(GITHUB_FILES.STUDENTS).catch(err => {
+                console.warn(`读取 ${GITHUB_FILES.STUDENTS} 失败:`, err.message);
+                return getDefaultStudents();
+            }),
+            window.githubIssuesManager.readJsonFile(GITHUB_FILES.PUBLICATIONS).catch(err => {
+                console.warn(`读取 ${GITHUB_FILES.PUBLICATIONS} 失败:`, err.message);
+                return getDefaultPublications();
+            }),
+            window.githubIssuesManager.readJsonFile(GITHUB_FILES.UPDATES).catch(err => {
+                console.warn(`读取 ${GITHUB_FILES.UPDATES} 失败:`, err.message);
+                return getDefaultUpdates();
+            })
         ]);
-
-        // 设置数据，如果文件不存在则使用默认数据
+        
+        // 设置数据
         projectsData = projects.status === 'fulfilled' ? projects.value : getDefaultProjects();
         advisorsData = advisors.status === 'fulfilled' ? advisors.value : getDefaultAdvisors();
         studentsData = students.status === 'fulfilled' ? students.value : getDefaultStudents();
         publicationsData = publications.status === 'fulfilled' ? publications.value : getDefaultPublications();
         updatesData = updates.status === 'fulfilled' ? updates.value : getDefaultUpdates();
-
+        
         // 保存到本地存储
         saveToLocalStorage();
-
+        
+        console.log('✅ 数据加载完成：', {
+            课题: projectsData.length,
+            导师: advisorsData.length,
+            学生: studentsData.length,
+            成果: publicationsData.length,
+            近况: updatesData.length
+        });
+        
         return true;
     } catch (error) {
-        console.error('从 GitHub 加载数据失败:', error);
+        console.error('❌ 从 GitHub 加载数据失败:', error);
+        showToast(`数据加载失败: ${error.message}`, 'error');
+        
         // 使用默认数据作为回退
         projectsData = getDefaultProjects();
         advisorsData = getDefaultAdvisors();
@@ -172,6 +269,7 @@ async function loadAllDataFromGitHub() {
         publicationsData = getDefaultPublications();
         updatesData = getDefaultUpdates();
         saveToLocalStorage();
+        
         return false;
     }
 }
@@ -210,10 +308,11 @@ async function saveAllDataToGitHub() {
         ]);
 
         console.log('所有数据已保存到 GitHub');
+        showToast('数据已同步到 GitHub', 'success');
         return true;
     } catch (error) {
         console.error('保存到 GitHub 失败:', error);
-        showToast('数据保存失败，请检查网络连接和 Token 权限', 'error');
+        showToast(`数据保存失败: ${error.message}`, 'error');
         return false;
     }
 }
@@ -228,6 +327,7 @@ async function saveDataToGitHub(filename, data) {
         }
 
         await window.githubIssuesManager.writeJsonFile(filename, data);
+        console.log(`${filename} 保存成功`);
         return true;
     } catch (error) {
         console.error(`保存 ${filename} 到 GitHub 失败:`, error);
@@ -2499,11 +2599,29 @@ function addAdminButton() {
  * 初始化所有功能
  */
 async function init() {
+    console.log('=== 系统初始化开始 ===');
+    
     try {
+        // 显示当前加载的模块
+        console.log('已加载的模块:', {
+            githubIssuesManager: !!window.githubIssuesManager,
+            dataManager: !!window.dataManager,
+            adminSystem: !!window.adminSystem,
+            labWebsite: !!window.labWebsite
+        });
+        
+        // 检查 GitHub Token 状态
+        if (window.githubIssuesManager) {
+            const hasToken = window.githubIssuesManager.hasValidToken();
+            console.log('GitHub Token 状态:', hasToken ? '已设置' : '未设置');
+        }
+        
         // 加载数据
+        console.log('开始加载数据...');
         await loadAllDataFromGitHub();
         
         // 渲染所有数据
+        console.log('开始渲染数据...');
         initFilterState();
         renderAdvisors();
         renderStudents();
@@ -2511,6 +2629,7 @@ async function init() {
         renderUpdates();
         
         // 设置事件监听
+        console.log('设置事件监听...');
         setupFilterButtons();
         setupThemeToggle();
         setupMobileMenu();
@@ -2530,6 +2649,8 @@ async function init() {
         
         // 监听管理员模式变化
         document.addEventListener('adminModeChanged', function(event) {
+            console.log('管理员模式变更:', event.detail);
+            
             const { editMode, isAdmin } = event.detail;
             if (isAdmin && editMode) {
                 // 重新渲染以显示编辑按钮
@@ -2538,6 +2659,9 @@ async function init() {
                 renderStudents();
                 renderPublications();
                 renderUpdates();
+                
+                // 显示管理提示
+                showToast('已进入管理员编辑模式', 'success');
             } else {
                 // 重新渲染以隐藏编辑按钮
                 renderProjects(currentFilter);
@@ -2545,13 +2669,54 @@ async function init() {
                 renderStudents();
                 renderPublications();
                 renderUpdates();
+                
+                if (isAdmin) {
+                    showToast('已退出编辑模式', 'info');
+                }
             }
         });
         
-        console.log('实验室网站初始化完成');
+        // 显示初始化完成提示
+        setTimeout(() => {
+            showToast('系统初始化完成', 'success');
+        }, 1000);
+        
+        console.log('✅ 实验室网站初始化完成');
+        
     } catch (error) {
-        console.error('初始化失败:', error);
-        showToast('初始化失败，请刷新页面重试', 'error');
+        console.error('❌ 初始化失败:', error);
+        showToast(`初始化失败: ${error.message}`, 'error');
+        
+        // 显示错误详情
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = `
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #e74c3c;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            z-index: 9999;
+            max-width: 80%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        `;
+        errorDiv.innerHTML = `
+            <h3 style="margin-top:0">初始化失败</h3>
+            <p><strong>错误信息:</strong> ${error.message}</p>
+            <p>请检查控制台获取更多信息</p>
+            <button onclick="location.reload()" style="
+                background: white;
+                color: #e74c3c;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                margin-top: 10px;
+                cursor: pointer;
+            ">刷新页面</button>
+        `;
+        document.body.appendChild(errorDiv);
     }
 }
 
