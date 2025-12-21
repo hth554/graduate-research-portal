@@ -3,818 +3,327 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>研究生科研门户 | 实时协作平台</title>
-    
-    <!-- 样式文件 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <title>学术研究门户 | 研究生课题展示与管理平台</title>
     <link rel="stylesheet" href="css/style.css">
-    
-    <!-- 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
-    
-    <style>
-        /* 页面全局样式 */
-        :root {
-            --primary-color: #4a6bff;
-            --secondary-color: #6c757d;
-            --success-color: #28a745;
-            --danger-color: #dc3545;
-            --warning-color: #ffc107;
-            --info-color: #17a2b8;
-            --light-color: #f8f9fa;
-            --dark-color: #343a40;
-            --border-radius: 8px;
-            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            --transition: all 0.3s ease;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f5f7fa;
-            min-height: 100vh;
-            position: relative;
-        }
-        
-        /* 加载遮罩 */
-        #loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(255, 255, 255, 0.9);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            display: none;
-        }
-        
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid rgba(74, 107, 255, 0.2);
-            border-top-color: var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        /* 导航栏 */
-        .navbar {
-            background-color: white;
-            box-shadow: var(--box-shadow);
-            padding: 1rem 0;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-        
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .nav-brand a {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .nav-actions {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        /* 同步状态指示器 */
-        .sync-status {
-            padding: 5px 10px;
-            border-radius: var(--border-radius);
-            font-size: 0.85rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .sync-status.synced {
-            background-color: rgba(40, 167, 69, 0.1);
-            color: var(--success-color);
-        }
-        
-        .sync-status.recent {
-            background-color: rgba(255, 193, 7, 0.1);
-            color: var(--warning-color);
-        }
-        
-        .sync-status.old {
-            background-color: rgba(220, 53, 69, 0.1);
-            color: var(--danger-color);
-        }
-        
-        .sync-status.no-token {
-            background-color: rgba(108, 117, 125, 0.1);
-            color: var(--secondary-color);
-        }
-        
-        .sync-status::before {
-            content: '';
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-        
-        .sync-status.synced::before {
-            background-color: var(--success-color);
-        }
-        
-        .sync-status.recent::before {
-            background-color: var(--warning-color);
-        }
-        
-        .sync-status.old::before {
-            background-color: var(--danger-color);
-        }
-        
-        .sync-status.no-token::before {
-            background-color: var(--secondary-color);
-        }
-        
-        /* 按钮样式 */
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: var(--border-radius);
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-        }
-        
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background-color: #3a5bff;
-            transform: translateY(-2px);
-        }
-        
-        .btn-outline {
-            background-color: transparent;
-            border: 2px solid var(--primary-color);
-            color: var(--primary-color);
-        }
-        
-        .btn-outline:hover {
-            background-color: var(--primary-color);
-            color: white;
-        }
-        
-        .btn-danger {
-            background-color: var(--danger-color);
-            color: white;
-        }
-        
-        .btn-danger:hover {
-            background-color: #c82333;
-        }
-        
-        /* 主容器 */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        /* 页面标题 */
-        .page-header {
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        
-        .page-header h1 {
-            font-size: 2.5rem;
-            color: var(--dark-color);
-            margin-bottom: 10px;
-        }
-        
-        .page-header p {
-            color: var(--secondary-color);
-            font-size: 1.1rem;
-        }
-        
-        /* 卡片网格 */
-        .cards-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
-        }
-        
-        /* 卡片样式 */
-        .card {
-            background-color: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            overflow: hidden;
-            transition: var(--transition);
-            height: 100%;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        }
-        
-        .card-header {
-            padding: 20px;
-            border-bottom: 1px solid #eee;
-            background-color: var(--light-color);
-        }
-        
-        .card-header h3 {
-            font-size: 1.3rem;
-            color: var(--dark-color);
-            margin-bottom: 5px;
-        }
-        
-        .card-body {
-            padding: 20px;
-        }
-        
-        /* 项目卡片 */
-        .project-card {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .project-category {
-            display: inline-block;
-            padding: 4px 10px;
-            background-color: #e9ecef;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            margin-bottom: 15px;
-        }
-        
-        .project-category.engineering {
-            background-color: #d1ecf1;
-            color: #0c5460;
-        }
-        
-        .project-category.science {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        
-        .project-category.humanities {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        
-        .project-meta {
-            margin-top: auto;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-            font-size: 0.9rem;
-            color: var(--secondary-color);
-        }
-        
-        /* 人物卡片 */
-        .person-card {
-            text-align: center;
-        }
-        
-        .person-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            margin: 0 auto 15px;
-            overflow: hidden;
-            border: 3px solid var(--light-color);
-        }
-        
-        .person-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        /* 通知样式 */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            border-radius: var(--border-radius);
-            color: white;
-            z-index: 1001;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            min-width: 300px;
-            max-width: 400px;
-            box-shadow: var(--box-shadow);
-            animation: slideIn 0.3s ease;
-        }
-        
-        .notification.success {
-            background-color: var(--success-color);
-        }
-        
-        .notification.error {
-            background-color: var(--danger-color);
-        }
-        
-        .notification.info {
-            background-color: var(--info-color);
-        }
-        
-        .notification.warning {
-            background-color: var(--warning-color);
-        }
-        
-        .close-notification {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 20px;
-            cursor: pointer;
-            margin-left: 15px;
-            padding: 0;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        /* 模态框样式 */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            visibility: hidden;
-            transition: var(--transition);
-        }
-        
-        .modal.show {
-            opacity: 1;
-            visibility: visible;
-        }
-        
-        .modal-content {
-            background-color: white;
-            border-radius: var(--border-radius);
-            width: 90%;
-            max-width: 600px;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-        
-        .modal-header {
-            padding: 20px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .modal-header h3 {
-            font-size: 1.5rem;
-            color: var(--dark-color);
-        }
-        
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--secondary-color);
-            padding: 0;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .modal-body {
-            padding: 20px;
-        }
-        
-        /* 表单样式 */
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--dark-color);
-        }
-        
-        .form-control {
-            width: 100%;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            transition: var(--transition);
-        }
-        
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.1);
-        }
-        
-        textarea.form-control {
-            min-height: 120px;
-            resize: vertical;
-        }
-        
-        /* 管理面板样式 */
-        .admin-panel .admin-sections {
-            display: grid;
-            gap: 25px;
-        }
-        
-        .admin-section {
-            padding: 20px;
-            border: 1px solid #eee;
-            border-radius: var(--border-radius);
-        }
-        
-        .admin-section h4 {
-            margin-bottom: 15px;
-            color: var(--dark-color);
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .admin-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 15px;
-        }
-        
-        .stat-card {
-            text-align: center;
-            padding: 15px;
-            background-color: var(--light-color);
-            border-radius: var(--border-radius);
-        }
-        
-        .stat-card h5 {
-            font-size: 1.8rem;
-            color: var(--primary-color);
-            margin-bottom: 5px;
-        }
-        
-        .sync-status {
-            display: grid;
-            gap: 10px;
-        }
-        
-        .sync-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .sync-actions, .quick-actions, .data-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .input-group {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .input-group input {
-            flex: 1;
-        }
-        
-        .help-text {
-            font-size: 0.85rem;
-            color: var(--secondary-color);
-            margin-top: 5px;
-        }
-        
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            .cards-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .nav-actions {
-                flex-wrap: wrap;
-                justify-content: flex-end;
-            }
-            
-            .sync-status {
-                order: -1;
-                width: 100%;
-                justify-content: center;
-                margin-bottom: 10px;
-            }
-            
-            .modal-content {
-                width: 95%;
-                margin: 10px;
-            }
-        }
-        
-        /* 编辑模式指示器 */
-        .edit-mode-indicator {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: var(--warning-color);
-            color: white;
-            padding: 10px 15px;
-            border-radius: var(--border-radius);
-            font-weight: 500;
-            z-index: 999;
-            box-shadow: var(--box-shadow);
-            display: none;
-        }
-        
-        body.edit-mode .edit-mode-indicator {
-            display: block;
-        }
-    </style>
 </head>
 <body>
-    <!-- 加载遮罩 -->
-    <div id="loading-overlay">
-        <div class="spinner"></div>
-        <span>加载中...</span>
-    </div>
-    
-    <!-- 导航栏 -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <a href="#">
-                    <i class="fas fa-flask"></i>
-                    研究生科研门户
-                </a>
-            </div>
-            
-            <div class="nav-actions">
-                <!-- 管理员模式切换按钮 -->
-                <button id="admin-toggle" class="btn btn-outline">
-                    <i class="fas fa-user-shield"></i>
-                    <span>进入管理</span>
-                </button>
-                
-                <!-- 同步状态显示 -->
-                <div id="sync-status" class="sync-status no-token">
-                    未配置GitHub
+    <!-- 登录模态框 -->
+    <div id="login-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>管理员登录</h2>
+            <div class="login-options">
+                <div class="login-option">
+                    <h3>方式一：GitHub Token 登录</h3>
+                    <p>（推荐，可保存数据到 GitHub）</p>
+                    <input type="password" id="github-token-login" placeholder="输入 GitHub Token">
+                    <button onclick="loginWithGitHubToken()" class="btn btn-primary">GitHub Token 登录</button>
                 </div>
+                <div class="login-option">
+                    <h3>方式二：密码登录</h3>
+                    <p>（临时编辑，数据保存在本地）</p>
+                    <input type="password" id="password-login" placeholder="输入管理员密码">
+                    <button onclick="loginWithPassword()" class="btn btn-secondary">密码登录</button>
+                </div>
+            </div>
+            <div id="login-message"></div>
+        </div>
+    </div>
+
+    <!-- 导航栏 -->
+    <header class="header">
+        <div class="container">
+            <nav class="navbar">
+                <a href="#" class="logo">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>学术研究门户</span>
+                </a>
                 
-                <!-- 管理面板按钮（由JS动态添加） -->
-                <button id="admin-panel-btn" class="btn btn-outline" style="display: none;">
-                    <i class="fas fa-cog"></i>
-                    <span>管理面板</span>
-                </button>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="#home" class="nav-link active">首页</a></li>
+                    <li class="nav-item"><a href="#projects" class="nav-link">课题展示</a></li>
+                    <li class="nav-item"><a href="#advisors" class="nav-link">导师介绍</a></li>
+                    <li class="nav-item"><a href="#students" class="nav-link">学生介绍</a></li>
+                    <li class="nav-item"><a href="#publications" class="nav-link">学术成果</a></li>
+                    <li class="nav-item"><a href="#updates" class="nav-link">研究近况</a></li>
+                    <li class="nav-item"><a href="#submit-section" class="nav-link">提交课题</a></li>
+                    <li class="nav-item" id="admin-nav-item" style="display: none;">
+                        <a href="#" class="nav-link" id="admin-toggle">
+                            <i class="fas fa-user-shield"></i> 管理
+                        </a>
+                    </li>
+                </ul>
                 
-                <!-- 主题切换按钮 -->
-                <button id="theme-toggle" class="btn btn-outline">
-                    <i class="fas fa-moon"></i>
-                </button>
+                <div class="nav-actions">
+                    <button class="btn btn-outline" id="theme-toggle">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="btn btn-outline" id="login-btn" style="display: block;">
+                        <i class="fas fa-sign-in-alt"></i> 登录
+                    </button>
+                    <button class="btn btn-outline" id="logout-btn" style="display: none;">
+                        <i class="fas fa-sign-out-alt"></i> 退出
+                    </button>
+                    <div class="hamburger" id="hamburger">
+                        <span class="bar"></span>
+                        <span class="bar"></span>
+                        <span class="bar"></span>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 首页横幅 -->
+    <section class="hero" id="home">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">研究生课题展示与管理门户</h1>
+                <p class="hero-subtitle">连接研究生、导师与学术资源的一站式数字化桥梁</p>
+                <p class="hero-description">
+                    本平台提供全面的课题信息展示、研究进度跟踪和学术资源整合服务，
+                    旨在促进跨学科研究与学术交流，展示前沿研究方向与创新项目。
+                </p>
+                <div class="hero-actions">
+                    <a href="#projects" class="btn btn-primary">探索课题</a>
+                    <a href="#submit-section" class="btn btn-secondary">提交课题</a>
+                </div>
+            </div>
+            <div class="hero-image">
+                <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" alt="学生讨论学术研究">
             </div>
         </div>
-    </nav>
-    
-    <!-- 主内容区域 -->
-    <main class="container">
-        <!-- 页面标题 -->
-        <header class="page-header">
-            <h1>智能计算与数据分析实验室</h1>
-            <p>实时协作的科研管理平台 · 数据自动同步 · 多人编辑</p>
-        </header>
-        
-        <!-- 研究课题部分 -->
-        <section id="projects-section" class="section">
+    </section>
+
+    <!-- 课题展示区 -->
+    <section class="section projects-section" id="projects">
+        <div class="container">
             <div class="section-header">
-                <h2>
-                    <i class="fas fa-project-diagram"></i>
-                    研究课题
-                </h2>
-                <button id="edit-projects-btn" class="btn btn-outline edit-btn" style="display: none;">
-                    <i class="fas fa-edit"></i>
-                    <span>编辑课题</span>
+                <h2 class="section-title">课题展示区</h2>
+                <p class="section-subtitle">探索各学科领域的前沿研究方向与创新项目</p>
+                <button class="btn btn-outline" id="edit-projects-btn" style="display: none; margin-top: 10px;">
+                    <i class="fas fa-edit"></i> 编辑课题
                 </button>
             </div>
-            <div id="projects-container" class="cards-grid">
-                <!-- 项目卡片将通过JavaScript动态生成 -->
+            
+            <div class="filters">
+                <button class="filter-btn active" data-filter="all">全部课题</button>
+                <button class="filter-btn" data-filter="engineering">人工智能与大模型</button>
+                <button class="filter-btn" data-filter="science">生态遥感</button>
+                <button class="filter-btn" data-filter="humanities">城市生态</button>
+                <button class="filter-btn" data-filter="medical">槟榔黄化病</button>
+                <button class="filter-btn" data-filter="medical">生态过程</button>
             </div>
-        </section>
-        
-        <!-- 指导老师部分 -->
-        <section id="advisors-section" class="section">
+            
+            <div class="projects-grid" id="projects-grid">
+                <!-- 课题卡片将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </section>
+
+    <!-- 导师介绍 -->
+    <section class="section advisors-section" id="advisors">
+        <div class="container">
             <div class="section-header">
-                <h2>
-                    <i class="fas fa-user-tie"></i>
-                    指导老师
-                </h2>
-                <button id="edit-advisors-btn" class="btn btn-outline edit-btn" style="display: none;">
-                    <i class="fas fa-edit"></i>
-                    <span>编辑导师</span>
+                <h2 class="section-title">导师介绍</h2>
+                <p class="section-subtitle">认识我们的优秀导师团队</p>
+                <button class="btn btn-outline" id="edit-advisors-btn" style="display: none; margin-top: 10px;">
+                    <i class="fas fa-edit"></i> 编辑导师信息
                 </button>
             </div>
-            <div id="advisors-container" class="cards-grid">
+            
+            <div class="advisors-grid" id="advisors-grid">
                 <!-- 导师卡片将通过JavaScript动态生成 -->
             </div>
-        </section>
-        
-        <!-- 研究生部分 -->
-        <section id="students-section" class="section">
+        </div>
+    </section>
+
+    <!-- 学生介绍 -->
+    <section class="section students-section" id="students">
+        <div class="container">
             <div class="section-header">
-                <h2>
-                    <i class="fas fa-user-graduate"></i>
-                    研究生
-                </h2>
-                <button id="edit-students-btn" class="btn btn-outline edit-btn" style="display: none;">
-                    <i class="fas fa-edit"></i>
-                    <span>编辑学生</span>
+                <h2 class="section-title">学生介绍</h2>
+                <p class="section-subtitle">认识我们的优秀研究生团队</p>
+                <button class="btn btn-outline" id="edit-students-btn" style="display: none; margin-top: 10px;">
+                    <i class="fas fa-edit"></i> 编辑学生信息
                 </button>
             </div>
-            <div id="students-container" class="cards-grid">
+            
+            <div class="students-grid" id="students-grid">
                 <!-- 学生卡片将通过JavaScript动态生成 -->
             </div>
-        </section>
-        
-        <!-- 学术成果部分 -->
-        <section id="publications-section" class="section">
+        </div>
+    </section>
+
+    <!-- 学术成果发布 -->
+    <section class="section publications-section" id="publications">
+        <div class="container">
             <div class="section-header">
-                <h2>
-                    <i class="fas fa-book"></i>
-                    学术成果
-                </h2>
-                <button id="edit-publications-btn" class="btn btn-outline edit-btn" style="display: none;">
-                    <i class="fas fa-edit"></i>
-                    <span>编辑成果</span>
+                <h2 class="section-title">学术成果</h2>
+                <p class="section-subtitle">最新发表的论文、专利与学术成果</p>
+                <button class="btn btn-outline" id="edit-publications-btn" style="display: none; margin-top: 10px;">
+                    <i class="fas fa-edit"></i> 编辑学术成果
                 </button>
             </div>
-            <div id="publications-container" class="cards-grid">
+            
+            <div class="publications-grid" id="publications-grid">
                 <!-- 学术成果卡片将通过JavaScript动态生成 -->
             </div>
-        </section>
-        
-        <!-- 研究近况部分 -->
-        <section id="updates-section" class="section">
+        </div>
+    </section>
+
+    <!-- 研究近况模块 -->
+    <section class="section updates-section" id="updates">
+        <div class="container">
             <div class="section-header">
-                <h2>
-                    <i class="fas fa-newspaper"></i>
-                    研究近况
-                </h2>
-                <button id="edit-updates-btn" class="btn btn-outline edit-btn" style="display: none;">
-                    <i class="fas fa-edit"></i>
-                    <span>编辑近况</span>
+                <h2 class="section-title">研究近况</h2>
+                <p class="section-subtitle">最新研究动态、项目进展与团队活动</p>
+                <button class="btn btn-outline" id="edit-updates-btn" style="display: none; margin-top: 10px;">
+                    <i class="fas fa-edit"></i> 编辑研究近况
                 </button>
             </div>
-            <div id="updates-container" class="cards-grid">
-                <!-- 研究近况卡片将通过JavaScript动态生成 -->
+            
+            <div class="updates-grid" id="updates-grid">
+                <!-- 近况卡片将通过JavaScript动态生成 -->
             </div>
-        </section>
-    </main>
-    
-    <!-- 编辑模式指示器 -->
-    <div class="edit-mode-indicator">
-        <i class="fas fa-pencil-alt"></i>
-        编辑模式已启用
-    </div>
-    
-    <!-- 模态框容器（用于管理面板、编辑表单等） -->
-    <div id="modal-container"></div>
-    
-    <!-- JavaScript文件 -->
-    <script src="js/github-issues.js"></script>
+        </div>
+    </section>
+
+    <!-- 提交新课题部分 -->
+    <section class="section submit-section" id="submit-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">📝 提交新课题</h2>
+                <p class="section-subtitle">填写以下信息提交您的研究课题，审核通过后将在网站展示</p>
+            </div>
+            
+            <!-- 提交表单 -->
+            <form id="project-form" class="project-form">
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="project-title">课题名称 *</label>
+                        <input type="text" id="project-title" name="title" required 
+                               placeholder="例如：基于深度学习的人脸识别系统研究">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="project-description">课题描述 *</label>
+                    <textarea id="project-description" name="description" rows="6" required
+                              placeholder="请详细描述研究背景、目标、方法、预期成果等..."></textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="student-name">研究生姓名</label>
+                        <input type="text" id="student-name" name="student" 
+                               placeholder="张三">
+                    </div>
+                    <div class="form-group">
+                        <label for="supervisor-name">指导老师</label>
+                        <input type="text" id="supervisor-name" name="supervisor" 
+                               placeholder="李四教授">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="project-tags">研究标签（用逗号分隔）</label>
+                    <input type="text" id="project-tags" name="tags" 
+                           placeholder="人工智能, 深度学习, 计算机视觉">
+                </div>
+                
+                <button type="submit" class="btn btn-primary submit-btn" id="submit-btn">
+                    <span id="submit-text">提交课题</span>
+                    <span id="submit-loading" style="display: none;">提交中...</span>
+                </button>
+            </form>
+            
+            <!-- 提交结果消息 -->
+            <div id="form-message" style="margin-top: 30px;"></div>
+            
+            <!-- 已提交课题展示 -->
+            <div id="submitted-projects" style="margin-top: 60px; padding-top: 40px; border-top: 2px solid #eee;">
+                <h3 style="font-size: 1.8rem; font-weight: 600; margin-bottom: 25px; color: #333;">📋 已提交的课题</h3>
+                <div id="projects-list" class="projects-grid" style="margin-top: 20px;">
+                    <!-- 动态加载课题 -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h3 class="footer-title">
+                        <i class="fas fa-graduation-cap"></i>
+                        学术研究门户
+                    </h3>
+                    <p class="footer-description">
+                        连接研究生、导师与学术资源的一站式数字化桥梁，促进跨学科研究与学术交流。
+                    </p>
+                    <div class="social-links">
+                        <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-weixin"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-column">
+                    <h4 class="footer-column-title">快速链接</h4>
+                    <ul class="footer-links">
+                        <li><a href="#home">首页</a></li>
+                        <li><a href="#projects">课题展示</a></li>
+                        <li><a href="#advisors">导师介绍</a></li>
+                        <li><a href="#students">学生介绍</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-column">
+                    <h4 class="footer-column-title">学术资源</h4>
+                    <ul class="footer-links">
+                        <li><a href="#publications">学术成果</a></li>
+                        <li><a href="#updates">研究近况</a></li>
+                        <li><a href="#submit-section">提交课题</a></li>
+                        <li><a href="#">投稿指南</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-column">
+                    <h4 class="footer-column-title">联系我们</h4>
+                    <ul class="footer-contact">
+                        <li><i class="fas fa-map-marker-alt"></i> 北京市海淀区学院路37号</li>
+                        <li><i class="fas fa-phone"></i> (010) 8231-1234</li>
+                        <li><i class="fas fa-envelope"></i> research@university.edu.cn</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2023 学术研究门户. 版权所有.</p>
+                <p>本网站为研究生课题展示与管理平台，旨在促进学术交流与研究合作。</p>
+                <p id="admin-status" style="font-size: 12px; color: #aaa; margin-top: 10px;">
+                    <!-- 管理员状态显示 -->
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 返回顶部按钮 -->
+    <button class="back-to-top" id="backToTop">
+        <i class="fas fa-chevron-up"></i>
+    </button>
+
+    <!-- 加载 JavaScript 文件 -->
+    <script src="js/script.js"></script>
     <script src="js/data-manager.js"></script>
     <script src="js/admin-system.js"></script>
-    <script src="js/script.js"></script>
-    
-    <script>
-        // 主题切换功能
-        document.addEventListener('DOMContentLoaded', function() {
-            const themeToggle = document.getElementById('theme-toggle');
-            const themeIcon = themeToggle.querySelector('i');
-            
-            // 检查保存的主题偏好
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            if (savedTheme === 'dark') {
-                document.body.classList.add('dark-theme');
-                themeIcon.className = 'fas fa-sun';
-            }
-            
-            themeToggle.addEventListener('click', function() {
-                const isDark = document.body.classList.toggle('dark-theme');
-                themeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-                localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            });
-        });
-        
-        // 添加深色主题样式
-        document.addEventListener('DOMContentLoaded', function() {
-            const style = document.createElement('style');
-            style.textContent = `
-                body.dark-theme {
-                    background-color: #1a1a2e;
-                    color: #e6e6e6;
-                }
-                
-                body.dark-theme .navbar {
-                    background-color: #16213e;
-                    border-bottom: 1px solid #2d3748;
-                }
-                
-                body.dark-theme .card {
-                    background-color: #16213e;
-                    border: 1px solid #2d3748;
-                }
-                
-                body.dark-theme .card-header {
-                    background-color: #1a1a2e;
-                    border-bottom: 1px solid #2d3748;
-                }
-                
-                body.dark-theme .form-control {
-                    background-color: #1a1a2e;
-                    border-color: #2d3748;
-                    color: #e6e6e6;
-                }
-                
-                body.dark-theme .form-control:focus {
-                    border-color: #4a6bff;
-                }
-                
-                body.dark-theme .modal-content {
-                    background-color: #16213e;
-                    color: #e6e6e6;
-                }
-                
-                body.dark-theme .modal-header {
-                    border-bottom-color: #2d3748;
-                }
-            `;
-            document.head.appendChild(style);
-        });
-    </script>
+    <script src="js/github-issues.js"></script>
+    <script src="js/form-handler.js"></script>
 </body>
 </html>
