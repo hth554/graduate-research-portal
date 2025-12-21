@@ -1,4 +1,4 @@
-// js/data-manager.js - 数据管理和存储（重构版，集成权限控制）
+// js/data-manager.js - 数据管理和存储（重构版，游客可查看最新数据）
 class DataManager {
     constructor() {
         // 默认数据（如果本地存储和GitHub都没有数据）
@@ -108,30 +108,45 @@ class DataManager {
         // 当前数据
         this.data = { ...this.defaultData };
         
+        // 公共数据缓存相关
+        this.publicDataCacheTime = localStorage.getItem('public_data_cache_time') || null;
+        this.publicDataCache = null;
+        
         // 初始化
         this.init();
     }
 
-    // 初始化（修改后的权限检查逻辑）
+    // 初始化（修改：游客也能加载最新数据）
     async init() {
         console.log('DataManager 初始化...');
         
         try {
-            // 检查是否有Token
+            // 首先加载公共数据（游客和管理员都能看到最新数据）
+            console.log('加载公共数据...');
+            await this.loadPublicData();
+            
+            // 检查是否有Token（决定是否可以编辑）
             if (this.hasValidToken() && window.githubIssuesManager) {
-                console.log('🔑 检测到Token，同步数据到githubIssuesManager');
+                console.log('🔑 检测到Token，进入编辑模式');
                 window.githubIssuesManager.setToken(this.githubToken);
                 
-                // 从GitHub加载数据
+                // 从GitHub加载数据（覆盖公共数据）
                 await this.syncFromGitHub();
                 
                 // 开始自动同步
                 this.startAutoSync();
-            } else {
-                console.log('ℹ️ 未检测到Token，使用本地数据');
                 
-                // 加载本地数据
-                await this.loadData();
+                // 触发权限状态更新
+                if (window.labWebsite && window.labWebsite.updatePermissionStatus) {
+                    window.labWebsite.updatePermissionStatus('authenticated');
+                }
+            } else {
+                console.log('ℹ️ 未检测到Token，只读模式');
+                
+                // 触发权限状态更新
+                if (window.labWebsite && window.labWebsite.updatePermissionStatus) {
+                    window.labWebsite.updatePermissionStatus('guest');
+                }
             }
             
             // 监听管理员模式变化
@@ -169,6 +184,142 @@ class DataManager {
         }
     }
 
+    // ==================== 新增：公共数据加载方法 ====================
+    
+    /**
+     * 加载公共数据（游客和管理员都能看到最新数据）
+     */
+    async loadPublicData() {
+        console.log('开始加载公共数据...');
+        
+        try {
+            // 检查本地缓存
+            const cachedData = localStorage.getItem('public_data_cache');
+            const cacheTime = localStorage.getItem('public_data_cache_time');
+            
+            // 如果缓存存在且未过期（1小时内），使用缓存
+            if (cachedData && cacheTime) {
+                const cacheAge = Date.now() - parseInt(cacheTime);
+                if (cacheAge < 3600000) { // 1小时
+                    console.log('使用缓存的公共数据');
+                    this.publicDataCache = JSON.parse(cachedData);
+                    this.publicDataCacheTime = cacheTime;
+                    this.applyPublicData(this.publicDataCache);
+                    return true;
+                }
+            }
+            
+            // 尝试从GitHub加载最新数据（公开访问）
+            console.log('从GitHub加载最新公共数据...');
+            const publicData = await this.fetchPublicData();
+            
+            if (publicData) {
+                // 缓存数据
+                localStorage.setItem('public_data_cache', JSON.stringify(publicData));
+                localStorage.setItem('public_data_cache_time', Date.now().toString());
+                
+                this.publicDataCache = publicData;
+                this.publicDataCacheTime = Date.now().toString();
+                
+                this.applyPublicData(publicData);
+                return true;
+            } else {
+                // 如果GitHub加载失败，使用默认数据
+                console.log('GitHub加载失败，使用默认数据');
+                this.data = { ...this.defaultData };
+                this.saveToLocalStorage();
+                return false;
+            }
+            
+        } catch (error) {
+            console.error('加载公共数据失败:', error);
+            this.data = { ...this.defaultData };
+            this.saveToLocalStorage();
+            return false;
+        }
+    }
+    
+    /**
+     * 从GitHub获取公开数据（不需要Token）
+     */
+    async fetchPublicData() {
+        try {
+            const files = ['projects.json', 'advisors.json', 'students.json', 
+                          'publications.json', 'updates.json'];
+            
+            const data = {};
+            let successCount = 0;
+            
+            // 使用GitHub公开API获取数据
+            await Promise.all(files.map(async (filename) => {
+                try {
+                    // 使用raw.githubusercontent.com公开访问
+                    const response = await fetch(
+                        `https://raw.githubusercontent.com/${this.owner}/${this.repo}/main/${filename}`
+                    );
+                    
+                    if (response.ok) {
+                        const jsonData = await response.json();
+                        const key = filename.replace('.json', '');
+                        data[key] = jsonData;
+                        successCount++;
+                        console.log(`✅ 加载 ${filename} 成功`);
+                    } else {
+                        console.warn(`无法加载 ${filename}: ${response.status}`);
+                        // 使用默认数据作为后备
+                        data[filename.replace('.json', '')] = this.defaultData[filename.replace('.json', '')] || [];
+                    }
+                } catch (error) {
+                    console.warn(`获取 ${filename} 失败:`, error.message);
+                    // 使用默认数据作为后备
+                    data[filename.replace('.json', '')] = this.defaultData[filename.replace('.json', '')] || [];
+                }
+            }));
+            
+            // 检查是否获取到足够的数据
+            if (successCount > 0) {
+                console.log(`成功加载 ${successCount}/${files.length} 个数据文件`);
+                // 确保数据结构完整
+                this.ensureDataStructure(data);
+                return data;
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('获取公开数据失败:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * 应用公共数据到当前实例
+     */
+    applyPublicData(publicData) {
+        console.log('应用公共数据...');
+        
+        // 合并数据，确保所有字段都有值
+        this.data = {
+            advisors: publicData.advisors || this.defaultData.advisors,
+            students: publicData.students || this.defaultData.students,
+            projects: publicData.projects || this.defaultData.projects,
+            publications: publicData.publications || this.defaultData.publications,
+            updates: publicData.updates || this.defaultData.updates
+        };
+        
+        // 确保数据结构完整
+        this.ensureDataStructure();
+        
+        // 保存到本地存储（作为缓存）
+        this.saveToLocalStorage();
+        
+        // 触发数据更新事件
+        this.dispatchDataUpdated();
+        
+        console.log('公共数据应用完成');
+    }
+    
+    // ==================== 原有方法（保持不变） ====================
+    
     // 设置GitHub Token
     setGitHubToken(token) {
         this.githubToken = token;
@@ -181,7 +332,7 @@ class DataManager {
         
         console.log('GitHub Token 已设置');
         
-        // 尝试从GitHub加载数据
+        // 尝试从GitHub加载数据（覆盖公共数据）
         this.syncFromGitHub();
     }
 
@@ -197,7 +348,7 @@ class DataManager {
                 this.githubToken.startsWith('github_pat_'));
     }
 
-    // 加载数据
+    // 加载数据（现在主要用于有Token的情况）
     async loadData() {
         console.log('开始加载数据...');
         
@@ -238,16 +389,16 @@ class DataManager {
     }
 
     // 确保数据结构完整
-    ensureDataStructure() {
+    ensureDataStructure(dataObj = this.data) {
         const dataFields = ['advisors', 'students', 'projects', 'publications', 'updates'];
         dataFields.forEach(field => {
-            if (!this.data[field]) {
-                this.data[field] = this.defaultData[field] || [];
+            if (!dataObj[field]) {
+                dataObj[field] = this.defaultData[field] || [];
             }
         });
     }
 
-    // 从GitHub同步数据
+    // 从GitHub同步数据（需要Token）
     async syncFromGitHub() {
         if (!this.hasValidToken() || !window.githubIssuesManager) {
             console.log('无法从GitHub同步：Token无效或githubIssuesManager未初始化');
@@ -454,7 +605,8 @@ class DataManager {
             updates: this.data.updates.length,
             lastSyncTime: this.lastSyncTime,
             dataVersion: this.dataVersion,
-            hasGitHubToken: this.hasValidToken()
+            hasGitHubToken: this.hasValidToken(),
+            publicDataCacheTime: this.publicDataCacheTime
         };
     }
 
@@ -701,7 +853,8 @@ class DataManager {
             dataVersion: this.dataVersion,
             hasGitHubToken: this.hasValidToken(),
             isAutoSyncing: !!this.autoSyncTimer,
-            syncInterval: this.syncInterval
+            syncInterval: this.syncInterval,
+            publicDataCacheTime: this.publicDataCacheTime
         };
     }
 }
