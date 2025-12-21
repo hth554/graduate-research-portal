@@ -1,7 +1,9 @@
-// js/admin-system.js - 管理员系统（简化版，无需登录）
+// js/admin-system.js - 管理员系统
 class AdminSystem {
     constructor() {
-        this.isAdmin = false; // 默认不是管理员
+        this.isAdmin = false;
+        this.adminToken = localStorage.getItem('admin_token');
+        this.githubToken = localStorage.getItem('github_admin_token');
         this.editMode = false;
         
         this.init();
@@ -9,12 +11,53 @@ class AdminSystem {
 
     // 初始化
     init() {
+        // 检查是否已登录
+        this.checkLoginStatus();
+        
+        // 绑定事件
         this.bindEvents();
+        
+        // 初始化UI
         this.updateUI();
+    }
+
+    // 检查登录状态
+    checkLoginStatus() {
+        if (this.adminToken || this.githubToken) {
+            this.isAdmin = true;
+        }
     }
 
     // 绑定事件
     bindEvents() {
+        // 登录按钮
+        const loginBtn = document.getElementById('login-btn');
+        if (loginBtn) {
+            loginBtn.addEventListener('click', () => this.showLoginModal());
+        }
+
+        // 退出按钮
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => this.logout());
+        }
+
+        // 关闭模态框
+        const closeModal = document.querySelector('.close-modal');
+        if (closeModal) {
+            closeModal.addEventListener('click', () => this.hideLoginModal());
+        }
+
+        // 点击模态框外部关闭
+        const modal = document.getElementById('login-modal');
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    this.hideLoginModal();
+                }
+            });
+        }
+
         // 编辑按钮
         const editButtons = [
             'edit-projects-btn',
@@ -36,123 +79,159 @@ class AdminSystem {
         if (adminToggle) {
             adminToggle.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.toggleAdminMode();
+                this.toggleEditMode();
             });
         }
     }
 
-    // 切换管理员模式
-    toggleAdminMode() {
-        this.isAdmin = !this.isAdmin;
-        if (this.isAdmin) {
-            this.editMode = true;
-            this.showLoginMessage('已进入管理员模式', 'success');
-        } else {
-            this.editMode = false;
-            this.showLoginMessage('已退出管理员模式', 'info');
+    // 显示登录模态框
+    showLoginModal() {
+        const modal = document.getElementById('login-modal');
+        if (modal) {
+            modal.style.display = 'block';
         }
-        this.updateUI();
-        this.reloadPageData();
     }
 
-    // 切换编辑模式
-    toggleEditMode() {
-        if (!this.isAdmin) {
-            this.showLoginMessage('请先进入管理员模式', 'warning');
+    // 隐藏登录模态框
+    hideLoginModal() {
+        const modal = document.getElementById('login-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    // 使用GitHub Token登录
+    async loginWithGitHubToken() {
+        const tokenInput = document.getElementById('github-token-login');
+        const messageDiv = document.getElementById('login-message');
+        
+        if (!tokenInput) return;
+
+        const token = tokenInput.value.trim();
+        
+        if (!token) {
+            this.showLoginMessage('请输入GitHub Token', 'error');
             return;
         }
-        
-        this.editMode = !this.editMode;
-        this.updateEditModeUI();
-        this.reloadPageData();
+
+        // 验证Token
+        try {
+            this.showLoginMessage('验证Token中...', 'info');
+            
+            const response = await fetch('https://api.github.com/user', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                this.githubToken = token;
+                localStorage.setItem('github_admin_token', token);
+                this.isAdmin = true;
+                this.hideLoginModal();
+                this.updateUI();
+                this.showLoginMessage('GitHub Token登录成功！', 'success');
+                
+                // 尝试从GitHub加载数据
+                try {
+                    await window.dataManager.syncAllDataFromGitHub(token);
+                    this.showLoginMessage('数据同步成功！', 'success');
+                    // 重新加载页面数据
+                    this.reloadPageData();
+                } catch (syncError) {
+                    console.warn('数据同步失败:', syncError);
+                }
+            } else {
+                this.showLoginMessage('Token无效，请检查权限', 'error');
+            }
+        } catch (error) {
+            console.error('登录失败:', error);
+            this.showLoginMessage('网络错误，请稍后重试', 'error');
+        }
     }
 
-    // 显示消息
-    showLoginMessage(message, type) {
-        // 创建一个简单的消息提示
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `alert alert-${type}`;
-        messageDiv.style.cssText = `
-            position: fixed;
-            top: 100px;
-            right: 20px;
-            padding: 15px 25px;
-            border-radius: 8px;
-            z-index: 9999;
-            max-width: 300px;
-            animation: slideIn 0.3s ease;
-        `;
-        messageDiv.innerHTML = `
-            <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i>
-            <span style="margin-left: 10px;">${message}</span>
-        `;
+    // 使用密码登录
+    loginWithPassword() {
+        const passwordInput = document.getElementById('password-login');
+        const messageDiv = document.getElementById('login-message');
         
-        document.body.appendChild(messageDiv);
+        if (!passwordInput) return;
+
+        const password = passwordInput.value.trim();
         
-        // 3秒后移除消息
-        setTimeout(() => {
-            messageDiv.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => {
-                if (messageDiv.parentNode) {
-                    messageDiv.parentNode.removeChild(messageDiv);
-                }
-            }, 300);
-        }, 3000);
-        
-        // 添加动画样式
-        if (!document.querySelector('#message-styles')) {
-            const style = document.createElement('style');
-            style.id = 'message-styles';
-            style.textContent = `
-                @keyframes slideIn {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
-                }
-                @keyframes slideOut {
-                    from { transform: translateX(0); opacity: 1; }
-                    to { transform: translateX(100%); opacity: 0; }
-                }
-                .alert-success {
-                    background-color: #d4edda;
-                    color: #155724;
-                    border: 1px solid #c3e6cb;
-                }
-                .alert-info {
-                    background-color: #d1ecf1;
-                    color: #0c5460;
-                    border: 1px solid #bee5eb;
-                }
-                .alert-warning {
-                    background-color: #fff3cd;
-                    color: #856404;
-                    border: 1px solid #ffeaa7;
-                }
-            `;
-            document.head.appendChild(style);
+        // 默认密码：admin123 （可以在生产环境中修改）
+        if (password === 'admin123') {
+            this.adminToken = 'local_admin_' + Date.now();
+            localStorage.setItem('admin_token', this.adminToken);
+            this.isAdmin = true;
+            this.hideLoginModal();
+            this.updateUI();
+            this.showLoginMessage('密码登录成功！', 'success');
+        } else {
+            this.showLoginMessage('密码错误', 'error');
         }
+    }
+
+    // 显示登录消息
+    showLoginMessage(message, type) {
+        const messageDiv = document.getElementById('login-message');
+        if (!messageDiv) return;
+        
+        messageDiv.innerHTML = `
+            <div class="alert alert-${type}" style="margin-top: 15px;">
+                ${message}
+            </div>
+        `;
+        
+        // 3秒后清除消息
+        setTimeout(() => {
+            messageDiv.innerHTML = '';
+        }, 3000);
+    }
+
+    // 退出登录
+    logout() {
+        this.isAdmin = false;
+        this.editMode = false;
+        this.adminToken = null;
+        this.githubToken = null;
+        
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('github_admin_token');
+        
+        this.updateUI();
+        this.showLoginMessage('已退出登录', 'info');
+        
+        // 重新加载页面以退出编辑模式
+        location.reload();
     }
 
     // 更新UI状态
     updateUI() {
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const adminNavItem = document.getElementById('admin-nav-item');
         const adminStatus = document.getElementById('admin-status');
         
         if (this.isAdmin) {
+            if (loginBtn) loginBtn.style.display = 'none';
+            if (logoutBtn) logoutBtn.style.display = 'block';
+            if (adminNavItem) adminNavItem.style.display = 'list-item';
+            
             // 显示编辑按钮
             this.showEditButtons(true);
             
             // 更新状态显示
             if (adminStatus) {
-                adminStatus.innerHTML = `<i class="fas fa-user-shield"></i> 管理员模式`;
+                const tokenType = this.githubToken ? 'GitHub Token' : '本地密码';
+                adminStatus.innerHTML = `<i class="fas fa-user-shield"></i> 管理员已登录 (${tokenType})`;
                 adminStatus.style.color = '#2ecc71';
             }
-            
-            // 更新管理员切换按钮
-            const adminToggle = document.getElementById('admin-toggle');
-            if (adminToggle) {
-                adminToggle.innerHTML = '<i class="fas fa-user-shield"></i> 退出管理';
-                adminToggle.style.color = '#e74c3c';
-            }
         } else {
+            if (loginBtn) loginBtn.style.display = 'block';
+            if (logoutBtn) logoutBtn.style.display = 'none';
+            if (adminNavItem) adminNavItem.style.display = 'none';
+            
             // 隐藏编辑按钮
             this.showEditButtons(false);
             
@@ -160,13 +239,6 @@ class AdminSystem {
             if (adminStatus) {
                 adminStatus.innerHTML = `<i class="fas fa-user"></i> 游客模式`;
                 adminStatus.style.color = '#aaa';
-            }
-            
-            // 更新管理员切换按钮
-            const adminToggle = document.getElementById('admin-toggle');
-            if (adminToggle) {
-                adminToggle.innerHTML = '<i class="fas fa-user-shield"></i> 管理';
-                adminToggle.style.color = '';
             }
         }
         
@@ -192,11 +264,31 @@ class AdminSystem {
         });
     }
 
+    // 切换编辑模式
+    toggleEditMode() {
+        if (!this.isAdmin) {
+            this.showLoginModal();
+            return;
+        }
+        
+        this.editMode = !this.editMode;
+        this.updateEditModeUI();
+        
+        // 重新渲染内容
+        this.reloadPageData();
+    }
+
     // 更新编辑模式UI
     updateEditModeUI() {
+        const adminToggle = document.getElementById('admin-toggle');
         const editButtons = document.querySelectorAll('[id^="edit-"]');
         
-        if (this.editMode && this.isAdmin) {
+        if (this.editMode) {
+            if (adminToggle) {
+                adminToggle.innerHTML = '<i class="fas fa-edit"></i> 退出编辑';
+                adminToggle.style.color = '#e74c3c';
+            }
+            
             // 显示所有编辑按钮为激活状态
             editButtons.forEach(btn => {
                 btn.classList.add('active');
@@ -206,6 +298,11 @@ class AdminSystem {
             // 添加编辑模式CSS类到body
             document.body.classList.add('edit-mode');
         } else {
+            if (adminToggle) {
+                adminToggle.innerHTML = '<i class="fas fa-user-shield"></i> 管理';
+                adminToggle.style.color = '';
+            }
+            
             // 恢复编辑按钮
             editButtons.forEach(btn => {
                 btn.classList.remove('active');
@@ -221,22 +318,95 @@ class AdminSystem {
     reloadPageData() {
         // 触发自定义事件，让其他模块重新渲染
         const event = new CustomEvent('adminModeChanged', {
-            detail: { 
-                editMode: this.editMode,
-                isAdmin: this.isAdmin 
-            }
+            detail: { editMode: this.editMode }
         });
         document.dispatchEvent(event);
+    }
+
+    // 保存数据到GitHub
+    async saveToGitHub() {
+        if (!this.githubToken) {
+            alert('请使用GitHub Token登录以保存到GitHub');
+            return false;
+        }
+        
+        try {
+            const results = await window.dataManager.syncAllDataToGitHub(this.githubToken);
+            console.log('保存到GitHub结果:', results);
+            return true;
+        } catch (error) {
+            console.error('保存到GitHub失败:', error);
+            alert('保存到GitHub失败: ' + error.message);
+            return false;
+        }
+    }
+
+    // 从GitHub加载数据
+    async loadFromGitHub() {
+        if (!this.githubToken) {
+            alert('请使用GitHub Token登录以从GitHub加载');
+            return false;
+        }
+        
+        try {
+            await window.dataManager.syncAllDataFromGitHub(this.githubToken);
+            this.reloadPageData();
+            return true;
+        } catch (error) {
+            console.error('从GitHub加载失败:', error);
+            alert('从GitHub加载失败: ' + error.message);
+            return false;
+        }
+    }
+
+    // 导出数据
+    exportData() {
+        const data = window.dataManager.exportData();
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'research-portal-data-' + new Date().toISOString().split('T')[0] + '.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // 导入数据
+    importData(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const success = window.dataManager.importData(e.target.result);
+            if (success) {
+                alert('数据导入成功！');
+                this.reloadPageData();
+            } else {
+                alert('数据导入失败，请检查文件格式');
+            }
+        };
+        reader.readAsText(file);
     }
 
     // 获取当前状态
     getStatus() {
         return {
             isAdmin: this.isAdmin,
-            editMode: this.editMode
+            editMode: this.editMode,
+            hasGitHubToken: !!this.githubToken
         };
     }
 }
 
 // 创建全局实例
 window.adminSystem = new AdminSystem();
+
+// 全局登录函数（供HTML按钮调用）
+window.loginWithGitHubToken = function() {
+    window.adminSystem.loginWithGitHubToken();
+};
+
+window.loginWithPassword = function() {
+    window.adminSystem.loginWithPassword();
+};
