@@ -1,0 +1,10 @@
+[
+  {
+    "id": 1,
+    "type": "期刊论文",
+    "title": "基于Transformer的视觉识别模型研究",
+    "authors": "张三, 李四",
+    "venue": "计算机学报, 2023",
+    "abstract": "本文提出了一种改进的Transformer模型..."
+  }
+]
