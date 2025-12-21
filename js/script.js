@@ -24,6 +24,10 @@ let studentsData = [];
 let publicationsData = [];
 let updatesData = [];
 
+// 权限控制
+let isAuthenticated = false;
+let isReadOnlyMode = true; // 默认只读模式
+
 // 当前筛选状态
 let currentFilter = 'all';
 
@@ -67,8 +71,208 @@ const DOM = {
     hamburger: document.getElementById('hamburger'),
     navMenu: document.querySelector('.nav-menu'),
     backToTop: document.getElementById('backToTop'),
-    navLinks: document.querySelectorAll('.nav-link')
+    navLinks: document.querySelectorAll('.nav-link'),
+    permissionStatus: document.getElementById('permission-status'),
+    statusMessage: document.getElementById('status-message'),
+    enterAdminBtn: document.getElementById('enter-admin-btn'),
+    logoutBtn: document.getElementById('logout-btn')
 };
+
+// ============================
+// 权限控制模块
+// ============================
+
+/**
+ * 检查认证状态
+ */
+async function checkAuthentication() {
+    console.log('检查认证状态...');
+    
+    // 检查是否有有效Token
+    const hasToken = window.githubIssuesManager && 
+                     window.githubIssuesManager.hasValidToken();
+    
+    if (hasToken) {
+        isAuthenticated = true;
+        isReadOnlyMode = false;
+        console.log('✅ 用户已认证，可以编辑和同步数据');
+        showPermissionStatus('🔗 已连接GitHub | 数据实时同步', 'authenticated');
+        
+        // 从GitHub加载最新数据
+        const success = await loadAllDataFromGitHub();
+        if (!success) {
+            // 如果GitHub加载失败，退回到默认数据
+            loadDefaultData();
+        }
+        return true;
+    } else {
+        isAuthenticated = false;
+        isReadOnlyMode = true;
+        console.log('👤 游客模式，只能查看示例数据');
+        showPermissionStatus('👤 游客模式 | 使用示例数据', 'guest');
+        
+        // 使用默认数据
+        loadDefaultData();
+        return false;
+    }
+}
+
+/**
+ * 显示权限状态
+ */
+function showPermissionStatus(message, type) {
+    if (DOM.permissionStatus && DOM.statusMessage) {
+        DOM.permissionStatus.style.display = 'block';
+        DOM.statusMessage.textContent = message;
+        
+        // 设置样式
+        DOM.permissionStatus.className = `permission-status status-${type}`;
+        
+        // 根据类型调整按钮显示
+        if (type === 'guest') {
+            if (DOM.enterAdminBtn) {
+                DOM.enterAdminBtn.style.display = 'inline-block';
+                DOM.enterAdminBtn.innerHTML = '<i class="fas fa-key"></i> 输入Token管理数据';
+                DOM.enterAdminBtn.onclick = requestTokenForAdmin;
+            }
+            if (DOM.logoutBtn) {
+                DOM.logoutBtn.style.display = 'none';
+            }
+        } else {
+            if (DOM.enterAdminBtn) {
+                DOM.enterAdminBtn.style.display = 'none';
+            }
+            if (DOM.logoutBtn) {
+                DOM.logoutBtn.style.display = 'inline-block';
+                DOM.logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> 退出登录';
+                DOM.logoutBtn.onclick = clearAuthentication;
+            }
+        }
+    }
+}
+
+/**
+ * 请求Token进入管理员模式
+ */
+function requestTokenForAdmin() {
+    const token = prompt(
+        '请输入 GitHub Personal Access Token：\n\n' +
+        '格式要求：以 "ghp_" 或 "github_pat_" 开头\n' +
+        'Token 需要以下权限：repo, workflow\n\n' +
+        '（Token 将安全保存在您的浏览器本地）',
+        ''
+    );
+    
+    if (token && token.trim()) {
+        const trimmedToken = token.trim();
+        
+        // 验证 Token 格式
+        if (!trimmedToken.startsWith('ghp_') && !trimmedToken.startsWith('github_pat_')) {
+            alert('❌ Token 格式不正确！\n必须以 "ghp_" 或 "github_pat_" 开头。');
+            return;
+        }
+        
+        // 保存Token
+        if (window.githubIssuesManager.setToken(trimmedToken)) {
+            // 保存到 dataManager
+            if (window.dataManager) {
+                window.dataManager.setGitHubToken(trimmedToken);
+            }
+            
+            // 保存到 localStorage
+            localStorage.setItem('github_pat_token', trimmedToken);
+            localStorage.setItem('github_admin_token', trimmedToken);
+            
+            alert('✅ Token 设置成功！正在加载最新数据...');
+            
+            // 重新检查认证状态
+            checkAuthentication().then(() => {
+                // 刷新页面数据
+                renderAllData();
+                showToast('已成功登录，现在可以编辑和同步数据', 'success');
+            });
+        }
+    }
+}
+
+/**
+ * 清除认证状态
+ */
+function clearAuthentication() {
+    if (confirm('确定要退出登录吗？将切换回游客模式，本地未保存的更改可能会丢失。')) {
+        // 清除Token
+        if (window.githubIssuesManager) {
+            window.githubIssuesManager.clearToken();
+        }
+        if (window.dataManager) {
+            window.dataManager.githubToken = null;
+        }
+        
+        // 清除本地存储的Token
+        localStorage.removeItem('github_admin_token');
+        localStorage.removeItem('github_pat_token');
+        
+        // 重置权限状态
+        isAuthenticated = false;
+        isReadOnlyMode = true;
+        
+        // 切换到默认数据
+        loadDefaultData();
+        
+        // 更新UI
+        showPermissionStatus('👤 游客模式 | 使用示例数据', 'guest');
+        
+        // 退出管理员模式
+        if (window.adminSystem && window.adminSystem.isAdmin) {
+            window.adminSystem.toggleAdminMode();
+        }
+        
+        showToast('已退出登录，切换为游客模式', 'info');
+    }
+}
+
+// ============================
+// 数据管理模块
+// ============================
+
+/**
+ * 加载默认数据（游客模式）
+ */
+function loadDefaultData() {
+    console.log('加载默认数据（游客模式）...');
+    
+    projectsData = getDefaultProjects();
+    advisorsData = getDefaultAdvisors();
+    studentsData = getDefaultStudents();
+    publicationsData = getDefaultPublications();
+    updatesData = getDefaultUpdates();
+    
+    // 保存到本地存储
+    saveToLocalStorage();
+    
+    // 渲染数据
+    renderAllData();
+}
+
+/**
+ * 渲染所有数据（根据权限）
+ */
+function renderAllData() {
+    const savedFilter = localStorage.getItem(LOCAL_STORAGE_KEYS.PROJECT_FILTER) || 'all';
+    
+    // 设置活动按钮
+    DOM.filterButtons.forEach(btn => {
+        if (btn.getAttribute('data-filter') === savedFilter) {
+            btn.classList.add('active');
+        }
+    });
+    
+    renderProjects(savedFilter);
+    renderAdvisors();
+    renderStudents();
+    renderPublications();
+    renderUpdates();
+}
 
 // ============================
 // 工具函数
@@ -97,27 +301,11 @@ async function initializeGitHubToken() {
     // 检查 githubIssuesManager 是否已加载
     if (!window.githubIssuesManager) {
         console.error('❌ githubIssuesManager 未加载！');
-        alert('系统错误：GitHub 管理器未正确加载，请刷新页面重试。');
         return false;
     }
     
     // 如果已有有效 Token，直接返回
     if (window.githubIssuesManager.hasValidToken()) {
-        console.log('✅ 已存在有效 Token');
-        return true;
-    }
-    
-    // 尝试从 localStorage 恢复
-    const savedToken = localStorage.getItem('github_pat_token');
-    if (savedToken && (savedToken.startsWith('ghp_') || savedToken.startsWith('github_pat_'))) {
-        console.log('🔑 从本地存储恢复 Token');
-        window.githubIssuesManager.setToken(savedToken);
-        
-        // 如果 dataManager 存在，也同步 Token
-        if (window.dataManager) {
-            window.dataManager.setGitHubToken(savedToken);
-        }
-        
         return true;
     }
     
@@ -140,34 +328,28 @@ async function initializeGitHubToken() {
             return false;
         }
         
-        // 保存到 githubIssuesManager
+        // 保存Token
         const success = window.githubIssuesManager.setToken(trimmedToken);
         
         if (success) {
-            // 保存到 dataManager（如果存在）
+            // 保存到 dataManager
             if (window.dataManager) {
                 window.dataManager.setGitHubToken(trimmedToken);
             }
             
-            // 保存到 localStorage（备用）
+            // 保存到 localStorage
             localStorage.setItem('github_pat_token', trimmedToken);
             localStorage.setItem('github_admin_token', trimmedToken);
             
-            alert('✅ GitHub Token 设置成功！\n现在可以管理数据了。');
-            console.log('✅ Token 设置成功');
+            alert('✅ GitHub Token 设置成功！');
             
-            // 触发数据加载
-            if (window.dataManager) {
-                await window.dataManager.syncFromGitHub();
-            }
+            // 更新权限状态
+            isAuthenticated = true;
+            isReadOnlyMode = false;
+            showPermissionStatus('🔗 已连接GitHub | 数据实时同步', 'authenticated');
             
             return true;
         }
-    } else if (token === null) {
-        // 用户点击了取消
-        console.log('用户取消输入 Token');
-    } else {
-        alert('❌ Token 不能为空！');
     }
     
     return false;
@@ -183,35 +365,14 @@ async function loadAllDataFromGitHub() {
         // 检查管理器是否可用
         if (!window.githubIssuesManager) {
             console.error('❌ githubIssuesManager 不可用');
-            throw new Error('GitHub 管理器未正确初始化');
-        }
-        
-        // 检查 Token
-        const hasToken = await initializeGitHubToken();
-        if (!hasToken) {
-            console.log('⚠️ 没有有效 Token，使用默认数据');
-            // 使用默认数据作为回退
-            projectsData = getDefaultProjects();
-            advisorsData = getDefaultAdvisors();
-            studentsData = getDefaultStudents();
-            publicationsData = getDefaultPublications();
-            updatesData = getDefaultUpdates();
-            saveToLocalStorage();
             return false;
         }
         
-        // 检查仓库连接
-        console.log('🔗 检查 GitHub 仓库连接...');
-        try {
-            const repoInfo = await window.githubIssuesManager.checkRepositoryVisibility();
-            console.log('仓库信息:', repoInfo);
-            
-            if (!repoInfo.isPublic && !window.githubIssuesManager.hasValidToken()) {
-                alert('⚠️ 仓库是私有的，需要 Token 才能访问数据');
-                return false;
-            }
-        } catch (repoError) {
-            console.warn('检查仓库失败:', repoError);
+        // 检查 Token
+        const hasToken = window.githubIssuesManager.hasValidToken();
+        if (!hasToken) {
+            console.log('⚠️ 没有有效 Token，无法从GitHub加载数据');
+            return false;
         }
         
         // 并行加载所有数据
@@ -219,32 +380,40 @@ async function loadAllDataFromGitHub() {
         const [projects, advisors, students, publications, updates] = await Promise.allSettled([
             window.githubIssuesManager.readJsonFile(GITHUB_FILES.PROJECTS).catch(err => {
                 console.warn(`读取 ${GITHUB_FILES.PROJECTS} 失败:`, err.message);
-                return getDefaultProjects();
+                return null;
             }),
             window.githubIssuesManager.readJsonFile(GITHUB_FILES.ADVISORS).catch(err => {
                 console.warn(`读取 ${GITHUB_FILES.ADVISORS} 失败:`, err.message);
-                return getDefaultAdvisors();
+                return null;
             }),
             window.githubIssuesManager.readJsonFile(GITHUB_FILES.STUDENTS).catch(err => {
                 console.warn(`读取 ${GITHUB_FILES.STUDENTS} 失败:`, err.message);
-                return getDefaultStudents();
+                return null;
             }),
             window.githubIssuesManager.readJsonFile(GITHUB_FILES.PUBLICATIONS).catch(err => {
                 console.warn(`读取 ${GITHUB_FILES.PUBLICATIONS} 失败:`, err.message);
-                return getDefaultPublications();
+                return null;
             }),
             window.githubIssuesManager.readJsonFile(GITHUB_FILES.UPDATES).catch(err => {
                 console.warn(`读取 ${GITHUB_FILES.UPDATES} 失败:`, err.message);
-                return getDefaultUpdates();
+                return null;
             })
         ]);
         
-        // 设置数据
-        projectsData = projects.status === 'fulfilled' ? projects.value : getDefaultProjects();
-        advisorsData = advisors.status === 'fulfilled' ? advisors.value : getDefaultAdvisors();
-        studentsData = students.status === 'fulfilled' ? students.value : getDefaultStudents();
-        publicationsData = publications.status === 'fulfilled' ? publications.value : getDefaultPublications();
-        updatesData = updates.status === 'fulfilled' ? updates.value : getDefaultUpdates();
+        // 检查是否有数据
+        let hasData = false;
+        
+        // 设置数据，如果文件不存在则使用默认数据
+        projectsData = projects.status === 'fulfilled' && projects.value ? projects.value : getDefaultProjects();
+        advisorsData = advisors.status === 'fulfilled' && advisors.value ? advisors.value : getDefaultAdvisors();
+        studentsData = students.status === 'fulfilled' && students.value ? students.value : getDefaultStudents();
+        publicationsData = publications.status === 'fulfilled' && publications.value ? publications.value : getDefaultPublications();
+        updatesData = updates.status === 'fulfilled' && updates.value ? updates.value : getDefaultUpdates();
+        
+        // 检查是否从GitHub成功加载了任何数据
+        if (projects.value || advisors.value || students.value || publications.value || updates.value) {
+            hasData = true;
+        }
         
         // 保存到本地存储
         saveToLocalStorage();
@@ -254,22 +423,14 @@ async function loadAllDataFromGitHub() {
             导师: advisorsData.length,
             学生: studentsData.length,
             成果: publicationsData.length,
-            近况: updatesData.length
+            近况: updatesData.length,
+            数据源: hasData ? 'GitHub' : '默认数据'
         });
         
-        return true;
+        return hasData;
     } catch (error) {
         console.error('❌ 从 GitHub 加载数据失败:', error);
         showToast(`数据加载失败: ${error.message}`, 'error');
-        
-        // 使用默认数据作为回退
-        projectsData = getDefaultProjects();
-        advisorsData = getDefaultAdvisors();
-        studentsData = getDefaultStudents();
-        publicationsData = getDefaultPublications();
-        updatesData = getDefaultUpdates();
-        saveToLocalStorage();
-        
         return false;
     }
 }
@@ -292,10 +453,18 @@ function saveToLocalStorage() {
  * 保存所有数据到 GitHub
  */
 async function saveAllDataToGitHub() {
+    // 检查权限
+    if (isReadOnlyMode) {
+        showToast('游客模式不能保存数据到GitHub', 'warning');
+        return false;
+    }
+    
     try {
         // 检查 Token
-        if (!await initializeGitHubToken()) {
-            return false;
+        if (!window.githubIssuesManager.hasValidToken()) {
+            showToast('需要GitHub Token才能保存数据', 'warning');
+            const success = await initializeGitHubToken();
+            if (!success) return false;
         }
 
         // 并行保存所有数据
@@ -321,8 +490,15 @@ async function saveAllDataToGitHub() {
  * 保存单个数据到 GitHub
  */
 async function saveDataToGitHub(filename, data) {
+    // 检查权限
+    if (isReadOnlyMode) {
+        console.warn(`游客模式不能保存 ${filename}`);
+        return false;
+    }
+    
     try {
-        if (!await initializeGitHubToken()) {
+        if (!window.githubIssuesManager.hasValidToken()) {
+            console.warn(`保存 ${filename} 需要Token`);
             return false;
         }
 
@@ -788,13 +964,18 @@ function throttle(func, limit) {
 }
 
 // ============================
-// CRUD 操作函数
+// CRUD 操作函数（带权限检查）
 // ============================
 
 /**
  * 添加新项目
  */
 async function addProject(projectData) {
+    if (isReadOnlyMode) {
+        showToast('游客模式不能添加数据，请先输入Token', 'warning');
+        return null;
+    }
+    
     const newProject = {
         ...projectData,
         id: generateId(),
@@ -804,9 +985,12 @@ async function addProject(projectData) {
     
     projectsData.unshift(newProject); // 添加到数组开头
     saveToLocalStorage();
+    
+    // 保存到GitHub
     if (await initializeGitHubToken()) {
         await saveDataToGitHub(GITHUB_FILES.PROJECTS, projectsData);
     }
+    
     renderProjects(currentFilter);
     showToast('课题添加成功！', 'success');
     return newProject;
@@ -816,6 +1000,11 @@ async function addProject(projectData) {
  * 更新项目
  */
 async function updateProject(projectId, updatedData) {
+    if (isReadOnlyMode) {
+        showToast('游客模式不能更新数据，请先输入Token', 'warning');
+        return null;
+    }
+    
     const index = projectsData.findIndex(p => p.id == projectId);
     if (index !== -1) {
         projectsData[index] = {
@@ -838,6 +1027,11 @@ async function updateProject(projectId, updatedData) {
  * 删除项目
  */
 async function deleteProject(projectId) {
+    if (isReadOnlyMode) {
+        showToast('游客模式不能删除数据，请先输入Token', 'warning');
+        return false;
+    }
+    
     const index = projectsData.findIndex(p => p.id == projectId);
     if (index !== -1) {
         projectsData.splice(index, 1);
@@ -856,6 +1050,11 @@ async function deleteProject(projectId) {
  * 添加新导师
  */
 async function addAdvisor(advisorData) {
+    if (isReadOnlyMode) {
+        showToast('游客模式不能添加数据，请先输入Token', 'warning');
+        return null;
+    }
+    
     const newAdvisor = {
         ...advisorData,
         id: generateId(),
@@ -877,6 +1076,11 @@ async function addAdvisor(advisorData) {
  * 更新导师信息
  */
 async function updateAdvisor(advisorId, updatedData) {
+    if (isReadOnlyMode) {
+        showToast('游客模式不能更新数据，请先输入Token', 'warning');
+        return null;
+    }
+    
     const index = advisorsData.findIndex(a => a.id == advisorId);
     if (index !== -1) {
         advisorsData[index] = {
@@ -899,6 +1103,11 @@ async function updateAdvisor(advisorId, updatedData) {
  * 删除导师
  */
 async function deleteAdvisor(advisorId) {
+    if (isReadOnlyMode) {
+        showToast('游客模式不能删除数据，请先输入Token', 'warning');
+        return false;
+    }
+    
     const index = advisorsData.findIndex(a => a.id == advisorId);
     if (index !== -1) {
         advisorsData.splice(index, 1);
@@ -917,6 +1126,11 @@ async function deleteAdvisor(advisorId) {
  * 添加新学生
  */
 async function addStudent(studentData) {
+    if (isReadOnlyMode) {
+        showToast('游客模式不能添加数据，请先输入Token', 'warning');
+        return null;
+    }
+    
     const newStudent = {
         ...studentData,
         id: generateId(),
@@ -938,6 +1152,11 @@ async function addStudent(studentData) {
  * 更新学生信息
  */
 async function updateStudent(studentId, updatedData) {
+    if (isReadOnlyMode) {
+        showToast('游客模式不能更新数据，请先输入Token', 'warning');
+        return null;
+    }
+    
     const index = studentsData.findIndex(s => s.id == studentId);
     if (index !== -1) {
         studentsData[index] = {
@@ -960,6 +1179,11 @@ async function updateStudent(studentId, updatedData) {
  * 删除学生
  */
 async function deleteStudent(studentId) {
+    if (isReadOnlyMode) {
+        showToast('游客模式不能删除数据，请先输入Token', 'warning');
+        return false;
+    }
+    
     const index = studentsData.findIndex(s => s.id == studentId);
     if (index !== -1) {
         studentsData.splice(index, 1);
@@ -978,6 +1202,11 @@ async function deleteStudent(studentId) {
  * 添加新学术成果
  */
 async function addPublication(publicationData) {
+    if (isReadOnlyMode) {
+        showToast('游客模式不能添加数据，请先输入Token', 'warning');
+        return null;
+    }
+    
     const newPublication = {
         ...publicationData,
         id: generateId(),
@@ -999,6 +1228,11 @@ async function addPublication(publicationData) {
  * 更新学术成果
  */
 async function updatePublication(publicationId, updatedData) {
+    if (isReadOnlyMode) {
+        showToast('游客模式不能更新数据，请先输入Token', 'warning');
+        return null;
+    }
+    
     const index = publicationsData.findIndex(p => p.id == publicationId);
     if (index !== -1) {
         publicationsData[index] = {
@@ -1021,6 +1255,11 @@ async function updatePublication(publicationId, updatedData) {
  * 删除学术成果
  */
 async function deletePublication(publicationId) {
+    if (isReadOnlyMode) {
+        showToast('游客模式不能删除数据，请先输入Token', 'warning');
+        return false;
+    }
+    
     const index = publicationsData.findIndex(p => p.id == publicationId);
     if (index !== -1) {
         publicationsData.splice(index, 1);
@@ -1039,6 +1278,11 @@ async function deletePublication(publicationId) {
  * 添加新研究近况
  */
 async function addUpdate(updateData) {
+    if (isReadOnlyMode) {
+        showToast('游客模式不能添加数据，请先输入Token', 'warning');
+        return null;
+    }
+    
     const newUpdate = {
         ...updateData,
         id: generateId(),
@@ -1060,6 +1304,11 @@ async function addUpdate(updateData) {
  * 更新研究近况
  */
 async function updateUpdate(updateId, updatedData) {
+    if (isReadOnlyMode) {
+        showToast('游客模式不能更新数据，请先输入Token', 'warning');
+        return null;
+    }
+    
     const index = updatesData.findIndex(u => u.id == updateId);
     if (index !== -1) {
         updatesData[index] = {
@@ -1082,6 +1331,11 @@ async function updateUpdate(updateId, updatedData) {
  * 删除研究近况
  */
 async function deleteUpdate(updateId) {
+    if (isReadOnlyMode) {
+        showToast('游客模式不能删除数据，请先输入Token', 'warning');
+        return false;
+    }
+    
     const index = updatesData.findIndex(u => u.id == updateId);
     if (index !== -1) {
         updatesData.splice(index, 1);
@@ -1097,11 +1351,11 @@ async function deleteUpdate(updateId) {
 }
 
 // ============================
-// 渲染函数
+// 渲染函数（带权限控制）
 // ============================
 
 /**
- * 渲染课题卡片（带编辑按钮）
+ * 渲染课题卡片（根据权限显示编辑按钮）
  */
 function renderProjects(filter = 'all') {
     if (!DOM.projectsGrid) return;
@@ -1127,6 +1381,11 @@ function renderProjects(filter = 'all') {
     filteredProjects.forEach(project => {
         const statusColor = CONFIG.STATUS_COLORS[project.statusType] || '#1abc9c';
         
+        // 根据权限决定是否显示编辑按钮
+        const showEditButton = !isReadOnlyMode && 
+                              window.adminSystem && 
+                              window.adminSystem.editMode;
+        
         const projectCard = document.createElement('div');
         projectCard.className = 'project-card';
         projectCard.setAttribute('data-category', project.category);
@@ -1138,6 +1397,7 @@ function renderProjects(filter = 'all') {
                 <div class="project-status-tag" style="background-color: ${statusColor}20; color: ${statusColor}">
                     ${project.status}
                 </div>
+                ${isReadOnlyMode ? '<div class="readonly-badge">示例数据</div>' : ''}
             </div>
             <div class="project-content">
                 <span class="project-category">${getCategoryName(project.category)}</span>
@@ -1157,7 +1417,7 @@ function renderProjects(filter = 'all') {
                     <button class="btn btn-outline project-details-btn" data-id="${project.id}">
                         查看详情
                     </button>
-                    ${window.adminSystem && window.adminSystem.editMode ? `
+                    ${showEditButton ? `
                         <button class="btn btn-outline project-edit-btn" data-id="${project.id}" title="编辑课题">
                             <i class="fas fa-edit"></i>
                         </button>
@@ -1182,8 +1442,8 @@ function renderProjects(filter = 'all') {
         });
     });
     
-    // 添加编辑按钮事件监听
-    if (window.adminSystem && window.adminSystem.editMode) {
+    // 只在认证模式下添加编辑按钮事件
+    if (!isReadOnlyMode && window.adminSystem && window.adminSystem.editMode) {
         document.querySelectorAll('.project-edit-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const projectId = this.getAttribute('data-id');
@@ -1194,7 +1454,7 @@ function renderProjects(filter = 'all') {
 }
 
 /**
- * 渲染导师卡片（带编辑按钮）
+ * 渲染导师卡片（根据权限显示编辑按钮）
  */
 function renderAdvisors() {
     if (!DOM.advisorsGrid) return;
@@ -1202,6 +1462,11 @@ function renderAdvisors() {
     DOM.advisorsGrid.innerHTML = '';
     
     advisorsData.forEach(advisor => {
+        // 根据权限决定是否显示编辑按钮
+        const showEditButton = !isReadOnlyMode && 
+                              window.adminSystem && 
+                              window.adminSystem.editMode;
+        
         const advisorCard = document.createElement('div');
         advisorCard.className = 'advisor-card';
         advisorCard.setAttribute('data-id', advisor.id);
@@ -1209,6 +1474,7 @@ function renderAdvisors() {
         advisorCard.innerHTML = `
             <div class="advisor-avatar">
                 <img src="${advisor.avatar}" alt="${advisor.name}" loading="lazy">
+                ${isReadOnlyMode ? '<div class="readonly-badge">示例数据</div>' : ''}
             </div>
             <h3 class="advisor-name">${advisor.name}</h3>
             <p class="advisor-title">${advisor.title}</p>
@@ -1224,7 +1490,7 @@ function renderAdvisors() {
                 <a href="#" title="学术主页">
                     <i class="fab fa-google-scholar"></i>
                 </a>
-                ${window.adminSystem && window.adminSystem.editMode ? `
+                ${showEditButton ? `
                     <button class="advisor-edit-btn" data-id="${advisor.id}" title="编辑导师信息">
                         <i class="fas fa-edit"></i>
                     </button>
@@ -1241,7 +1507,7 @@ function renderAdvisors() {
     });
     
     // 添加编辑按钮事件监听
-    if (window.adminSystem && window.adminSystem.editMode) {
+    if (!isReadOnlyMode && window.adminSystem && window.adminSystem.editMode) {
         document.querySelectorAll('.advisor-edit-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const advisorId = this.getAttribute('data-id');
@@ -1252,7 +1518,7 @@ function renderAdvisors() {
 }
 
 /**
- * 渲染学生卡片（带编辑按钮）
+ * 渲染学生卡片（根据权限显示编辑按钮）
  */
 function renderStudents() {
     if (!DOM.studentsGrid) return;
@@ -1260,6 +1526,11 @@ function renderStudents() {
     DOM.studentsGrid.innerHTML = '';
     
     studentsData.forEach(student => {
+        // 根据权限决定是否显示编辑按钮
+        const showEditButton = !isReadOnlyMode && 
+                              window.adminSystem && 
+                              window.adminSystem.editMode;
+        
         const studentCard = document.createElement('div');
         studentCard.className = 'student-card';
         studentCard.setAttribute('data-id', student.id);
@@ -1267,6 +1538,7 @@ function renderStudents() {
         studentCard.innerHTML = `
             <div class="student-avatar">
                 <img src="${student.avatar}" alt="${student.name}" loading="lazy">
+                ${isReadOnlyMode ? '<div class="readonly-badge">示例数据</div>' : ''}
             </div>
             <h3 class="student-name">${student.name}</h3>
             <p class="student-degree">${student.degree}</p>
@@ -1283,7 +1555,7 @@ function renderStudents() {
                 <a href="${student.github}" target="_blank" title="GitHub主页">
                     <i class="fab fa-github"></i>
                 </a>
-                ${window.adminSystem && window.adminSystem.editMode ? `
+                ${showEditButton ? `
                     <button class="student-edit-btn" data-id="${student.id}" title="编辑学生信息">
                         <i class="fas fa-edit"></i>
                     </button>
@@ -1300,7 +1572,7 @@ function renderStudents() {
     });
     
     // 添加编辑按钮事件监听
-    if (window.adminSystem && window.adminSystem.editMode) {
+    if (!isReadOnlyMode && window.adminSystem && window.adminSystem.editMode) {
         document.querySelectorAll('.student-edit-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const studentId = this.getAttribute('data-id');
@@ -1311,7 +1583,7 @@ function renderStudents() {
 }
 
 /**
- * 渲染学术成果（带编辑按钮）
+ * 渲染学术成果（根据权限显示编辑按钮）
  */
 function renderPublications() {
     if (!DOM.publicationsGrid) return;
@@ -1320,6 +1592,11 @@ function renderPublications() {
     
     publicationsData.forEach(publication => {
         const typeColor = CONFIG.TYPE_COLORS[publication.type] || '#3498db';
+        
+        // 根据权限决定是否显示编辑按钮
+        const showEditButton = !isReadOnlyMode && 
+                              window.adminSystem && 
+                              window.adminSystem.editMode;
         
         const publicationCard = document.createElement('div');
         publicationCard.className = 'publication-card';
@@ -1330,6 +1607,7 @@ function renderPublications() {
                 <span class="publication-type" style="background-color: ${typeColor}20; color: ${typeColor}">
                     ${publication.type}
                 </span>
+                ${isReadOnlyMode ? '<span class="readonly-badge">示例数据</span>' : ''}
                 <h3 class="publication-title">${publication.title}</h3>
                 <p class="publication-authors">
                     <i class="fas fa-users"></i>
@@ -1357,7 +1635,7 @@ function renderPublications() {
                             查看全文
                         </a>
                     ` : ''}
-                    ${window.adminSystem && window.adminSystem.editMode ? `
+                    ${showEditButton ? `
                         <button class="btn btn-outline edit-publication-btn" data-id="${publication.id}">
                             <i class="fas fa-edit"></i> 编辑
                         </button>
@@ -1373,7 +1651,7 @@ function renderPublications() {
     });
     
     // 添加编辑按钮事件监听
-    if (window.adminSystem && window.adminSystem.editMode) {
+    if (!isReadOnlyMode && window.adminSystem && window.adminSystem.editMode) {
         document.querySelectorAll('.edit-publication-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const publicationId = this.getAttribute('data-id');
@@ -1393,7 +1671,7 @@ function renderPublications() {
 }
 
 /**
- * 渲染研究近况（带编辑按钮）
+ * 渲染研究近况（根据权限显示编辑按钮）
  */
 function renderUpdates() {
     if (!DOM.updatesGrid) return;
@@ -1408,6 +1686,11 @@ function renderUpdates() {
     sortedUpdates.forEach(update => {
         const typeColor = CONFIG.TYPE_COLORS[update.type] || '#3498db';
         
+        // 根据权限决定是否显示编辑按钮
+        const showEditButton = !isReadOnlyMode && 
+                              window.adminSystem && 
+                              window.adminSystem.editMode;
+        
         const updateCard = document.createElement('div');
         updateCard.className = 'update-card';
         updateCard.setAttribute('data-id', update.id);
@@ -1418,6 +1701,7 @@ function renderUpdates() {
                     <span class="update-date" style="background-color: ${typeColor}20; color: ${typeColor}">
                         ${formatDate(update.date)}
                     </span>
+                    ${isReadOnlyMode ? '<span class="readonly-badge">示例数据</span>' : ''}
                     <span class="update-type" style="color: ${typeColor}">
                         ${update.type}
                     </span>
@@ -1431,7 +1715,7 @@ function renderUpdates() {
                         <i class="fas fa-project-diagram"></i>
                         <span>${update.project}</span>
                     </div>
-                    ${window.adminSystem && window.adminSystem.editMode ? `
+                    ${showEditButton ? `
                         <div class="update-actions">
                             <button class="btn btn-outline edit-update-btn" data-id="${update.id}">
                                 <i class="fas fa-edit"></i> 编辑
@@ -1449,7 +1733,7 @@ function renderUpdates() {
     });
     
     // 添加编辑按钮事件监听
-    if (window.adminSystem && window.adminSystem.editMode) {
+    if (!isReadOnlyMode && window.adminSystem && window.adminSystem.editMode) {
         document.querySelectorAll('.edit-update-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const updateId = this.getAttribute('data-id');
@@ -1469,13 +1753,20 @@ function renderUpdates() {
 }
 
 // ============================
-// 编辑界面函数
+// 编辑界面函数（带权限检查）
 // ============================
 
 /**
  * 显示项目编辑表单
  */
 function showEditProjectForm(projectId = null) {
+    // 检查权限
+    if (isReadOnlyMode) {
+        showToast('需要输入Token才能编辑数据', 'warning');
+        requestTokenForAdmin();
+        return;
+    }
+    
     const project = projectId ? 
         projectsData.find(p => p.id == projectId) : 
         {
@@ -1494,7 +1785,7 @@ function showEditProjectForm(projectId = null) {
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
-                <h3>${isEditMode ? '编辑课题' : '添加新课题'}</h3>
+                <h3>${isEditMode ? '编辑课题' : '添加新课题'} <span class="auth-badge authenticated">已认证</span></h3>
                 <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
@@ -1603,529 +1894,26 @@ function showEditProjectForm(projectId = null) {
     setupModalClose(modal);
 }
 
-/**
- * 显示导师编辑表单
- */
-function showEditAdvisorForm(advisorId = null) {
-    const advisor = advisorId ? 
-        advisorsData.find(a => a.id == advisorId) : 
-        {
-            name: '',
-            title: '',
-            field: '',
-            bio: '',
-            avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-            email: '',
-            website: ''
-        };
-    
-    const isEditMode = !!advisorId;
-    
-    const modal = createModal();
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>${isEditMode ? '编辑导师信息' : '添加新导师'}</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="editAdvisorForm" class="edit-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="editAdvisorName">姓名 *</label>
-                            <input type="text" id="editAdvisorName" value="${advisor.name}" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="editAdvisorTitle">职称 *</label>
-                            <input type="text" id="editAdvisorTitle" value="${advisor.title}" required>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editAdvisorField">研究领域 *</label>
-                        <input type="text" id="editAdvisorField" value="${advisor.field}" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editAdvisorBio">简介 *</label>
-                        <textarea id="editAdvisorBio" rows="5" required>${advisor.bio}</textarea>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="editAdvisorEmail">邮箱</label>
-                            <input type="email" id="editAdvisorEmail" value="${advisor.email || ''}">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="editAdvisorWebsite">个人网站</label>
-                            <input type="url" id="editAdvisorWebsite" value="${advisor.website || ''}">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editAdvisorAvatar">头像URL</label>
-                        <input type="url" id="editAdvisorAvatar" value="${advisor.avatar || ''}">
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-secondary cancel-btn">取消</button>
-                        <button type="submit" class="btn btn-primary">
-                            ${isEditMode ? '更新导师信息' : '添加导师'}
-                        </button>
-                        ${isEditMode ? `
-                            <button type="button" class="btn btn-danger delete-btn">
-                                <i class="fas fa-trash"></i> 删除导师
-                            </button>
-                        ` : ''}
-                    </div>
-                </form>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    setTimeout(() => modal.classList.add('show'), 10);
-    
-    const form = modal.querySelector('#editAdvisorForm');
-    form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const formData = {
-            name: modal.querySelector('#editAdvisorName').value,
-            title: modal.querySelector('#editAdvisorTitle').value,
-            field: modal.querySelector('#editAdvisorField').value,
-            bio: modal.querySelector('#editAdvisorBio').value,
-            email: modal.querySelector('#editAdvisorEmail').value,
-            website: modal.querySelector('#editAdvisorWebsite').value,
-            avatar: modal.querySelector('#editAdvisorAvatar').value || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'
-        };
-        
-        if (isEditMode) {
-            await updateAdvisor(advisorId, formData);
-        } else {
-            await addAdvisor(formData);
-        }
-        
-        closeModal(modal);
-    });
-    
-    if (isEditMode) {
-        modal.querySelector('.delete-btn').addEventListener('click', async function() {
-            if (confirm('确定要删除这位导师吗？此操作不可撤销。')) {
-                await deleteAdvisor(advisorId);
-                closeModal(modal);
-            }
-        });
-    }
-    
-    modal.querySelector('.cancel-btn').addEventListener('click', () => closeModal(modal));
-    setupModalClose(modal);
-}
-
-/**
- * 显示学生编辑表单
- */
-function showEditStudentForm(studentId = null) {
-    const student = studentId ? 
-        studentsData.find(s => s.id == studentId) : 
-        {
-            name: '',
-            degree: '硕士研究生',
-            field: '',
-            supervisor: '',
-            research: '',
-            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-            email: '',
-            github: ''
-        };
-    
-    const isEditMode = !!studentId;
-    
-    const modal = createModal();
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>${isEditMode ? '编辑学生信息' : '添加新学生'}</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="editStudentForm" class="edit-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="editStudentName">姓名 *</label>
-                            <input type="text" id="editStudentName" value="${student.name}" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="editStudentDegree">学位 *</label>
-                            <select id="editStudentDegree" required>
-                                <option value="博士研究生" ${student.degree === '博士研究生' ? 'selected' : ''}>博士研究生</option>
-                                <option value="硕士研究生" ${student.degree === '硕士研究生' ? 'selected' : ''}>硕士研究生</option>
-                                <option value="本科生" ${student.degree === '本科生' ? 'selected' : ''}>本科生</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editStudentField">专业领域 *</label>
-                        <input type="text" id="editStudentField" value="${student.field}" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editStudentSupervisor">指导老师 *</label>
-                        <input type="text" id="editStudentSupervisor" value="${student.supervisor}" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editStudentResearch">研究方向 *</label>
-                        <textarea id="editStudentResearch" rows="4" required>${student.research}</textarea>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="editStudentEmail">邮箱</label>
-                            <input type="email" id="editStudentEmail" value="${student.email || ''}">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="editStudentGithub">GitHub链接</label>
-                            <input type="url" id="editStudentGithub" value="${student.github || ''}">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editStudentAvatar">头像URL</label>
-                        <input type="url" id="editStudentAvatar" value="${student.avatar || ''}">
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-secondary cancel-btn">取消</button>
-                        <button type="submit" class="btn btn-primary">
-                            ${isEditMode ? '更新学生信息' : '添加学生'}
-                        </button>
-                        ${isEditMode ? `
-                            <button type="button" class="btn btn-danger delete-btn">
-                                <i class="fas fa-trash"></i> 删除学生
-                            </button>
-                        ` : ''}
-                    </div>
-                </form>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    setTimeout(() => modal.classList.add('show'), 10);
-    
-    const form = modal.querySelector('#editStudentForm');
-    form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const formData = {
-            name: modal.querySelector('#editStudentName').value,
-            degree: modal.querySelector('#editStudentDegree').value,
-            field: modal.querySelector('#editStudentField').value,
-            supervisor: modal.querySelector('#editStudentSupervisor').value,
-            research: modal.querySelector('#editStudentResearch').value,
-            email: modal.querySelector('#editStudentEmail').value,
-            github: modal.querySelector('#editStudentGithub').value,
-            avatar: modal.querySelector('#editStudentAvatar').value || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'
-        };
-        
-        if (isEditMode) {
-            await updateStudent(studentId, formData);
-        } else {
-            await addStudent(formData);
-        }
-        
-        closeModal(modal);
-    });
-    
-    if (isEditMode) {
-        modal.querySelector('.delete-btn').addEventListener('click', async function() {
-            if (confirm('确定要删除这位学生吗？此操作不可撤销。')) {
-                await deleteStudent(studentId);
-                closeModal(modal);
-            }
-        });
-    }
-    
-    modal.querySelector('.cancel-btn').addEventListener('click', () => closeModal(modal));
-    setupModalClose(modal);
-}
-
-/**
- * 显示学术成果编辑表单
- */
-function showEditPublicationForm(publicationId = null) {
-    const publication = publicationId ? 
-        publicationsData.find(p => p.id == publicationId) : 
-        {
-            type: '期刊论文',
-            title: '',
-            authors: '',
-            venue: '',
-            abstract: '',
-            doi: '',
-            link: ''
-        };
-    
-    const isEditMode = !!publicationId;
-    
-    const modal = createModal();
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>${isEditMode ? '编辑学术成果' : '添加新学术成果'}</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="editPublicationForm" class="edit-form">
-                    <div class="form-group">
-                        <label for="editPubType">类型 *</label>
-                        <select id="editPubType" required>
-                            <option value="期刊论文" ${publication.type === '期刊论文' ? 'selected' : ''}>期刊论文</option>
-                            <option value="会议论文" ${publication.type === '会议论文' ? 'selected' : ''}>会议论文</option>
-                            <option value="专利" ${publication.type === '专利' ? 'selected' : ''}>专利</option>
-                            <option value="专著" ${publication.type === '专著' ? 'selected' : ''}>专著</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editPubTitle">标题 *</label>
-                        <input type="text" id="editPubTitle" value="${publication.title}" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editPubAuthors">作者 *</label>
-                        <input type="text" id="editPubAuthors" value="${publication.authors}" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editPubVenue">出处 *</label>
-                        <input type="text" id="editPubVenue" value="${publication.venue}" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editPubAbstract">摘要 *</label>
-                        <textarea id="editPubAbstract" rows="6" required>${publication.abstract}</textarea>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="editPubDoi">DOI</label>
-                            <input type="text" id="editPubDoi" value="${publication.doi || ''}">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="editPubLink">全文链接</label>
-                            <input type="url" id="editPubLink" value="${publication.link || ''}">
-                        </div>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-secondary cancel-btn">取消</button>
-                        <button type="submit" class="btn btn-primary">
-                            ${isEditMode ? '更新学术成果' : '添加学术成果'}
-                        </button>
-                        ${isEditMode ? `
-                            <button type="button" class="btn btn-danger delete-btn">
-                                <i class="fas fa-trash"></i> 删除学术成果
-                            </button>
-                        ` : ''}
-                    </div>
-                </form>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // 显示模态框
-    setTimeout(() => modal.classList.add('show'), 10);
-    
-    // 表单提交事件
-    const form = modal.querySelector('#editPublicationForm');
-    form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const formData = {
-            type: modal.querySelector('#editPubType').value,
-            title: modal.querySelector('#editPubTitle').value,
-            authors: modal.querySelector('#editPubAuthors').value,
-            venue: modal.querySelector('#editPubVenue').value,
-            abstract: modal.querySelector('#editPubAbstract').value,
-            doi: modal.querySelector('#editPubDoi').value,
-            link: modal.querySelector('#editPubLink').value
-        };
-        
-        if (isEditMode) {
-            await updatePublication(publicationId, formData);
-        } else {
-            await addPublication(formData);
-        }
-        
-        closeModal(modal);
-    });
-    
-    // 删除按钮事件
-    if (isEditMode) {
-        modal.querySelector('.delete-btn').addEventListener('click', async function() {
-            if (confirm('确定要删除这个学术成果吗？此操作不可撤销。')) {
-                await deletePublication(publicationId);
-                closeModal(modal);
-            }
-        });
-    }
-    
-    // 取消按钮事件
-    modal.querySelector('.cancel-btn').addEventListener('click', () => closeModal(modal));
-    
-    // 关闭模态框
-    setupModalClose(modal);
-}
-
-/**
- * 显示研究近况编辑表单
- */
-function showEditUpdateForm(updateId = null) {
-    const update = updateId ? 
-        updatesData.find(u => u.id == updateId) : 
-        {
-            date: getCurrentTimestamp(),
-            title: '',
-            type: '项目进展',
-            content: '',
-            project: '',
-            projectId: null
-        };
-    
-    const isEditMode = !!updateId;
-    
-    const modal = createModal();
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>${isEditMode ? '编辑研究近况' : '添加新研究近况'}</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="editUpdateForm" class="edit-form">
-                    <div class="form-group">
-                        <label for="editUpdateDate">日期 *</label>
-                        <input type="date" id="editUpdateDate" value="${update.date}" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editUpdateType">类型 *</label>
-                        <select id="editUpdateType" required>
-                            <option value="项目进展" ${update.type === '项目进展' ? 'selected' : ''}>项目进展</option>
-                            <option value="学术活动" ${update.type === '学术活动' ? 'selected' : ''}>学术活动</option>
-                            <option value="科研资助" ${update.type === '科研资助' ? 'selected' : ''}>科研资助</option>
-                            <option value="技术转化" ${update.type === '技术转化' ? 'selected' : ''}>技术转化</option>
-                            <option value="学生荣誉" ${update.type === '学生荣誉' ? 'selected' : ''}>学生荣誉</option>
-                            <option value="产学研合作" ${update.type === '产学研合作' ? 'selected' : ''}>产学研合作</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editUpdateTitle">标题 *</label>
-                        <input type="text" id="editUpdateTitle" value="${update.title}" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editUpdateContent">内容 *</label>
-                        <textarea id="editUpdateContent" rows="8" required>${update.content}</textarea>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="editUpdateProject">相关项目</label>
-                            <input type="text" id="editUpdateProject" value="${update.project || ''}">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="editUpdateProjectId">项目ID</label>
-                            <input type="number" id="editUpdateProjectId" value="${update.projectId || ''}">
-                        </div>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-secondary cancel-btn">取消</button>
-                        <button type="submit" class="btn btn-primary">
-                            ${isEditMode ? '更新研究近况' : '添加研究近况'}
-                        </button>
-                        ${isEditMode ? `
-                            <button type="button" class="btn btn-danger delete-btn">
-                                <i class="fas fa-trash"></i> 删除研究近况
-                            </button>
-                        ` : ''}
-                    </div>
-                </form>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // 显示模态框
-    setTimeout(() => modal.classList.add('show'), 10);
-    
-    // 表单提交事件
-    const form = modal.querySelector('#editUpdateForm');
-    form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const formData = {
-            date: modal.querySelector('#editUpdateDate').value,
-            type: modal.querySelector('#editUpdateType').value,
-            title: modal.querySelector('#editUpdateTitle').value,
-            content: modal.querySelector('#editUpdateContent').value,
-            project: modal.querySelector('#editUpdateProject').value,
-            projectId: modal.querySelector('#editUpdateProjectId').value || null
-        };
-        
-        if (isEditMode) {
-            await updateUpdate(updateId, formData);
-        } else {
-            await addUpdate(formData);
-        }
-        
-        closeModal(modal);
-    });
-    
-    // 删除按钮事件
-    if (isEditMode) {
-        modal.querySelector('.delete-btn').addEventListener('click', async function() {
-            if (confirm('确定要删除这个研究近况吗？此操作不可撤销。')) {
-                await deleteUpdate(updateId);
-                closeModal(modal);
-            }
-        });
-    }
-    
-    // 取消按钮事件
-    modal.querySelector('.cancel-btn').addEventListener('click', () => closeModal(modal));
-    
-    // 关闭模态框
-    setupModalClose(modal);
-}
-
 // ============================
-// 管理面板功能
+// 管理面板功能（带权限控制）
 // ============================
 
 /**
  * 显示管理面板
  */
 function showAdminPanel() {
+    // 检查权限
+    if (isReadOnlyMode) {
+        showToast('需要输入Token才能进入管理面板', 'warning');
+        requestTokenForAdmin();
+        return;
+    }
+    
     const modal = createModal();
     modal.innerHTML = `
         <div class="modal-content admin-panel">
             <div class="modal-header">
-                <h3><i class="fas fa-cog"></i> 管理面板</h3>
+                <h3><i class="fas fa-cog"></i> 管理面板 <span class="auth-badge authenticated">已认证</span></h3>
                 <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
@@ -2185,6 +1973,9 @@ function showAdminPanel() {
                         <button class="btn btn-danger" id="resetDataBtn">
                             <i class="fas fa-redo"></i> 重置为默认数据
                         </button>
+                        <button class="btn btn-warning" id="clearTokenBtn">
+                            <i class="fas fa-sign-out-alt"></i> 退出登录
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2210,13 +2001,11 @@ function showAdminPanel() {
         setTimeout(() => showEditStudentForm(), 100);
     });
     
-    // 添加学术成果按钮事件
     modal.querySelector('#addPublicationBtn').addEventListener('click', () => {
         closeModal(modal);
         setTimeout(() => showEditPublicationForm(), 100);
     });
     
-    // 添加研究近况按钮事件
     modal.querySelector('#addUpdateBtn').addEventListener('click', () => {
         closeModal(modal);
         setTimeout(() => showEditUpdateForm(), 100);
@@ -2230,6 +2019,10 @@ function showAdminPanel() {
         }
     });
     modal.querySelector('#resetDataBtn').addEventListener('click', resetDataToDefault);
+    modal.querySelector('#clearTokenBtn').addEventListener('click', () => {
+        closeModal(modal);
+        clearAuthentication();
+    });
     
     setupModalClose(modal);
 }
@@ -2244,7 +2037,8 @@ function exportAllData() {
         students: studentsData,
         publications: publicationsData,
         updates: updatesData,
-        exportDate: new Date().toISOString()
+        exportDate: new Date().toISOString(),
+        source: isReadOnlyMode ? '示例数据' : 'GitHub数据'
     };
     
     const dataStr = JSON.stringify(allData, null, 2);
@@ -2276,8 +2070,8 @@ async function resetDataToDefault() {
             // 保存到本地存储
             saveToLocalStorage();
             
-            // 尝试保存到 GitHub
-            if (await initializeGitHubToken()) {
+            // 如果已认证，保存到 GitHub
+            if (!isReadOnlyMode && await initializeGitHubToken()) {
                 await saveAllDataToGitHub();
             }
             
@@ -2362,6 +2156,7 @@ function showProjectDetails(projectId) {
                     <p><strong>描述：</strong>${project.description}</p>
                     <p><strong>创建时间：</strong>${formatDate(project.createdAt)}</p>
                     <p><strong>更新时间：</strong>${formatDate(project.updatedAt)}</p>
+                    ${isReadOnlyMode ? '<p><strong>数据来源：</strong>示例数据</p>' : ''}
                 </div>
             </div>
         </div>
@@ -2372,37 +2167,6 @@ function showProjectDetails(projectId) {
     setTimeout(() => modal.classList.add('show'), 10);
     
     setupModalClose(modal);
-}
-
-/**
- * 显示引用格式
- */
-function showCitation(doi) {
-    const citation = `请引用为：DOI: ${doi}`;
-    alert(citation);
-}
-
-/**
- * 滚动到指定课题
- */
-function scrollToProject(projectId) {
-    const projectElement = document.querySelector(`.project-card[data-id="${projectId}"]`);
-    if (projectElement) {
-        const headerOffset = 80;
-        const elementPosition = projectElement.offsetTop;
-        const offsetPosition = elementPosition - headerOffset;
-        
-        window.scrollTo({
-            top: offsetPosition,
-            behavior: 'smooth'
-        });
-        
-        // 高亮显示
-        projectElement.style.boxShadow = '0 0 0 3px rgba(52, 152, 219, 0.3)';
-        setTimeout(() => {
-            projectElement.style.boxShadow = '';
-        }, 2000);
-    }
 }
 
 // ============================
@@ -2544,23 +2308,6 @@ function setupSmoothScroll() {
     });
 }
 
-/**
- * 初始化过滤器状态
- */
-function initFilterState() {
-    const savedFilter = localStorage.getItem(LOCAL_STORAGE_KEYS.PROJECT_FILTER) || 'all';
-    
-    // 设置活动按钮
-    DOM.filterButtons.forEach(btn => {
-        if (btn.getAttribute('data-filter') === savedFilter) {
-            btn.classList.add('active');
-        }
-    });
-    
-    // 渲染对应过滤的课题
-    renderProjects(savedFilter);
-}
-
 // ============================
 // 添加管理按钮到导航栏
 // ============================
@@ -2606,30 +2353,13 @@ async function init() {
         console.log('已加载的模块:', {
             githubIssuesManager: !!window.githubIssuesManager,
             dataManager: !!window.dataManager,
-            adminSystem: !!window.adminSystem,
-            labWebsite: !!window.labWebsite
+            adminSystem: !!window.adminSystem
         });
         
-        // 检查 GitHub Token 状态
-        if (window.githubIssuesManager) {
-            const hasToken = window.githubIssuesManager.hasValidToken();
-            console.log('GitHub Token 状态:', hasToken ? '已设置' : '未设置');
-        }
-        
-        // 加载数据
-        console.log('开始加载数据...');
-        await loadAllDataFromGitHub();
-        
-        // 渲染所有数据
-        console.log('开始渲染数据...');
-        initFilterState();
-        renderAdvisors();
-        renderStudents();
-        renderPublications();
-        renderUpdates();
+        // 检查认证状态
+        await checkAuthentication();
         
         // 设置事件监听
-        console.log('设置事件监听...');
         setupFilterButtons();
         setupThemeToggle();
         setupMobileMenu();
@@ -2646,6 +2376,7 @@ async function init() {
         addModalStyles();
         addToastStyles();
         addAdminStyles();
+        addPermissionStyles();
         
         // 监听管理员模式变化
         document.addEventListener('adminModeChanged', function(event) {
@@ -2653,17 +2384,24 @@ async function init() {
             
             const { editMode, isAdmin } = event.detail;
             if (isAdmin && editMode) {
+                if (isReadOnlyMode) {
+                    showToast('需要输入Token才能编辑数据', 'warning');
+                    requestTokenForAdmin();
+                    return;
+                }
+                
                 // 重新渲染以显示编辑按钮
+                const currentFilter = localStorage.getItem(LOCAL_STORAGE_KEYS.PROJECT_FILTER) || 'all';
                 renderProjects(currentFilter);
                 renderAdvisors();
                 renderStudents();
                 renderPublications();
                 renderUpdates();
                 
-                // 显示管理提示
                 showToast('已进入管理员编辑模式', 'success');
             } else {
                 // 重新渲染以隐藏编辑按钮
+                const currentFilter = localStorage.getItem(LOCAL_STORAGE_KEYS.PROJECT_FILTER) || 'all';
                 renderProjects(currentFilter);
                 renderAdvisors();
                 renderStudents();
@@ -2676,12 +2414,7 @@ async function init() {
             }
         });
         
-        // 显示初始化完成提示
-        setTimeout(() => {
-            showToast('系统初始化完成', 'success');
-        }, 1000);
-        
-        console.log('✅ 实验室网站初始化完成');
+        console.log('✅ 系统初始化完成');
         
     } catch (error) {
         console.error('❌ 初始化失败:', error);
@@ -2718,6 +2451,117 @@ async function init() {
         `;
         document.body.appendChild(errorDiv);
     }
+}
+
+/**
+ * 添加权限相关样式
+ */
+function addPermissionStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .permission-status {
+            padding: 10px 0;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 14px;
+            position: sticky;
+            top: 80px;
+            z-index: 999;
+            transition: all 0.3s ease;
+        }
+        
+        .status-guest {
+            background: #fff3cd;
+            color: #856404;
+            border-bottom-color: #ffeaa7;
+        }
+        
+        .status-authenticated {
+            background: #d4edda;
+            color: #155724;
+            border-bottom-color: #c3e6cb;
+        }
+        
+        .permission-status .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .permission-status .btn-sm {
+            padding: 4px 12px;
+            font-size: 12px;
+        }
+        
+        .readonly-badge {
+            display: inline-block;
+            background: #6c757d;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin-left: 8px;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        
+        .auth-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .auth-badge.authenticated {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .auth-badge.guest {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        body.dark-mode .permission-status {
+            background: #2c3e50;
+        }
+        
+        body.dark-mode .status-guest {
+            background: #664d03;
+            color: #fff3cd;
+            border-bottom-color: #523e02;
+        }
+        
+        body.dark-mode .status-authenticated {
+            background: #0f5132;
+            color: #d1e7dd;
+            border-bottom-color: #0c4128;
+        }
+        
+        body.dark-mode .readonly-badge {
+            background: #6c757d;
+        }
+        
+        body.dark-mode .auth-badge.authenticated {
+            background: #0f5132;
+            color: #d1e7dd;
+            border-color: #0c4128;
+        }
+        
+        body.dark-mode .auth-badge.guest {
+            background: #664d03;
+            color: #fff3cd;
+            border-color: #523e02;
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 /**
@@ -2774,6 +2618,8 @@ function addModalStyles() {
             margin: 0;
             font-size: 1.5rem;
             color: #333;
+            display: flex;
+            align-items: center;
         }
         
         .modal-close {
@@ -2911,7 +2757,6 @@ function addModalStyles() {
             color: #bdc3c7;
         }
     `;
-    
     document.head.appendChild(style);
 }
 
@@ -3047,7 +2892,6 @@ function addAdminStyles() {
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
         }
-        
         .edit-form .form-actions {
             display: flex;
             gap: 10px;
@@ -3098,7 +2942,7 @@ function addAdminStyles() {
         
         .edit-form input:focus,
         .edit-form textarea:focus,
-        .edit-form select:focus {
+        .edit-form select:focus { 
             border-color: #3498db;
             background: white;
             outline: none;
