@@ -42,6 +42,7 @@ const CONFIG = {
         '期刊论文': '#2ecc71',
         '会议论文': '#9b59b6',
         '专利': '#e74c3c',
+        '专著': '#f39c12',
         '项目进展': '#2ecc71',
         '学术活动': '#9b59b6',
         '科研资助': '#e74c3c',
@@ -66,8 +67,7 @@ const DOM = {
     hamburger: document.getElementById('hamburger'),
     navMenu: document.querySelector('.nav-menu'),
     backToTop: document.getElementById('backToTop'),
-    navLinks: document.querySelectorAll('.nav-link'),
-    projectForm: document.getElementById('projectForm')
+    navLinks: document.querySelectorAll('.nav-link')
 };
 
 // ============================
@@ -89,21 +89,21 @@ function getCurrentTimestamp() {
 }
 
 /**
- * 检查并初始化 GitHub Token（仅用于写入操作）
+ * 检查并初始化 GitHub Token
  */
 async function initializeGitHubToken() {
     if (!window.githubIssuesManager || !window.githubIssuesManager.hasValidToken()) {
-        const token = prompt('请输入 GitHub Personal Access Token (ghp_ 或 github_pat_ 开头):\n\n提示：如果您只想浏览数据，不需要 Token。只有编辑数据时才需要 Token。\n\n您可以在 GitHub -> Settings -> Developer settings -> Personal access tokens 创建 Token，需要 repo 权限。');
+        const token = prompt('请输入 GitHub Personal Access Token (ghp_ 或 github_pat_ 开头):');
         if (token) {
             if (window.githubIssuesManager.setToken(token)) {
-                showToast('GitHub Token 设置成功！您现在可以编辑数据了。', 'success');
+                alert('GitHub Token 设置成功！');
                 return true;
             } else {
-                showToast('Token 格式不正确！', 'error');
+                alert('Token 格式不正确！');
                 return false;
             }
         } else {
-            showToast('需要 GitHub Token 才能编辑数据！您仍然可以浏览数据。', 'warning');
+            alert('需要 GitHub Token 才能使用数据存储功能！');
             return false;
         }
     }
@@ -111,95 +111,87 @@ async function initializeGitHubToken() {
 }
 
 /**
- * 从 GitHub 加载所有数据（支持公开读取）
+ * 从 GitHub 加载所有数据
  */
 async function loadAllDataFromGitHub() {
     try {
-        console.log('开始从 GitHub 加载数据...');
-        
-        // 检查仓库状态
-        try {
-            const visibility = await window.githubIssuesManager.checkRepositoryVisibility();
-            console.log(`仓库可见性: ${visibility.visibility}, 公开: ${visibility.isPublic}`);
-            
-            if (!visibility.isPublic) {
-                console.warn('仓库是私有的，普通访客将无法看到最新数据');
-            }
-        } catch (visibilityError) {
-            console.warn('检查仓库状态失败:', visibilityError);
-        }
-        
-        // 定义加载单个文件的函数
-        const loadFile = async (filename, getDefaultData) => {
+        // 首先尝试从本地存储加载
+        const savedData = localStorage.getItem('research_portal_data');
+        if (savedData) {
             try {
-                // 尝试从 GitHub 读取（支持公开读取）
-                const data = await window.githubIssuesManager.readJsonFile(filename);
-                if (data && Array.isArray(data) && data.length > 0) {
-                    console.log(`${filename}: 从 GitHub 加载成功，${data.length} 条记录`);
-                    return data;
-                } else if (data === null) {
-                    // 文件不存在
-                    console.log(`${filename}: GitHub 上不存在，使用默认数据`);
-                    return getDefaultData();
-                } else {
-                    // 空数组
-                    console.log(`${filename}: GitHub 数据为空，使用默认数据`);
-                    return getDefaultData();
-                }
-            } catch (error) {
-                console.log(`${filename}: 从 GitHub 加载失败: ${error.message}，使用默认数据`);
-                
-                // 检查是否为权限错误
-                if (error.message.includes('公开') || error.message.includes('Token')) {
-                    console.log(`${filename}: 权限不足，可能仓库是私有的且没有 Token`);
-                }
-                
-                return getDefaultData();
+                const data = JSON.parse(savedData);
+                projectsData = data.projects || getDefaultProjects();
+                advisorsData = data.advisors || getDefaultAdvisors();
+                studentsData = data.students || getDefaultStudents();
+                publicationsData = data.publications || getDefaultPublications();
+                updatesData = data.updates || getDefaultUpdates();
+                console.log('从本地存储加载数据成功');
+                return true;
+            } catch (e) {
+                console.error('本地存储数据解析失败:', e);
             }
-        };
-        
+        }
+
+        // 检查 Token
+        if (!await initializeGitHubToken()) {
+            // 使用默认数据作为回退
+            projectsData = getDefaultProjects();
+            advisorsData = getDefaultAdvisors();
+            studentsData = getDefaultStudents();
+            publicationsData = getDefaultPublications();
+            updatesData = getDefaultUpdates();
+            return false;
+        }
+
         // 并行加载所有数据
-        const [projects, advisors, students, publications, updates] = await Promise.all([
-            loadFile(GITHUB_FILES.PROJECTS, getDefaultProjects),
-            loadFile(GITHUB_FILES.ADVISORS, getDefaultAdvisors),
-            loadFile(GITHUB_FILES.STUDENTS, getDefaultStudents),
-            loadFile(GITHUB_FILES.PUBLICATIONS, getDefaultPublications),
-            loadFile(GITHUB_FILES.UPDATES, getDefaultUpdates)
+        const [projects, advisors, students, publications, updates] = await Promise.allSettled([
+            window.githubIssuesManager.readJsonFile(GITHUB_FILES.PROJECTS).catch(() => []),
+            window.githubIssuesManager.readJsonFile(GITHUB_FILES.ADVISORS).catch(() => []),
+            window.githubIssuesManager.readJsonFile(GITHUB_FILES.STUDENTS).catch(() => []),
+            window.githubIssuesManager.readJsonFile(GITHUB_FILES.PUBLICATIONS).catch(() => []),
+            window.githubIssuesManager.readJsonFile(GITHUB_FILES.UPDATES).catch(() => [])
         ]);
-        
-        // 设置数据
-        projectsData = projects;
-        advisorsData = advisors;
-        studentsData = students;
-        publicationsData = publications;
-        updatesData = updates;
-        
-        console.log('所有数据加载完成');
+
+        // 设置数据，如果文件不存在则使用默认数据
+        projectsData = projects.status === 'fulfilled' ? projects.value : getDefaultProjects();
+        advisorsData = advisors.status === 'fulfilled' ? advisors.value : getDefaultAdvisors();
+        studentsData = students.status === 'fulfilled' ? students.value : getDefaultStudents();
+        publicationsData = publications.status === 'fulfilled' ? publications.value : getDefaultPublications();
+        updatesData = updates.status === 'fulfilled' ? updates.value : getDefaultUpdates();
+
+        // 保存到本地存储
+        saveToLocalStorage();
+
         return true;
-        
     } catch (error) {
-        console.error('加载数据失败:', error);
-        
+        console.error('从 GitHub 加载数据失败:', error);
         // 使用默认数据作为回退
         projectsData = getDefaultProjects();
         advisorsData = getDefaultAdvisors();
         studentsData = getDefaultStudents();
         publicationsData = getDefaultPublications();
         updatesData = getDefaultUpdates();
-        
-        // 如果仓库是私有的，给用户提示
-        if (error.message.includes('公开') || error.message.includes('Token')) {
-            setTimeout(() => {
-                showToast('提示：如需看到最新数据，请设置 GitHub Token 或确保仓库是公开的', 'info', 8000);
-            }, 2000);
-        }
-        
+        saveToLocalStorage();
         return false;
     }
 }
 
 /**
- * 保存所有数据到 GitHub（需要 Token）
+ * 保存到本地存储
+ */
+function saveToLocalStorage() {
+    const data = {
+        projects: projectsData,
+        advisors: advisorsData,
+        students: studentsData,
+        publications: publicationsData,
+        updates: updatesData
+    };
+    localStorage.setItem('research_portal_data', JSON.stringify(data));
+}
+
+/**
+ * 保存所有数据到 GitHub
  */
 async function saveAllDataToGitHub() {
     try {
@@ -227,7 +219,7 @@ async function saveAllDataToGitHub() {
 }
 
 /**
- * 保存单个数据到 GitHub（需要 Token）
+ * 保存单个数据到 GitHub
  */
 async function saveDataToGitHub(filename, data) {
     try {
@@ -596,7 +588,7 @@ function getCategoryName(category) {
 /**
  * 显示Toast消息
  */
-function showToast(message, type = 'success', duration = 3000) {
+function showToast(message, type = 'success') {
     // 移除现有的toast
     const existingToast = document.querySelector('.toast');
     if (existingToast) {
@@ -626,7 +618,7 @@ function showToast(message, type = 'success', duration = 3000) {
                 toast.parentNode.removeChild(toast);
             }
         }, 300);
-    }, duration);
+    }, 3000);
     
     // 手动关闭
     toast.querySelector('.toast-close').addEventListener('click', () => {
@@ -696,7 +688,7 @@ function throttle(func, limit) {
 }
 
 // ============================
-// CRUD 操作函数（已修改为使用 GitHub）
+// CRUD 操作函数
 // ============================
 
 /**
@@ -711,13 +703,12 @@ async function addProject(projectData) {
     };
     
     projectsData.unshift(newProject); // 添加到数组开头
-    const saved = await saveDataToGitHub(GITHUB_FILES.PROJECTS, projectsData);
-    if (saved) {
-        renderProjects(currentFilter);
-        showToast('课题添加成功并保存到 GitHub！', 'success');
-    } else {
-        showToast('课题添加成功，但保存到 GitHub 失败', 'warning');
+    saveToLocalStorage();
+    if (await initializeGitHubToken()) {
+        await saveDataToGitHub(GITHUB_FILES.PROJECTS, projectsData);
     }
+    renderProjects(currentFilter);
+    showToast('课题添加成功！', 'success');
     return newProject;
 }
 
@@ -732,13 +723,12 @@ async function updateProject(projectId, updatedData) {
             ...updatedData,
             updatedAt: getCurrentTimestamp()
         };
-        const saved = await saveDataToGitHub(GITHUB_FILES.PROJECTS, projectsData);
-        renderProjects(currentFilter);
-        if (saved) {
-            showToast('课题更新成功并保存到 GitHub！', 'success');
-        } else {
-            showToast('课题更新成功，但保存到 GitHub 失败', 'warning');
+        saveToLocalStorage();
+        if (await initializeGitHubToken()) {
+            await saveDataToGitHub(GITHUB_FILES.PROJECTS, projectsData);
         }
+        renderProjects(currentFilter);
+        showToast('课题更新成功！', 'success');
         return projectsData[index];
     }
     return null;
@@ -751,13 +741,12 @@ async function deleteProject(projectId) {
     const index = projectsData.findIndex(p => p.id == projectId);
     if (index !== -1) {
         projectsData.splice(index, 1);
-        const saved = await saveDataToGitHub(GITHUB_FILES.PROJECTS, projectsData);
-        renderProjects(currentFilter);
-        if (saved) {
-            showToast('课题已删除并从 GitHub 移除', 'success');
-        } else {
-            showToast('课题已删除，但 GitHub 同步失败', 'warning');
+        saveToLocalStorage();
+        if (await initializeGitHubToken()) {
+            await saveDataToGitHub(GITHUB_FILES.PROJECTS, projectsData);
         }
+        renderProjects(currentFilter);
+        showToast('课题已删除', 'success');
         return true;
     }
     return false;
@@ -775,13 +764,12 @@ async function addAdvisor(advisorData) {
     };
     
     advisorsData.unshift(newAdvisor);
-    const saved = await saveDataToGitHub(GITHUB_FILES.ADVISORS, advisorsData);
-    renderAdvisors();
-    if (saved) {
-        showToast('导师添加成功并保存到 GitHub！', 'success');
-    } else {
-        showToast('导师添加成功，但保存到 GitHub 失败', 'warning');
+    saveToLocalStorage();
+    if (await initializeGitHubToken()) {
+        await saveDataToGitHub(GITHUB_FILES.ADVISORS, advisorsData);
     }
+    renderAdvisors();
+    showToast('导师添加成功！', 'success');
     return newAdvisor;
 }
 
@@ -796,13 +784,12 @@ async function updateAdvisor(advisorId, updatedData) {
             ...updatedData,
             updatedAt: getCurrentTimestamp()
         };
-        const saved = await saveDataToGitHub(GITHUB_FILES.ADVISORS, advisorsData);
-        renderAdvisors();
-        if (saved) {
-            showToast('导师信息更新成功并保存到 GitHub！', 'success');
-        } else {
-            showToast('导师信息更新成功，但保存到 GitHub 失败', 'warning');
+        saveToLocalStorage();
+        if (await initializeGitHubToken()) {
+            await saveDataToGitHub(GITHUB_FILES.ADVISORS, advisorsData);
         }
+        renderAdvisors();
+        showToast('导师信息更新成功！', 'success');
         return advisorsData[index];
     }
     return null;
@@ -815,13 +802,12 @@ async function deleteAdvisor(advisorId) {
     const index = advisorsData.findIndex(a => a.id == advisorId);
     if (index !== -1) {
         advisorsData.splice(index, 1);
-        const saved = await saveDataToGitHub(GITHUB_FILES.ADVISORS, advisorsData);
-        renderAdvisors();
-        if (saved) {
-            showToast('导师已删除并从 GitHub 移除', 'success');
-        } else {
-            showToast('导师已删除，但 GitHub 同步失败', 'warning');
+        saveToLocalStorage();
+        if (await initializeGitHubToken()) {
+            await saveDataToGitHub(GITHUB_FILES.ADVISORS, advisorsData);
         }
+        renderAdvisors();
+        showToast('导师已删除', 'success');
         return true;
     }
     return false;
@@ -839,13 +825,12 @@ async function addStudent(studentData) {
     };
     
     studentsData.unshift(newStudent);
-    const saved = await saveDataToGitHub(GITHUB_FILES.STUDENTS, studentsData);
-    renderStudents();
-    if (saved) {
-        showToast('学生添加成功并保存到 GitHub！', 'success');
-    } else {
-        showToast('学生添加成功，但保存到 GitHub 失败', 'warning');
+    saveToLocalStorage();
+    if (await initializeGitHubToken()) {
+        await saveDataToGitHub(GITHUB_FILES.STUDENTS, studentsData);
     }
+    renderStudents();
+    showToast('学生添加成功！', 'success');
     return newStudent;
 }
 
@@ -860,13 +845,12 @@ async function updateStudent(studentId, updatedData) {
             ...updatedData,
             updatedAt: getCurrentTimestamp()
         };
-        const saved = await saveDataToGitHub(GITHUB_FILES.STUDENTS, studentsData);
-        renderStudents();
-        if (saved) {
-            showToast('学生信息更新成功并保存到 GitHub！', 'success');
-        } else {
-            showToast('学生信息更新成功，但保存到 GitHub 失败', 'warning');
+        saveToLocalStorage();
+        if (await initializeGitHubToken()) {
+            await saveDataToGitHub(GITHUB_FILES.STUDENTS, studentsData);
         }
+        renderStudents();
+        showToast('学生信息更新成功！', 'success');
         return studentsData[index];
     }
     return null;
@@ -879,20 +863,141 @@ async function deleteStudent(studentId) {
     const index = studentsData.findIndex(s => s.id == studentId);
     if (index !== -1) {
         studentsData.splice(index, 1);
-        const saved = await saveDataToGitHub(GITHUB_FILES.STUDENTS, studentsData);
-        renderStudents();
-        if (saved) {
-            showToast('学生已删除并从 GitHub 移除', 'success');
-        } else {
-            showToast('学生已删除，但 GitHub 同步失败', 'warning');
+        saveToLocalStorage();
+        if (await initializeGitHubToken()) {
+            await saveDataToGitHub(GITHUB_FILES.STUDENTS, studentsData);
         }
+        renderStudents();
+        showToast('学生已删除', 'success');
+        return true;
+    }
+    return false;
+}
+
+/**
+ * 添加新学术成果
+ */
+async function addPublication(publicationData) {
+    const newPublication = {
+        ...publicationData,
+        id: generateId(),
+        createdAt: getCurrentTimestamp(),
+        updatedAt: getCurrentTimestamp()
+    };
+    
+    publicationsData.unshift(newPublication);
+    saveToLocalStorage();
+    if (await initializeGitHubToken()) {
+        await saveDataToGitHub(GITHUB_FILES.PUBLICATIONS, publicationsData);
+    }
+    renderPublications();
+    showToast('学术成果添加成功！', 'success');
+    return newPublication;
+}
+
+/**
+ * 更新学术成果
+ */
+async function updatePublication(publicationId, updatedData) {
+    const index = publicationsData.findIndex(p => p.id == publicationId);
+    if (index !== -1) {
+        publicationsData[index] = {
+            ...publicationsData[index],
+            ...updatedData,
+            updatedAt: getCurrentTimestamp()
+        };
+        saveToLocalStorage();
+        if (await initializeGitHubToken()) {
+            await saveDataToGitHub(GITHUB_FILES.PUBLICATIONS, publicationsData);
+        }
+        renderPublications();
+        showToast('学术成果更新成功！', 'success');
+        return publicationsData[index];
+    }
+    return null;
+}
+
+/**
+ * 删除学术成果
+ */
+async function deletePublication(publicationId) {
+    const index = publicationsData.findIndex(p => p.id == publicationId);
+    if (index !== -1) {
+        publicationsData.splice(index, 1);
+        saveToLocalStorage();
+        if (await initializeGitHubToken()) {
+            await saveDataToGitHub(GITHUB_FILES.PUBLICATIONS, publicationsData);
+        }
+        renderPublications();
+        showToast('学术成果已删除', 'success');
+        return true;
+    }
+    return false;
+}
+
+/**
+ * 添加新研究近况
+ */
+async function addUpdate(updateData) {
+    const newUpdate = {
+        ...updateData,
+        id: generateId(),
+        createdAt: getCurrentTimestamp(),
+        updatedAt: getCurrentTimestamp()
+    };
+    
+    updatesData.unshift(newUpdate);
+    saveToLocalStorage();
+    if (await initializeGitHubToken()) {
+        await saveDataToGitHub(GITHUB_FILES.UPDATES, updatesData);
+    }
+    renderUpdates();
+    showToast('研究近况添加成功！', 'success');
+    return newUpdate;
+}
+
+/**
+ * 更新研究近况
+ */
+async function updateUpdate(updateId, updatedData) {
+    const index = updatesData.findIndex(u => u.id == updateId);
+    if (index !== -1) {
+        updatesData[index] = {
+            ...updatesData[index],
+            ...updatedData,
+            updatedAt: getCurrentTimestamp()
+        };
+        saveToLocalStorage();
+        if (await initializeGitHubToken()) {
+            await saveDataToGitHub(GITHUB_FILES.UPDATES, updatesData);
+        }
+        renderUpdates();
+        showToast('研究近况更新成功！', 'success');
+        return updatesData[index];
+    }
+    return null;
+}
+
+/**
+ * 删除研究近况
+ */
+async function deleteUpdate(updateId) {
+    const index = updatesData.findIndex(u => u.id == updateId);
+    if (index !== -1) {
+        updatesData.splice(index, 1);
+        saveToLocalStorage();
+        if (await initializeGitHubToken()) {
+            await saveDataToGitHub(GITHUB_FILES.UPDATES, updatesData);
+        }
+        renderUpdates();
+        showToast('研究近况已删除', 'success');
         return true;
     }
     return false;
 }
 
 // ============================
-// 渲染函数（带编辑按钮）保持不变
+// 渲染函数
 // ============================
 
 /**
@@ -952,9 +1057,11 @@ function renderProjects(filter = 'all') {
                     <button class="btn btn-outline project-details-btn" data-id="${project.id}">
                         查看详情
                     </button>
-                    <button class="btn btn-outline project-edit-btn" data-id="${project.id}" title="编辑课题">
-                        <i class="fas fa-edit"></i>
-                    </button>
+                    ${window.adminSystem && window.adminSystem.editMode ? `
+                        <button class="btn btn-outline project-edit-btn" data-id="${project.id}" title="编辑课题">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    ` : ''}
                 </div>
                 <div class="project-meta-footer">
                     <small class="text-muted">
@@ -976,12 +1083,14 @@ function renderProjects(filter = 'all') {
     });
     
     // 添加编辑按钮事件监听
-    document.querySelectorAll('.project-edit-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const projectId = this.getAttribute('data-id');
-            showEditProjectForm(projectId);
+    if (window.adminSystem && window.adminSystem.editMode) {
+        document.querySelectorAll('.project-edit-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const projectId = this.getAttribute('data-id');
+                showEditProjectForm(projectId);
+            });
         });
-    });
+    }
 }
 
 /**
@@ -1015,9 +1124,11 @@ function renderAdvisors() {
                 <a href="#" title="学术主页">
                     <i class="fab fa-google-scholar"></i>
                 </a>
-                <button class="advisor-edit-btn" data-id="${advisor.id}" title="编辑导师信息">
-                    <i class="fas fa-edit"></i>
-                </button>
+                ${window.adminSystem && window.adminSystem.editMode ? `
+                    <button class="advisor-edit-btn" data-id="${advisor.id}" title="编辑导师信息">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                ` : ''}
             </div>
             <div class="advisor-meta-footer">
                 <small class="text-muted">
@@ -1030,12 +1141,14 @@ function renderAdvisors() {
     });
     
     // 添加编辑按钮事件监听
-    document.querySelectorAll('.advisor-edit-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const advisorId = this.getAttribute('data-id');
-            showEditAdvisorForm(advisorId);
+    if (window.adminSystem && window.adminSystem.editMode) {
+        document.querySelectorAll('.advisor-edit-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const advisorId = this.getAttribute('data-id');
+                showEditAdvisorForm(advisorId);
+            });
         });
-    });
+    }
 }
 
 /**
@@ -1070,9 +1183,11 @@ function renderStudents() {
                 <a href="${student.github}" target="_blank" title="GitHub主页">
                     <i class="fab fa-github"></i>
                 </a>
-                <button class="student-edit-btn" data-id="${student.id}" title="编辑学生信息">
-                    <i class="fas fa-edit"></i>
-                </button>
+                ${window.adminSystem && window.adminSystem.editMode ? `
+                    <button class="student-edit-btn" data-id="${student.id}" title="编辑学生信息">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                ` : ''}
             </div>
             <div class="student-meta-footer">
                 <small class="text-muted">
@@ -1085,16 +1200,18 @@ function renderStudents() {
     });
     
     // 添加编辑按钮事件监听
-    document.querySelectorAll('.student-edit-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const studentId = this.getAttribute('data-id');
-            showEditStudentForm(studentId);
+    if (window.adminSystem && window.adminSystem.editMode) {
+        document.querySelectorAll('.student-edit-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const studentId = this.getAttribute('data-id');
+                showEditStudentForm(studentId);
+            });
         });
-    });
+    }
 }
 
 /**
- * 渲染学术成果
+ * 渲染学术成果（带编辑按钮）
  */
 function renderPublications() {
     if (!DOM.publicationsGrid) return;
@@ -1140,10 +1257,14 @@ function renderPublications() {
                             查看全文
                         </a>
                     ` : ''}
-                    <button class="btn btn-outline citation-btn" data-doi="${publication.doi || ''}">
-                        <i class="fas fa-quote-right"></i>
-                        引用格式
-                    </button>
+                    ${window.adminSystem && window.adminSystem.editMode ? `
+                        <button class="btn btn-outline edit-publication-btn" data-id="${publication.id}">
+                            <i class="fas fa-edit"></i> 编辑
+                        </button>
+                        <button class="btn btn-outline delete-publication-btn" data-id="${publication.id}">
+                            <i class="fas fa-trash"></i> 删除
+                        </button>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -1151,19 +1272,28 @@ function renderPublications() {
         DOM.publicationsGrid.appendChild(publicationCard);
     });
     
-    // 添加引用按钮事件监听
-    document.querySelectorAll('.citation-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const doi = this.getAttribute('data-doi');
-            if (doi) {
-                showCitation(doi);
-            }
+    // 添加编辑按钮事件监听
+    if (window.adminSystem && window.adminSystem.editMode) {
+        document.querySelectorAll('.edit-publication-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const publicationId = this.getAttribute('data-id');
+                showEditPublicationForm(publicationId);
+            });
         });
-    });
+        
+        document.querySelectorAll('.delete-publication-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const publicationId = this.getAttribute('data-id');
+                if (confirm('确定要删除这个学术成果吗？')) {
+                    deletePublication(publicationId);
+                }
+            });
+        });
+    }
 }
 
 /**
- * 渲染研究近况
+ * 渲染研究近况（带编辑按钮）
  */
 function renderUpdates() {
     if (!DOM.updatesGrid) return;
@@ -1201,9 +1331,16 @@ function renderUpdates() {
                         <i class="fas fa-project-diagram"></i>
                         <span>${update.project}</span>
                     </div>
-                    <button class="btn btn-outline update-details-btn" data-project-id="${update.projectId}">
-                        查看相关课题
-                    </button>
+                    ${window.adminSystem && window.adminSystem.editMode ? `
+                        <div class="update-actions">
+                            <button class="btn btn-outline edit-update-btn" data-id="${update.id}">
+                                <i class="fas fa-edit"></i> 编辑
+                            </button>
+                            <button class="btn btn-outline delete-update-btn" data-id="${update.id}">
+                                <i class="fas fa-trash"></i> 删除
+                            </button>
+                        </div>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -1211,31 +1348,34 @@ function renderUpdates() {
         DOM.updatesGrid.appendChild(updateCard);
     });
     
-    // 添加详情按钮事件监听
-    document.querySelectorAll('.update-details-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const projectId = this.getAttribute('data-project-id');
-            if (projectId) {
-                scrollToProject(projectId);
-            }
+    // 添加编辑按钮事件监听
+    if (window.adminSystem && window.adminSystem.editMode) {
+        document.querySelectorAll('.edit-update-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const updateId = this.getAttribute('data-id');
+                showEditUpdateForm(updateId);
+            });
         });
-    });
+        
+        document.querySelectorAll('.delete-update-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const updateId = this.getAttribute('data-id');
+                if (confirm('确定要删除这个研究近况吗？')) {
+                    deleteUpdate(updateId);
+                }
+            });
+        });
+    }
 }
 
 // ============================
-// 编辑界面函数保持不变
+// 编辑界面函数
 // ============================
 
 /**
  * 显示项目编辑表单
  */
 function showEditProjectForm(projectId = null) {
-    // 检查是否有编辑权限
-    if (!window.githubIssuesManager.hasValidToken()) {
-        showToast('需要 GitHub Token 才能编辑数据，请在管理面板中设置', 'warning');
-        return;
-    }
-    
     const project = projectId ? 
         projectsData.find(p => p.id == projectId) : 
         {
@@ -1367,12 +1507,6 @@ function showEditProjectForm(projectId = null) {
  * 显示导师编辑表单
  */
 function showEditAdvisorForm(advisorId = null) {
-    // 检查是否有编辑权限
-    if (!window.githubIssuesManager.hasValidToken()) {
-        showToast('需要 GitHub Token 才能编辑数据，请在管理面板中设置', 'warning');
-        return;
-    }
-    
     const advisor = advisorId ? 
         advisorsData.find(a => a.id == advisorId) : 
         {
@@ -1494,12 +1628,6 @@ function showEditAdvisorForm(advisorId = null) {
  * 显示学生编辑表单
  */
 function showEditStudentForm(studentId = null) {
-    // 检查是否有编辑权限
-    if (!window.githubIssuesManager.hasValidToken()) {
-        showToast('需要 GitHub Token 才能编辑数据，请在管理面板中设置', 'warning');
-        return;
-    }
-    
     const student = studentId ? 
         studentsData.find(s => s.id == studentId) : 
         {
@@ -1628,16 +1756,271 @@ function showEditStudentForm(studentId = null) {
     setupModalClose(modal);
 }
 
+/**
+ * 显示学术成果编辑表单
+ */
+function showEditPublicationForm(publicationId = null) {
+    const publication = publicationId ? 
+        publicationsData.find(p => p.id == publicationId) : 
+        {
+            type: '期刊论文',
+            title: '',
+            authors: '',
+            venue: '',
+            abstract: '',
+            doi: '',
+            link: ''
+        };
+    
+    const isEditMode = !!publicationId;
+    
+    const modal = createModal();
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>${isEditMode ? '编辑学术成果' : '添加新学术成果'}</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editPublicationForm" class="edit-form">
+                    <div class="form-group">
+                        <label for="editPubType">类型 *</label>
+                        <select id="editPubType" required>
+                            <option value="期刊论文" ${publication.type === '期刊论文' ? 'selected' : ''}>期刊论文</option>
+                            <option value="会议论文" ${publication.type === '会议论文' ? 'selected' : ''}>会议论文</option>
+                            <option value="专利" ${publication.type === '专利' ? 'selected' : ''}>专利</option>
+                            <option value="专著" ${publication.type === '专著' ? 'selected' : ''}>专著</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editPubTitle">标题 *</label>
+                        <input type="text" id="editPubTitle" value="${publication.title}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editPubAuthors">作者 *</label>
+                        <input type="text" id="editPubAuthors" value="${publication.authors}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editPubVenue">出处 *</label>
+                        <input type="text" id="editPubVenue" value="${publication.venue}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editPubAbstract">摘要 *</label>
+                        <textarea id="editPubAbstract" rows="6" required>${publication.abstract}</textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editPubDoi">DOI</label>
+                            <input type="text" id="editPubDoi" value="${publication.doi || ''}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editPubLink">全文链接</label>
+                            <input type="url" id="editPubLink" value="${publication.link || ''}">
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary cancel-btn">取消</button>
+                        <button type="submit" class="btn btn-primary">
+                            ${isEditMode ? '更新学术成果' : '添加学术成果'}
+                        </button>
+                        ${isEditMode ? `
+                            <button type="button" class="btn btn-danger delete-btn">
+                                <i class="fas fa-trash"></i> 删除学术成果
+                            </button>
+                        ` : ''}
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // 显示模态框
+    setTimeout(() => modal.classList.add('show'), 10);
+    
+    // 表单提交事件
+    const form = modal.querySelector('#editPublicationForm');
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            type: modal.querySelector('#editPubType').value,
+            title: modal.querySelector('#editPubTitle').value,
+            authors: modal.querySelector('#editPubAuthors').value,
+            venue: modal.querySelector('#editPubVenue').value,
+            abstract: modal.querySelector('#editPubAbstract').value,
+            doi: modal.querySelector('#editPubDoi').value,
+            link: modal.querySelector('#editPubLink').value
+        };
+        
+        if (isEditMode) {
+            await updatePublication(publicationId, formData);
+        } else {
+            await addPublication(formData);
+        }
+        
+        closeModal(modal);
+    });
+    
+    // 删除按钮事件
+    if (isEditMode) {
+        modal.querySelector('.delete-btn').addEventListener('click', async function() {
+            if (confirm('确定要删除这个学术成果吗？此操作不可撤销。')) {
+                await deletePublication(publicationId);
+                closeModal(modal);
+            }
+        });
+    }
+    
+    // 取消按钮事件
+    modal.querySelector('.cancel-btn').addEventListener('click', () => closeModal(modal));
+    
+    // 关闭模态框
+    setupModalClose(modal);
+}
+
+/**
+ * 显示研究近况编辑表单
+ */
+function showEditUpdateForm(updateId = null) {
+    const update = updateId ? 
+        updatesData.find(u => u.id == updateId) : 
+        {
+            date: getCurrentTimestamp(),
+            title: '',
+            type: '项目进展',
+            content: '',
+            project: '',
+            projectId: null
+        };
+    
+    const isEditMode = !!updateId;
+    
+    const modal = createModal();
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>${isEditMode ? '编辑研究近况' : '添加新研究近况'}</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editUpdateForm" class="edit-form">
+                    <div class="form-group">
+                        <label for="editUpdateDate">日期 *</label>
+                        <input type="date" id="editUpdateDate" value="${update.date}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editUpdateType">类型 *</label>
+                        <select id="editUpdateType" required>
+                            <option value="项目进展" ${update.type === '项目进展' ? 'selected' : ''}>项目进展</option>
+                            <option value="学术活动" ${update.type === '学术活动' ? 'selected' : ''}>学术活动</option>
+                            <option value="科研资助" ${update.type === '科研资助' ? 'selected' : ''}>科研资助</option>
+                            <option value="技术转化" ${update.type === '技术转化' ? 'selected' : ''}>技术转化</option>
+                            <option value="学生荣誉" ${update.type === '学生荣誉' ? 'selected' : ''}>学生荣誉</option>
+                            <option value="产学研合作" ${update.type === '产学研合作' ? 'selected' : ''}>产学研合作</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editUpdateTitle">标题 *</label>
+                        <input type="text" id="editUpdateTitle" value="${update.title}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editUpdateContent">内容 *</label>
+                        <textarea id="editUpdateContent" rows="8" required>${update.content}</textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editUpdateProject">相关项目</label>
+                            <input type="text" id="editUpdateProject" value="${update.project || ''}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editUpdateProjectId">项目ID</label>
+                            <input type="number" id="editUpdateProjectId" value="${update.projectId || ''}">
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary cancel-btn">取消</button>
+                        <button type="submit" class="btn btn-primary">
+                            ${isEditMode ? '更新研究近况' : '添加研究近况'}
+                        </button>
+                        ${isEditMode ? `
+                            <button type="button" class="btn btn-danger delete-btn">
+                                <i class="fas fa-trash"></i> 删除研究近况
+                            </button>
+                        ` : ''}
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // 显示模态框
+    setTimeout(() => modal.classList.add('show'), 10);
+    
+    // 表单提交事件
+    const form = modal.querySelector('#editUpdateForm');
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            date: modal.querySelector('#editUpdateDate').value,
+            type: modal.querySelector('#editUpdateType').value,
+            title: modal.querySelector('#editUpdateTitle').value,
+            content: modal.querySelector('#editUpdateContent').value,
+            project: modal.querySelector('#editUpdateProject').value,
+            projectId: modal.querySelector('#editUpdateProjectId').value || null
+        };
+        
+        if (isEditMode) {
+            await updateUpdate(updateId, formData);
+        } else {
+            await addUpdate(formData);
+        }
+        
+        closeModal(modal);
+    });
+    
+    // 删除按钮事件
+    if (isEditMode) {
+        modal.querySelector('.delete-btn').addEventListener('click', async function() {
+            if (confirm('确定要删除这个研究近况吗？此操作不可撤销。')) {
+                await deleteUpdate(updateId);
+                closeModal(modal);
+            }
+        });
+    }
+    
+    // 取消按钮事件
+    modal.querySelector('.cancel-btn').addEventListener('click', () => closeModal(modal));
+    
+    // 关闭模态框
+    setupModalClose(modal);
+}
+
 // ============================
-// 管理面板功能（已修改为使用 GitHub）
+// 管理面板功能
 // ============================
 
 /**
  * 显示管理面板
  */
 function showAdminPanel() {
-    const hasToken = window.githubIssuesManager.hasValidToken();
-    
     const modal = createModal();
     modal.innerHTML = `
         <div class="modal-content admin-panel">
@@ -1646,18 +2029,6 @@ function showAdminPanel() {
                 <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="admin-status">
-                    <div class="status-indicator ${hasToken ? 'status-active' : 'status-inactive'}">
-                        <i class="fas ${hasToken ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-                        <span>GitHub Token 状态: ${hasToken ? '已设置' : '未设置'}</span>
-                    </div>
-                    ${!hasToken ? `
-                        <p class="status-help">
-                            <small>需要 GitHub Token 才能编辑数据。您可以在 GitHub -> Settings -> Developer settings -> Personal access tokens 创建 Token，需要 repo 权限。</small>
-                        </p>
-                    ` : ''}
-                </div>
-                
                 <div class="admin-stats">
                     <div class="stat-card">
                         <h4>${projectsData.length}</h4>
@@ -1675,40 +2046,45 @@ function showAdminPanel() {
                         <h4>${publicationsData.length}</h4>
                         <p>学术成果</p>
                     </div>
+                    <div class="stat-card">
+                        <h4>${updatesData.length}</h4>
+                        <p>研究近况</p>
+                    </div>
                 </div>
                 
                 <div class="admin-actions">
-                    <h4>数据操作</h4>
+                    <h4>快速操作</h4>
                     <div class="action-buttons">
-                        <button class="btn btn-primary" id="addProjectBtn" ${!hasToken ? 'disabled title="需要 Token"' : ''}>
+                        <button class="btn btn-primary" id="addProjectBtn">
                             <i class="fas fa-plus"></i> 添加新课题
                         </button>
-                        <button class="btn btn-primary" id="addAdvisorBtn" ${!hasToken ? 'disabled title="需要 Token"' : ''}>
+                        <button class="btn btn-primary" id="addAdvisorBtn">
                             <i class="fas fa-user-plus"></i> 添加新导师
                         </button>
-                        <button class="btn btn-primary" id="addStudentBtn" ${!hasToken ? 'disabled title="需要 Token"' : ''}>
+                        <button class="btn btn-primary" id="addStudentBtn">
                             <i class="fas fa-user-graduate"></i> 添加研究生
+                        </button>
+                        <button class="btn btn-primary" id="addPublicationBtn">
+                            <i class="fas fa-book"></i> 添加学术成果
+                        </button>
+                        <button class="btn btn-primary" id="addUpdateBtn">
+                            <i class="fas fa-newspaper"></i> 添加研究近况
                         </button>
                     </div>
                 </div>
                 
                 <div class="admin-tools">
-                    <h4>管理工具</h4>
+                    <h4>数据管理</h4>
                     <div class="tool-buttons">
-                        <button class="btn btn-secondary" id="refreshDataBtn">
-                            <i class="fas fa-sync"></i> 刷新数据
-                        </button>
-                        <button class="btn btn-secondary" id="setTokenBtn">
-                            <i class="fas fa-key"></i> ${hasToken ? '更新 Token' : '设置 Token'}
-                        </button>
                         <button class="btn btn-secondary" id="exportDataBtn">
                             <i class="fas fa-download"></i> 导出数据
                         </button>
-                        ${hasToken ? `
-                            <button class="btn btn-danger" id="resetDataBtn">
-                                <i class="fas fa-redo"></i> 重置为默认数据
-                            </button>
-                        ` : ''}
+                        <button class="btn btn-secondary" id="saveToGitHubBtn">
+                            <i class="fab fa-github"></i> 保存到GitHub
+                        </button>
+                        <button class="btn btn-danger" id="resetDataBtn">
+                            <i class="fas fa-redo"></i> 重置为默认数据
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1720,57 +2096,40 @@ function showAdminPanel() {
     
     // 添加按钮事件
     modal.querySelector('#addProjectBtn').addEventListener('click', () => {
-        if (hasToken) {
-            closeModal(modal);
-            setTimeout(() => showEditProjectForm(), 100);
-        } else {
-            showToast('需要 GitHub Token 才能编辑数据', 'warning');
-        }
+        closeModal(modal);
+        setTimeout(() => showEditProjectForm(), 100);
     });
     
     modal.querySelector('#addAdvisorBtn').addEventListener('click', () => {
-        if (hasToken) {
-            closeModal(modal);
-            setTimeout(() => showEditAdvisorForm(), 100);
-        } else {
-            showToast('需要 GitHub Token 才能编辑数据', 'warning');
-        }
+        closeModal(modal);
+        setTimeout(() => showEditAdvisorForm(), 100);
     });
     
     modal.querySelector('#addStudentBtn').addEventListener('click', () => {
-        if (hasToken) {
-            closeModal(modal);
-            setTimeout(() => showEditStudentForm(), 100);
-        } else {
-            showToast('需要 GitHub Token 才能编辑数据', 'warning');
-        }
-    });
-    
-    modal.querySelector('#refreshDataBtn').addEventListener('click', async () => {
-        showToast('正在刷新数据...', 'info');
-        await loadAllDataFromGitHub();
-        renderProjects(currentFilter);
-        renderAdvisors();
-        renderStudents();
-        renderPublications();
-        renderUpdates();
-        showToast('数据刷新完成', 'success');
-    });
-    
-    modal.querySelector('#setTokenBtn').addEventListener('click', async () => {
         closeModal(modal);
-        setTimeout(async () => {
-            await initializeGitHubToken();
-            // 重新打开管理面板
-            setTimeout(() => showAdminPanel(), 500);
-        }, 100);
+        setTimeout(() => showEditStudentForm(), 100);
+    });
+    
+    // 添加学术成果按钮事件
+    modal.querySelector('#addPublicationBtn').addEventListener('click', () => {
+        closeModal(modal);
+        setTimeout(() => showEditPublicationForm(), 100);
+    });
+    
+    // 添加研究近况按钮事件
+    modal.querySelector('#addUpdateBtn').addEventListener('click', () => {
+        closeModal(modal);
+        setTimeout(() => showEditUpdateForm(), 100);
     });
     
     modal.querySelector('#exportDataBtn').addEventListener('click', exportAllData);
-    
-    if (hasToken) {
-        modal.querySelector('#resetDataBtn').addEventListener('click', resetDataToDefault);
-    }
+    modal.querySelector('#saveToGitHubBtn').addEventListener('click', async () => {
+        const success = await saveAllDataToGitHub();
+        if (success) {
+            showToast('数据已保存到GitHub', 'success');
+        }
+    });
+    modal.querySelector('#resetDataBtn').addEventListener('click', resetDataToDefault);
     
     setupModalClose(modal);
 }
@@ -1785,14 +2144,13 @@ function exportAllData() {
         students: studentsData,
         publications: publicationsData,
         updates: updatesData,
-        exportDate: new Date().toISOString(),
-        exportFrom: '研究生研究门户网站'
+        exportDate: new Date().toISOString()
     };
     
     const dataStr = JSON.stringify(allData, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     
-    const exportFileDefaultName = `research_portal_data_${new Date().toISOString().split('T')[0]}.json`;
+    const exportFileDefaultName = `lab_data_${new Date().toISOString().split('T')[0]}.json`;
     
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
@@ -1806,7 +2164,7 @@ function exportAllData() {
  * 重置数据为默认值
  */
 async function resetDataToDefault() {
-    if (confirm('确定要重置所有数据为默认值吗？此操作将覆盖 GitHub 仓库中的数据，不可撤销。')) {
+    if (confirm('确定要重置所有数据为默认值吗？此操作不可撤销。')) {
         try {
             // 设置为默认数据
             projectsData = getDefaultProjects();
@@ -1815,8 +2173,13 @@ async function resetDataToDefault() {
             publicationsData = getDefaultPublications();
             updatesData = getDefaultUpdates();
             
-            // 保存到 GitHub
-            const saved = await saveAllDataToGitHub();
+            // 保存到本地存储
+            saveToLocalStorage();
+            
+            // 尝试保存到 GitHub
+            if (await initializeGitHubToken()) {
+                await saveAllDataToGitHub();
+            }
             
             // 重新渲染
             renderProjects(currentFilter);
@@ -1825,11 +2188,7 @@ async function resetDataToDefault() {
             renderPublications();
             renderUpdates();
             
-            if (saved) {
-                showToast('数据已重置为默认值并保存到 GitHub', 'success');
-            } else {
-                showToast('数据已重置为默认值，但保存到 GitHub 失败', 'warning');
-            }
+            showToast('数据已重置为默认值', 'success');
         } catch (error) {
             console.error('重置数据失败:', error);
             showToast('重置数据失败', 'error');
@@ -1838,7 +2197,7 @@ async function resetDataToDefault() {
 }
 
 // ============================
-// 模态框辅助函数保持不变
+// 模态框辅助函数
 // ============================
 
 /**
@@ -1875,7 +2234,7 @@ function setupModalClose(modal) {
 }
 
 // ============================
-// 现有功能函数（保持不变）
+// 现有功能函数
 // ============================
 
 /**
@@ -2103,87 +2462,6 @@ function initFilterState() {
 }
 
 // ============================
-// 表单处理
-// ============================
-
-/**
- * 设置表单提交
- */
-function setupProjectForm() {
-    if (!DOM.projectForm) return;
-    
-    DOM.projectForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const formData = {
-            title: this.querySelector('#projectTitle').value,
-            category: this.querySelector('#projectCategory').value,
-            description: this.querySelector('#projectDescription').value,
-            advisor: this.querySelector('#projectAdvisor').value,
-            studentName: this.querySelector('#studentName').value,
-            studentEmail: this.querySelector('#studentEmail').value,
-            researchPlan: this.querySelector('#researchPlan').value
-        };
-        
-        // 验证表单数据
-        if (!validateFormData(formData)) {
-            showFormMessage('请填写所有必填字段', 'error');
-            return;
-        }
-        
-        // 显示提交中状态
-        const submitBtn = this.querySelector('.submit-btn');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 提交中...';
-        submitBtn.disabled = true;
-        
-        // 模拟API调用
-        setTimeout(() => {
-            console.log('提交的数据：', formData);
-            
-            // 显示成功消息
-            showFormMessage('课题提交成功！我们将在3个工作日内回复您。', 'success');
-            
-            // 重置表单
-            this.reset();
-            
-            // 恢复按钮状态
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-        }, 1500);
-    });
-}
-
-/**
- * 验证表单数据
- */
-function validateFormData(data) {
-    return data.title && data.category && data.description && 
-           data.advisor && data.studentName && data.studentEmail;
-}
-
-/**
- * 显示表单消息
- */
-function showFormMessage(message, type = 'success') {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `form-message alert alert-${type}`;
-    messageDiv.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-        <span>${message}</span>
-    `;
-    
-    const form = DOM.projectForm;
-    if (form) {
-        form.insertBefore(messageDiv, form.firstChild);
-        
-        setTimeout(() => {
-            messageDiv.remove();
-        }, 5000);
-    }
-}
-
-// ============================
 // 添加管理按钮到导航栏
 // ============================
 
@@ -2199,7 +2477,7 @@ function addAdminButton() {
     
     const adminBtn = document.createElement('button');
     adminBtn.className = 'btn btn-outline admin-btn';
-    adminBtn.innerHTML = '<i class="fas fa-cog"></i> 管理';
+    adminBtn.innerHTML = '<i class="fas fa-cog"></i> 管理面板';
     adminBtn.title = '打开管理面板';
     
     adminBtn.addEventListener('click', showAdminPanel);
@@ -2222,14 +2500,8 @@ function addAdminButton() {
  */
 async function init() {
     try {
-        // 加载 GitHub 数据（支持公开读取）
-        const loaded = await loadAllDataFromGitHub();
-        
-        if (loaded) {
-            console.log('从 GitHub 加载数据成功');
-        } else {
-            console.log('使用默认数据');
-        }
+        // 加载数据
+        await loadAllDataFromGitHub();
         
         // 渲染所有数据
         initFilterState();
@@ -2244,7 +2516,6 @@ async function init() {
         setupMobileMenu();
         setupBackToTop();
         setupSmoothScroll();
-        setupProjectForm();
         
         // 初始化状态
         initTheme();
@@ -2257,24 +2528,25 @@ async function init() {
         addToastStyles();
         addAdminStyles();
         
-        // 检查 Token 状态，如果没有 Token 但可以公开读取，给出提示
-        setTimeout(() => {
-            const hasToken = window.githubIssuesManager.hasValidToken();
-            if (!hasToken) {
-                // 尝试检查是否能够访问公开数据
-                window.githubIssuesManager.checkRepositoryVisibility()
-                    .then(visibility => {
-                        if (visibility.isPublic) {
-                            showToast('您正在浏览公开数据。如需编辑数据，请点击右上角"管理"按钮设置 GitHub Token。', 'info', 8000);
-                        } else {
-                            showToast('仓库是私有的，您看到的是默认数据。如需看到最新数据，请设置 GitHub Token。', 'warning', 8000);
-                        }
-                    })
-                    .catch(() => {
-                        // 忽略错误
-                    });
+        // 监听管理员模式变化
+        document.addEventListener('adminModeChanged', function(event) {
+            const { editMode, isAdmin } = event.detail;
+            if (isAdmin && editMode) {
+                // 重新渲染以显示编辑按钮
+                renderProjects(currentFilter);
+                renderAdvisors();
+                renderStudents();
+                renderPublications();
+                renderUpdates();
+            } else {
+                // 重新渲染以隐藏编辑按钮
+                renderProjects(currentFilter);
+                renderAdvisors();
+                renderStudents();
+                renderPublications();
+                renderUpdates();
             }
-        }, 3000);
+        });
         
         console.log('实验室网站初始化完成');
     } catch (error) {
@@ -2570,33 +2842,6 @@ function addAdminStyles() {
             max-width: 800px;
         }
         
-        .admin-status {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        
-        .status-indicator {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 5px;
-        }
-        
-        .status-active {
-            color: #28a745;
-        }
-        
-        .status-inactive {
-            color: #dc3545;
-        }
-        
-        .status-help {
-            margin: 5px 0 0 0;
-            color: #6c757d;
-        }
-        
         .admin-stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -2787,11 +3032,19 @@ window.labWebsite = {
     addStudent,
     updateStudent,
     deleteStudent,
+    addPublication,
+    updatePublication,
+    deletePublication,
+    addUpdate,
+    updateUpdate,
+    deleteUpdate,
     
     // 界面操作
     showEditProjectForm,
     showEditAdvisorForm,
     showEditStudentForm,
+    showEditPublicationForm,
+    showEditUpdateForm,
     showAdminPanel,
     
     // 工具函数
