@@ -16,7 +16,7 @@ const LOCAL_STORAGE_KEYS = {
     THEME: 'lab_theme_preference',
     PROJECT_FILTER: 'project_filter_state',
     PUBLIC_DATA_CACHE: 'public_data_cache',
-    PUBLIC_DATA_CACHE_TIME: 'public_data_cache_time'
+    PUBLIC_DATA_CACHE_TIME: 'public_data_cache_timestamp'
 };
 
 // 初始化数据
@@ -129,55 +129,31 @@ async function checkAuthentication() {
 /**
  * 加载公共数据（游客模式）
  */
-async function loadPublicData() {
-    console.log('正在加载公共数据...');
+function loadPublicData() {
+    console.log('加载公共数据...');
     
-    const cacheKey = LOCAL_STORAGE_KEYS.PUBLIC_DATA_CACHE;
-    const cacheTimeKey = LOCAL_STORAGE_KEYS.PUBLIC_DATA_CACHE_TIME;
+    // 检查是否有缓存数据
+    const cachedData = localStorage.getItem(LOCAL_STORAGE_KEYS.PUBLIC_DATA_CACHE);
+    const cacheTimestamp = localStorage.getItem(LOCAL_STORAGE_KEYS.PUBLIC_DATA_CACHE_TIME);
+    const now = Date.now();
     const cacheExpiry = 30 * 60 * 1000; // 30分钟缓存
     
-    // 检查缓存是否存在且未过期
-    const cachedData = localStorage.getItem(cacheKey);
-    const cacheTime = localStorage.getItem(cacheTimeKey);
-    
-    if (cachedData && cacheTime && (Date.now() - parseInt(cacheTime)) < cacheExpiry) {
+    if (cachedData && cacheTimestamp && (now - parseInt(cacheTimestamp)) < cacheExpiry) {
         // 使用缓存数据
         console.log('使用缓存的公共数据');
-        const data = JSON.parse(cachedData);
-        applyPublicData(data);
-        dataSourceInfo = {
-            type: 'cache',
-            timestamp: new Date(parseInt(cacheTime)),
-            live: false
-        };
-        showToast('使用缓存数据（30分钟更新）', 'info');
-        return;
-    }
-    
-    // 缓存过期或不存在，从GitHub获取
-    try {
-        const data = await fetchPublicDataFromGitHub();
-        applyPublicData(data);
-        
-        // 更新缓存
-        localStorage.setItem(cacheKey, JSON.stringify(data));
-        localStorage.setItem(cacheTimeKey, Date.now().toString());
-        dataSourceInfo = {
-            type: 'github',
-            timestamp: new Date(),
-            live: true
-        };
-        showToast('已获取最新数据', 'success');
-    } catch (error) {
-        console.error('获取公共数据失败:', error);
-        showToast('无法加载最新数据，使用示例数据', 'warning');
-        // 使用默认数据作为后备
-        loadDefaultData();
-        dataSourceInfo = {
-            type: 'default',
-            timestamp: new Date(),
-            live: false
-        };
+        try {
+            const data = JSON.parse(cachedData);
+            applyPublicData(data, 'cached');
+            showToast('已显示缓存数据', 'info');
+        } catch (error) {
+            console.error('缓存数据解析失败:', error);
+            // 缓存无效，从GitHub获取
+            fetchPublicDataFromGitHub();
+        }
+    } else {
+        // 从 GitHub 获取最新数据
+        console.log('从 GitHub 获取最新数据');
+        fetchPublicDataFromGitHub();
     }
 }
 
@@ -185,48 +161,136 @@ async function loadPublicData() {
  * 从GitHub获取公共数据
  */
 async function fetchPublicDataFromGitHub() {
-    // 这里需要替换为实际的GitHub公开数据URL
-    const PUBLIC_DATA_BASE_URL = 'https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/data/';
-    
-    console.log('从GitHub获取公共数据...');
-    
-    // 并行获取所有数据文件
-    const [projects, advisors, students, publications, updates] = await Promise.allSettled([
-        fetch(`${PUBLIC_DATA_BASE_URL}${GITHUB_FILES.PROJECTS}`).then(r => r.ok ? r.json() : null),
-        fetch(`${PUBLIC_DATA_BASE_URL}${GITHUB_FILES.ADVISORS}`).then(r => r.ok ? r.json() : null),
-        fetch(`${PUBLIC_DATA_BASE_URL}${GITHUB_FILES.STUDENTS}`).then(r => r.ok ? r.json() : null),
-        fetch(`${PUBLIC_DATA_BASE_URL}${GITHUB_FILES.PUBLICATIONS}`).then(r => r.ok ? r.json() : null),
-        fetch(`${PUBLIC_DATA_BASE_URL}${GITHUB_FILES.UPDATES}`).then(r => r.ok ? r.json() : null)
-    ]);
-    
-    // 构建完整的数据对象
-    const data = {
-        projects: projects.status === 'fulfilled' && projects.value ? projects.value : getDefaultProjects(),
-        advisors: advisors.status === 'fulfilled' && advisors.value ? advisors.value : getDefaultAdvisors(),
-        students: students.status === 'fulfilled' && students.value ? students.value : getDefaultStudents(),
-        publications: publications.status === 'fulfilled' && publications.value ? publications.value : getDefaultPublications(),
-        updates: updates.status === 'fulfilled' && updates.value ? updates.value : getDefaultUpdates()
-    };
-    
-    return data;
+    try {
+        console.log('开始从GitHub加载数据...');
+        
+        // 您的GitHub仓库基础URL
+        const baseUrl = 'https://raw.githubusercontent.com/hth554/graduate-research-portal/main/data/';
+        
+        // 所有需要加载的数据文件
+        const dataFiles = {
+            projects: GITHUB_FILES.PROJECTS,
+            advisors: GITHUB_FILES.ADVISORS,
+            students: GITHUB_FILES.STUDENTS,
+            publications: GITHUB_FILES.PUBLICATIONS,
+            updates: GITHUB_FILES.UPDATES
+        };
+        
+        // 加载所有数据
+        const allData = {};
+        let loadedCount = 0;
+        
+        for (const [key, filename] of Object.entries(dataFiles)) {
+            try {
+                const url = baseUrl + filename;
+                console.log(`正在加载: ${url}`);
+                
+                const response = await fetch(url);
+                
+                if (response.ok) {
+                    allData[key] = await response.json();
+                    loadedCount++;
+                    console.log(`✅ 成功加载 ${filename} (${allData[key].length} 条记录)`);
+                } else {
+                    console.warn(`⚠️ 无法加载 ${filename}: ${response.status} ${response.statusText}`);
+                    allData[key] = [];
+                }
+            } catch (error) {
+                console.error(`❌ 加载 ${filename} 失败:`, error);
+                allData[key] = [];
+            }
+        }
+        
+        console.log(`总计加载 ${loadedCount}/${Object.keys(dataFiles).length} 个文件`);
+        
+        if (loadedCount > 0) {
+            // 缓存所有数据
+            localStorage.setItem(LOCAL_STORAGE_KEYS.PUBLIC_DATA_CACHE, JSON.stringify(allData));
+            localStorage.setItem(LOCAL_STORAGE_KEYS.PUBLIC_DATA_CACHE_TIME, Date.now().toString());
+            
+            // 应用数据到页面
+            applyPublicData(allData, 'github');
+            showToast(`成功加载 ${loadedCount} 个数据文件`, 'success');
+            
+            return allData;
+        } else {
+            throw new Error('所有数据文件加载失败');
+        }
+        
+    } catch (error) {
+        console.error('获取GitHub公共数据失败:', error);
+        
+        // 尝试使用缓存数据
+        const cachedData = localStorage.getItem(LOCAL_STORAGE_KEYS.PUBLIC_DATA_CACHE);
+        const cacheTimestamp = localStorage.getItem(LOCAL_STORAGE_KEYS.PUBLIC_DATA_CACHE_TIME);
+        const now = Date.now();
+        const cacheExpiry = 24 * 60 * 60 * 1000; // 24小时缓存
+        
+        if (cachedData && cacheTimestamp && (now - parseInt(cacheTimestamp)) < cacheExpiry) {
+            try {
+                const data = JSON.parse(cachedData);
+                console.log('使用缓存的GitHub数据');
+                applyPublicData(data, 'cached');
+                showToast('网络连接失败，已显示缓存数据', 'warning');
+                return data;
+            } catch (parseError) {
+                console.error('缓存数据解析失败:', parseError);
+            }
+        }
+        
+        // 使用默认数据作为最后的后备
+        console.log('使用默认示例数据');
+        showToast('无法加载远程数据，已显示示例数据', 'error');
+        
+        const defaultData = {
+            projects: getDefaultProjects(),
+            advisors: getDefaultAdvisors(),
+            students: getDefaultStudents(),
+            publications: getDefaultPublications(),
+            updates: getDefaultUpdates()
+        };
+        
+        applyPublicData(defaultData, 'default');
+        return defaultData;
+    }
 }
 
 /**
  * 应用公共数据到页面
  */
-function applyPublicData(data) {
-    if (data && data.projects) {
-        projectsData = data.projects || getDefaultProjects();
-        advisorsData = data.advisors || getDefaultAdvisors();
-        studentsData = data.students || getDefaultStudents();
-        publicationsData = data.publications || getDefaultPublications();
-        updatesData = data.updates || getDefaultUpdates();
+function applyPublicData(allData, sourceType) {
+    console.log('应用公共数据，来源:', sourceType);
+    
+    if (allData && allData.projects) {
+        projectsData = allData.projects || getDefaultProjects();
+        advisorsData = allData.advisors || getDefaultAdvisors();
+        studentsData = allData.students || getDefaultStudents();
+        publicationsData = allData.publications || getDefaultPublications();
+        updatesData = allData.updates || getDefaultUpdates();
+        
+        // 更新数据源信息
+        dataSourceInfo = {
+            type: sourceType,
+            timestamp: new Date(),
+            live: sourceType === 'github'
+        };
         
         // 保存到本地存储（作为缓存）
         saveToLocalStorage();
         
         // 渲染数据
         renderAllData();
+        
+        // 更新数据源提示
+        updateDataSourceHint(sourceType);
+        
+        console.log('数据应用完成:', {
+            课题: projectsData.length,
+            导师: advisorsData.length,
+            学生: studentsData.length,
+            成果: publicationsData.length,
+            近况: updatesData.length
+        });
     }
 }
 
@@ -1078,6 +1142,32 @@ function getDataSourceHint() {
 }
 
 /**
+ * 更新数据源提示
+ */
+function updateDataSourceHint(sourceType) {
+    const hintElement = document.getElementById('dataSourceHint');
+    if (!hintElement) return;
+    
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('zh-CN', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    
+    if (sourceType === 'github') {
+        hintElement.textContent = `🟢 实时数据 (更新于 ${timeString})`;
+        hintElement.className = 'data-source-hint live';
+    } else if (sourceType === 'cached') {
+        hintElement.textContent = `⚪ 缓存数据 (更新于 ${timeString})`;
+        hintElement.className = 'data-source-hint cached';
+    } else {
+        hintElement.textContent = `📋 示例数据 (更新于 ${timeString})`;
+        hintElement.className = 'data-source-hint default';
+    }
+}
+
+/**
  * 防抖函数
  */
 function debounce(func, wait) {
@@ -1545,7 +1635,7 @@ function renderProjects(filter = 'all') {
                 <div class="project-status-tag" style="background-color: ${statusColor}20; color: ${statusColor}">
                     ${project.status}
                 </div>
-                ${isReadOnlyMode ? '<div class="readonly-badge">示例数据</div>' : ''}
+                ${dataSourceInfo.type === 'default' ? '<div class="readonly-badge">示例数据</div>' : ''}
             </div>
             <div class="project-content">
                 <span class="project-category">${getCategoryName(project.category)}</span>
@@ -1628,7 +1718,7 @@ function renderAdvisors() {
         advisorCard.innerHTML = `
             <div class="advisor-avatar">
                 <img src="${advisor.avatar}" alt="${advisor.name}" loading="lazy">
-                ${isReadOnlyMode ? '<div class="readonly-badge">示例数据</div>' : ''}
+                ${dataSourceInfo.type === 'default' ? '<div class="readonly-badge">示例数据</div>' : ''}
             </div>
             <h3 class="advisor-name">${advisor.name}</h3>
             <p class="advisor-title">${advisor.title}</p>
@@ -1696,7 +1786,7 @@ function renderStudents() {
         studentCard.innerHTML = `
             <div class="student-avatar">
                 <img src="${student.avatar}" alt="${student.name}" loading="lazy">
-                ${isReadOnlyMode ? '<div class="readonly-badge">示例数据</div>' : ''}
+                ${dataSourceInfo.type === 'default' ? '<div class="readonly-badge">示例数据</div>' : ''}
             </div>
             <h3 class="student-name">${student.name}</h3>
             <p class="student-degree">${student.degree}</p>
@@ -1769,7 +1859,7 @@ function renderPublications() {
                 <span class="publication-type" style="background-color: ${typeColor}20; color: ${typeColor}">
                     ${publication.type}
                 </span>
-                ${isReadOnlyMode ? '<span class="readonly-badge">示例数据</span>' : ''}
+                ${dataSourceInfo.type === 'default' ? '<span class="readonly-badge">示例数据</span>' : ''}
                 <h3 class="publication-title">${publication.title}</h3>
                 <p class="publication-authors">
                     <i class="fas fa-users"></i>
@@ -1867,7 +1957,7 @@ function renderUpdates() {
                     <span class="update-date" style="background-color: ${typeColor}20; color: ${typeColor}">
                         ${formatDate(update.date)}
                     </span>
-                    ${isReadOnlyMode ? '<span class="readonly-badge">示例数据</span>' : ''}
+                    ${dataSourceInfo.type === 'default' ? '<span class="readonly-badge">示例数据</span>' : ''}
                     <span class="update-type" style="color: ${typeColor}">
                         ${update.type}
                     </span>
@@ -2328,7 +2418,7 @@ function showProjectDetails(projectId) {
                     <p><strong>描述：</strong>${project.description}</p>
                     <p><strong>创建时间：</strong>${formatDate(project.createdAt)}</p>
                     <p><strong>更新时间：</strong>${formatDate(project.updatedAt)}</p>
-                    ${isReadOnlyMode ? '<p><strong>数据来源：</strong>示例数据</p>' : ''}
+                    <p><strong>数据来源：</strong>${dataSourceInfo.type === 'default' ? '示例数据' : dataSourceInfo.type === 'github' ? 'GitHub实时数据' : '本地缓存数据'}</p>
                 </div>
             </div>
         </div>
@@ -3237,7 +3327,7 @@ function addAdminStyles() {
         }
         
         body.dark-mode .stat-card {
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%;
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
         }
         
         body.dark-mode .edit-form label {
