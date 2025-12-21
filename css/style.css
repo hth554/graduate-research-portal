@@ -20,6 +20,9 @@
     --warning-color: #f39c12;
     --error-color: #e74c3c;
     --info-color: #3498db;
+    --guest-color: #1976d2;
+    --live-color: #27ae60;
+    --cached-color: #95a5a6;
 }
 
 body.dark-mode {
@@ -31,6 +34,9 @@ body.dark-mode {
     --gray-color: #bdc3c7;
     --light-gray: #34495e;
     --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    --guest-color: #64b5f6;
+    --live-color: #81c784;
+    --cached-color: #90a4ae;
 }
 
 body {
@@ -48,133 +54,6 @@ body {
     margin: 0 auto;
     padding: 0 20px;
 }
-
-/* ===== 权限相关样式（新增）===== */
-
-/* 权限状态栏 */
-.permission-status {
-    padding: 10px 0;
-    background: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
-    font-size: 14px;
-    position: sticky;
-    top: 80px;
-    z-index: 999;
-    transition: all 0.3s ease;
-}
-
-.status-guest {
-    background: #fff3cd;
-    color: #856404;
-    border-bottom-color: #ffeaa7;
-}
-
-.status-authenticated {
-    background: #d4edda;
-    color: #155724;
-    border-bottom-color: #c3e6cb;
-}
-
-.permission-status .container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.permission-status .btn-sm {
-    padding: 4px 12px;
-    font-size: 12px;
-}
-
-.readonly-badge {
-    display: inline-block;
-    background: #6c757d;
-    color: white;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 11px;
-    margin-left: 8px;
-}
-
-.authenticated-badge {
-    display: inline-block;
-    background: #28a745;
-    color: white;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 11px;
-    margin-left: 8px;
-}
-
-/* 编辑按钮禁用状态 */
-.btn:disabled,
-.btn[disabled] {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* 只读模式提示 */
-.readonly-hint {
-    font-size: 12px;
-    color: #6c757d;
-    margin-top: 5px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-/* 认证徽章 */
-.auth-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    margin-left: 10px;
-}
-
-.auth-badge.authenticated {
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-}
-
-.auth-badge.guest {
-    background: #fff3cd;
-    color: #856404;
-    border: 1px solid #ffeaa7;
-}
-
-/* 暗色模式适配 */
-body.dark-mode .permission-status {
-    background: #2c3e50;
-}
-
-body.dark-mode .status-guest {
-    background: #fff3cd;
-    color: #856404;
-}
-
-body.dark-mode .status-authenticated {
-    background: #155724;
-    color: #d4edda;
-}
-
-body.dark-mode .auth-badge.authenticated {
-    background: #155724;
-    color: #d4edda;
-    border-color: #0c4128;
-}
-
-body.dark-mode .auth-badge.guest {
-    background: #856404;
-    color: #fff3cd;
-    border-color: #664d03;
-}
-
-/* ===== 原始样式（保持不变）===== */
 
 /* 按钮样式 */
 .btn {
@@ -298,6 +177,42 @@ body.dark-mode .auth-badge.guest {
     display: flex;
     align-items: center;
     gap: 15px;
+}
+
+/* 权限状态样式 */
+.auth-status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.9rem;
+    border: 1px solid;
+}
+
+.status-authenticated {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border-color: #c8e6c9;
+}
+
+.status-authenticated::before {
+    content: "🔓 ";
+    margin-right: 4px;
+    font-size: 1.1em;
+}
+
+/* 更新权限状态样式：游客模式 */
+.status-guest {
+    background-color: #e3f2fd;
+    color: var(--guest-color);
+    border-color: #bbdefb;
+}
+
+.status-guest::before {
+    content: "👁️ ";
+    margin-right: 4px;
+    font-size: 1.1em;
 }
 
 .hamburger {
@@ -527,6 +442,152 @@ body.dark-mode .auth-badge.guest {
 
 .project-status i {
     color: var(--accent-color);
+}
+
+/* 项目卡片底部布局 */
+.project-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+}
+
+/* 新增数据源提示样式 */
+.data-source-hint {
+    font-size: 0.85em;
+    padding: 4px 8px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    font-weight: 500;
+    margin-right: 8px;
+}
+
+.data-source-hint.live {
+    background-color: #e8f5e9;
+    color: var(--live-color);
+    border: 1px solid #c8e6c9;
+}
+
+.data-source-hint.live::before {
+    content: "🟢 ";
+    margin-right: 4px;
+}
+
+.data-source-hint.cached {
+    background-color: #f5f5f5;
+    color: var(--cached-color);
+    border: 1px solid #e0e0e0;
+}
+
+.data-source-hint.cached::before {
+    content: "⚪ ";
+    margin-right: 4px;
+}
+
+/* 项目卡片中的编辑按钮样式调整 */
+.project-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-edit {
+    background-color: #2196f3;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s;
+}
+
+.btn-edit:hover:not(:disabled) {
+    background-color: #1976d2;
+}
+
+.btn-delete {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s;
+}
+
+.btn-delete:hover:not(:disabled) {
+    background-color: #d32f2f;
+}
+
+/* 添加禁用状态提示 */
+.btn-edit:disabled,
+.btn-delete:disabled,
+.btn-save:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    position: relative;
+}
+
+.btn-edit:disabled::after {
+    content: " (需要登录)";
+    font-size: 0.8em;
+    color: #999;
+}
+
+/* 只读模式下的样式调整 */
+.readonly-mode .btn-edit,
+.readonly-mode .btn-delete,
+.readonly-mode .btn-save {
+    display: none !important;
+}
+
+.readonly-mode .project-actions {
+    display: none !important;
+}
+
+/* 通知样式 */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: slideIn 0.3s ease-out;
+}
+
+.notification.info {
+    background-color: #2196f3;
+}
+
+.notification.warning {
+    background-color: #ff9800;
+}
+
+.notification.success {
+    background-color: #4caf50;
+}
+
+.notification.error {
+    background-color: #f44336;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 /* 导师介绍 */
@@ -1471,6 +1532,17 @@ body.dark-mode .auth-badge.guest {
         align-items: flex-start;
         gap: 10px;
     }
+    
+    /* 响应式调整 */
+    .project-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .data-source-hint {
+        align-self: flex-start;
+    }
 }
 
 @media (max-width: 576px) {
@@ -1617,6 +1689,29 @@ body.dark-mode #projects-list .project-card {
 body.dark-mode .tag {
     background: #4a6572;
     color: #bdc3c7;
+}
+
+/* 暗色模式下的新样式调整 */
+body.dark-mode .status-guest {
+    background-color: rgba(25, 118, 210, 0.2);
+    color: #64b5f6;
+    border-color: #1976d2;
+}
+
+body.dark-mode .data-source-hint.live {
+    background-color: rgba(39, 174, 96, 0.2);
+    color: #81c784;
+    border-color: #27ae60;
+}
+
+body.dark-mode .data-source-hint.cached {
+    background-color: rgba(149, 165, 166, 0.2);
+    color: #b0bec5;
+    border-color: #95a5a6;
+}
+
+body.dark-mode .btn-edit:disabled::after {
+    color: #b0bec5;
 }
 
 /* 打印样式 */
