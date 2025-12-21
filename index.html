@@ -10,29 +10,6 @@
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
 </head>
 <body>
-    <!-- 登录模态框 -->
-    <div id="login-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h2>管理员登录</h2>
-            <div class="login-options">
-                <div class="login-option">
-                    <h3>方式一：GitHub Token 登录</h3>
-                    <p>（推荐，可保存数据到 GitHub）</p>
-                    <input type="password" id="github-token-login" placeholder="输入 GitHub Token">
-                    <button onclick="loginWithGitHubToken()" class="btn btn-primary">GitHub Token 登录</button>
-                </div>
-                <div class="login-option">
-                    <h3>方式二：密码登录</h3>
-                    <p>（临时编辑，数据保存在本地）</p>
-                    <input type="password" id="password-login" placeholder="输入管理员密码">
-                    <button onclick="loginWithPassword()" class="btn btn-secondary">密码登录</button>
-                </div>
-            </div>
-            <div id="login-message"></div>
-        </div>
-    </div>
-
     <!-- 导航栏 -->
     <header class="header">
         <div class="container">
@@ -49,8 +26,8 @@
                     <li class="nav-item"><a href="#students" class="nav-link">学生介绍</a></li>
                     <li class="nav-item"><a href="#publications" class="nav-link">学术成果</a></li>
                     <li class="nav-item"><a href="#updates" class="nav-link">研究近况</a></li>
-                    <li class="nav-item"><a href="#submit-section" class="nav-link">提交课题</a></li>
-                    <li class="nav-item" id="admin-nav-item" style="display: none;">
+                    <!-- 移除提交课题导航项 -->
+                    <li class="nav-item" id="admin-nav-item">
                         <a href="#" class="nav-link" id="admin-toggle">
                             <i class="fas fa-user-shield"></i> 管理
                         </a>
@@ -61,12 +38,7 @@
                     <button class="btn btn-outline" id="theme-toggle">
                         <i class="fas fa-moon"></i>
                     </button>
-                    <button class="btn btn-outline" id="login-btn" style="display: block;">
-                        <i class="fas fa-sign-in-alt"></i> 登录
-                    </button>
-                    <button class="btn btn-outline" id="logout-btn" style="display: none;">
-                        <i class="fas fa-sign-out-alt"></i> 退出
-                    </button>
+                    <!-- 移除登录和退出按钮 -->
                     <div class="hamburger" id="hamburger">
                         <span class="bar"></span>
                         <span class="bar"></span>
@@ -89,7 +61,7 @@
                 </p>
                 <div class="hero-actions">
                     <a href="#projects" class="btn btn-primary">探索课题</a>
-                    <a href="#submit-section" class="btn btn-secondary">提交课题</a>
+                    <!-- 移除提交课题按钮 -->
                 </div>
             </div>
             <div class="hero-image">
@@ -192,68 +164,6 @@
         </div>
     </section>
 
-    <!-- 提交新课题部分 -->
-    <section class="section submit-section" id="submit-section">
-        <div class="container">
-            <div class="section-header">
-                <h2 class="section-title">📝 提交新课题</h2>
-                <p class="section-subtitle">填写以下信息提交您的研究课题，审核通过后将在网站展示</p>
-            </div>
-            
-            <!-- 提交表单 -->
-            <form id="project-form" class="project-form">
-                <div class="form-row">
-                    <div class="form-group full-width">
-                        <label for="project-title">课题名称 *</label>
-                        <input type="text" id="project-title" name="title" required 
-                               placeholder="例如：基于深度学习的人脸识别系统研究">
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="project-description">课题描述 *</label>
-                    <textarea id="project-description" name="description" rows="6" required
-                              placeholder="请详细描述研究背景、目标、方法、预期成果等..."></textarea>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="student-name">研究生姓名</label>
-                        <input type="text" id="student-name" name="student" 
-                               placeholder="张三">
-                    </div>
-                    <div class="form-group">
-                        <label for="supervisor-name">指导老师</label>
-                        <input type="text" id="supervisor-name" name="supervisor" 
-                               placeholder="李四教授">
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="project-tags">研究标签（用逗号分隔）</label>
-                    <input type="text" id="project-tags" name="tags" 
-                           placeholder="人工智能, 深度学习, 计算机视觉">
-                </div>
-                
-                <button type="submit" class="btn btn-primary submit-btn" id="submit-btn">
-                    <span id="submit-text">提交课题</span>
-                    <span id="submit-loading" style="display: none;">提交中...</span>
-                </button>
-            </form>
-            
-            <!-- 提交结果消息 -->
-            <div id="form-message" style="margin-top: 30px;"></div>
-            
-            <!-- 已提交课题展示 -->
-            <div id="submitted-projects" style="margin-top: 60px; padding-top: 40px; border-top: 2px solid #eee;">
-                <h3 style="font-size: 1.8rem; font-weight: 600; margin-bottom: 25px; color: #333;">📋 已提交的课题</h3>
-                <div id="projects-list" class="projects-grid" style="margin-top: 20px;">
-                    <!-- 动态加载课题 -->
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- 页脚 -->
     <footer class="footer">
         <div class="container">
@@ -289,7 +199,7 @@
                     <ul class="footer-links">
                         <li><a href="#publications">学术成果</a></li>
                         <li><a href="#updates">研究近况</a></li>
-                        <li><a href="#submit-section">提交课题</a></li>
+                        <!-- 移除提交课题链接 -->
                         <li><a href="#">投稿指南</a></li>
                     </ul>
                 </div>
@@ -323,7 +233,6 @@
     <script src="js/script.js"></script>
     <script src="js/data-manager.js"></script>
     <script src="js/admin-system.js"></script>
-    <script src="js/github-issues.js"></script>
-    <script src="js/form-handler.js"></script>
+    <!-- 移除对github-issues.js和form-handler.js的引用 -->
 </body>
 </html>
