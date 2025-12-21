@@ -1,4 +1,4 @@
-// js/data-manager.js - 数据管理和存储（重构版）
+// js/data-manager.js - 数据管理和存储（重构版，集成权限控制）
 class DataManager {
     constructor() {
         // 默认数据（如果本地存储和GitHub都没有数据）
@@ -112,43 +112,26 @@ class DataManager {
         this.init();
     }
 
-    // 初始化
+    // 初始化（修改后的权限检查逻辑）
     async init() {
         console.log('DataManager 初始化...');
         
         try {
-            // 检查 githubIssuesManager 是否可用
-            if (!window.githubIssuesManager) {
-                console.warn('⚠️ githubIssuesManager 未加载，等待 script.js 初始化');
-            } else {
-                // 如果已有 Token，同步到 githubIssuesManager
-                if (this.githubToken) {
-                    console.log('🔑 同步 Token 到 githubIssuesManager');
-                    window.githubIssuesManager.setToken(this.githubToken);
-                }
-            }
-            
-            // 加载数据
-            await this.loadData();
-            
-            // 检查 GitHub 连接
-            if (this.hasValidToken()) {
-                console.log('🔗 检查 GitHub 连接状态...');
-                const connection = await this.checkGitHubConnection();
-                console.log('GitHub 连接状态:', connection);
+            // 检查是否有Token
+            if (this.hasValidToken() && window.githubIssuesManager) {
+                console.log('🔑 检测到Token，同步数据到githubIssuesManager');
+                window.githubIssuesManager.setToken(this.githubToken);
                 
-                if (connection.connected) {
-                    // 开始自动同步
-                    this.startAutoSync();
-                } else {
-                    console.warn('GitHub 连接失败:', connection.message);
-                    // 显示提示消息
-                    if (window.showToast) {
-                        window.showToast(`GitHub 连接失败: ${connection.message}`, 'warning');
-                    }
-                }
+                // 从GitHub加载数据
+                await this.syncFromGitHub();
+                
+                // 开始自动同步
+                this.startAutoSync();
             } else {
-                console.log('ℹ️ 未设置 GitHub Token，仅使用本地数据');
+                console.log('ℹ️ 未检测到Token，使用本地数据');
+                
+                // 加载本地数据
+                await this.loadData();
             }
             
             // 监听管理员模式变化
@@ -316,12 +299,17 @@ class DataManager {
         }
     }
 
-    // 保存数据到GitHub
+    // 保存数据到GitHub（添加权限检查）
     async syncToGitHub() {
         if (!this.hasValidToken() || !window.githubIssuesManager) {
-            console.log('无法保存到GitHub：Token无效或githubIssuesManager未初始化');
+            console.warn('尝试保存到GitHub但未设置Token');
             
-            // 如果没有GitHub Token，只保存到本地
+            // 显示提示
+            if (typeof showToast === 'function') {
+                showToast('需要GitHub Token才能保存数据到云端', 'warning');
+            }
+            
+            // 只保存到本地
             this.saveToLocalStorage();
             return false;
         }
