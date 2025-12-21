@@ -1,4 +1,4 @@
-// js/admin-system.js - 管理员系统（简化版，无需登录）
+// js/admin-system.js - 管理员系统（集成权限控制）
 class AdminSystem {
     constructor() {
         this.isAdmin = false; // 默认不是管理员
@@ -41,8 +41,36 @@ class AdminSystem {
         }
     }
 
-    // 切换管理员模式
+    // 切换管理员模式（添加权限检查）
     toggleAdminMode() {
+        // 首先检查是否已认证
+        if (window.labWebsite && window.labWebsite.isReadOnlyMode) {
+            // 如果是只读模式，提示输入Token
+            if (confirm('需要GitHub Token才能进入管理员模式。现在输入Token？')) {
+                const token = prompt('请输入GitHub Token:');
+                if (token && window.githubIssuesManager.setToken(token)) {
+                    // 设置dataManager的Token
+                    if (window.dataManager) {
+                        window.dataManager.setGitHubToken(token);
+                    }
+                    
+                    // 重新检查认证状态
+                    if (window.labWebsite.checkAuthentication) {
+                        window.labWebsite.checkAuthentication().then(() => {
+                            // 进入管理员模式
+                            this.isAdmin = true;
+                            this.editMode = true;
+                            this.showLoginMessage('Token验证成功，已进入管理员模式', 'success');
+                            this.updateUI();
+                            this.reloadPageData();
+                        });
+                    }
+                }
+            }
+            return;
+        }
+        
+        // 原有切换逻辑
         this.isAdmin = !this.isAdmin;
         if (this.isAdmin) {
             this.editMode = true;
