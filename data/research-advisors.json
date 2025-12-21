@@ -1,50 +1,78 @@
 [
   {
-    "name": "刘曙光",
-    "title": "教授，硕士生/博士生导师",
-    "field": "碳循环、水循环、生态系统功能和服务",
-    "bio": "国家海外引进高级人才、中组部'千人计划'入选者，与中科院合作证实成熟森林土壤可累积碳，推翻经典理论，成果发表于《SCIENCE》并入选'中国科学10大进展\";研发 GEMS 生物地球化学循环模型、SkyCenterESM 生态系统服务核算模型，主导完成美国全域生态系统固碳与减排潜力评估。\n",
-    "email": "shuguang.liu@hainanu.edu.cn",
-    "website": "https://ecology.hainanu.edu.cn/info/1101/5430.htm",
-    "avatar": "https://s41.ax1x.com/2025/12/14/pZMqFfI.png",
-    "id": "_kcas9umcd",
-    "createdAt": "2025-12-15",
-    "updatedAt": "2025-12-15"
-  },
-  {
-    "name": "赵淑清",
-    "title": "教授，硕士生/博士生导师",
-    "field": "城市生态学、全球变化与陆地生态系统碳循环",
-    "bio": "创新性建立了城市化对植被生长影响的理论与定量方法，在 PNAS 发文证实城市环境对植被生长的普遍促进作用，该成果被学界广泛验证应用；提出解释城市化生物多样性梯度的 '热促进和胁迫平衡假说'，构建了我国城市生态系统有机碳储量评估体系，还搭建了北京城乡生态梯度长期研究平台。\n",
-    "email": "shuqing.zhao@hainanu.edu.cn",
-    "website": "https://ecology.hainanu.edu.cn/info/1101/5420.htm",
-    "avatar": "https://s41.ax1x.com/2025/12/14/pZMqApt.png",
-    "id": "_h75k97tti",
-    "createdAt": "2025-12-15",
-    "updatedAt": "2025-12-15"
+    "name": "周德成",
+    "title": "副教授，硕士生/硕士生导师",
+    "field": "城市气象与生态",
+    "bio": "11",
+    "email": "decheng.zhou@hainanu.edu.cn",
+    "website": "https://ecology.hainanu.edu.cn/info/1102/10010.htm",
+    "avatar": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    "id": "_z6jfb709z",
+    "createdAt": "2025-12-21",
+    "updatedAt": "2025-12-21"
   },
   {
     "name": "周德成",
     "title": "副教授，硕士生/硕士生导师",
     "field": "城市气象与生态",
-    "bio": "曾赴美国地质调查局、农业部林务局等机构任高级访问学者。其核心研究方向为城市气象与生态、全球变化遥感及生态系统模拟，尤聚焦快速城市化热环境效应，目前主持国家自然科学基金面上项目等多项课题。",
+    "bio": "aa",
     "email": "decheng.zhou@hainanu.edu.cn",
     "website": "https://ecology.hainanu.edu.cn/info/1102/10010.htm",
-    "avatar": "https://s41.ax1x.com/2025/12/14/pZMqn0g.png",
-    "id": "_xmmstkfwu",
-    "createdAt": "2025-12-15",
-    "updatedAt": "2025-12-15"
+    "avatar": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    "id": 1766291263620,
+    "createdAt": "2025-12-21",
+    "updatedAt": "2025-12-21"
   },
   {
-    "name": "郑艺",
-    "title": "副教授，硕士生导师",
-    "field": "1·",
-    "bio": "1",
-    "email": "liusg@example.com",
-    "website": "https://example.com/liusg",
+    "name": "周德成",
+    "title": "副教授，硕士生/硕士生导师",
+    "field": "城市气象与生态",
+    "bio": "11",
+    "email": "decheng.zhou@hainanu.edu.cn",
+    "website": "https://ecology.hainanu.edu.cn/info/1102/10010.htm",
     "avatar": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-    "id": "_iq9shgma5",
-    "createdAt": "2025-12-15",
-    "updatedAt": "2025-12-15"
+    "id": 1766290467832,
+    "createdAt": "2025-12-21",
+    "updatedAt": "2025-12-21"
+  },
+  {
+    "name": "周德成",
+    "title": "副教授，硕士生/硕士生导师",
+    "field": "城市气象与生态",
+    "bio": "aaaaaaaaaaaa",
+    "email": "decheng.zhou@hainanu.edu.cn",
+    "website": "https://ecology.hainanu.edu.cn/info/1102/10010.htm",
+    "avatar": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    "id": 1766290396206,
+    "createdAt": "2025-12-21",
+    "updatedAt": "2025-12-21"
+  },
+  {
+    "name": "周德成",
+    "title": "副教授，硕士生/硕士生导师",
+    "field": "城市气象与生态",
+    "bio": "1",
+    "email": "decheng.zhou@hainanu.edu.cn",
+    "website": "https://ecology.hainanu.edu.cn/info/1102/10010.htm",
+    "avatar": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    "id": 1766290356841,
+    "createdAt": "2025-12-21",
+    "updatedAt": "2025-12-21"
+  },
+  {
+    "id": 1,
+    "name": "李四教授",
+    "avatar": "https://randomuser.me/api/portraits/men/32.jpg",
+    "title": "教授，博士生导师",
+    "field": "计算机视觉",
+    "bio": "长期从事计算机视觉研究，发表论文100余篇。"
+  },
+  {
+    "id": 2,
+    "name": "赵六教授",
+    "avatar": "https://randomuser.me/api/portraits/women/44.jpg",
+    "title": "教授，博士生导师",
+    "field": "自然语言处理",
+    "bio": "在自然语言处理领域有深厚造诣，多项研究成果已产业化。"
   }
 ]
