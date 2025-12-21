@@ -116,29 +116,74 @@ class DataManager {
     async init() {
         console.log('DataManager 初始化...');
         
-        // 设置GitHub Token（如果已保存）
-        if (this.githubToken && window.githubIssuesManager) {
-            window.githubIssuesManager.setToken(this.githubToken);
-        }
-        
-        // 加载数据
-        await this.loadData();
-        
-        // 开始自动同步
-        this.startAutoSync();
-        
-        // 监听管理员模式变化
-        document.addEventListener('adminModeChanged', (event) => {
-            if (event.detail.isAdmin && event.detail.editMode) {
-                console.log('管理员模式启用，停止自动同步');
-                this.stopAutoSync();
+        try {
+            // 检查 githubIssuesManager 是否可用
+            if (!window.githubIssuesManager) {
+                console.warn('⚠️ githubIssuesManager 未加载，等待 script.js 初始化');
             } else {
-                console.log('退出管理员模式，恢复自动同步');
-                this.startAutoSync();
+                // 如果已有 Token，同步到 githubIssuesManager
+                if (this.githubToken) {
+                    console.log('🔑 同步 Token 到 githubIssuesManager');
+                    window.githubIssuesManager.setToken(this.githubToken);
+                }
             }
-        });
-        
-        console.log('DataManager 初始化完成');
+            
+            // 加载数据
+            await this.loadData();
+            
+            // 检查 GitHub 连接
+            if (this.hasValidToken()) {
+                console.log('🔗 检查 GitHub 连接状态...');
+                const connection = await this.checkGitHubConnection();
+                console.log('GitHub 连接状态:', connection);
+                
+                if (connection.connected) {
+                    // 开始自动同步
+                    this.startAutoSync();
+                } else {
+                    console.warn('GitHub 连接失败:', connection.message);
+                    // 显示提示消息
+                    if (window.showToast) {
+                        window.showToast(`GitHub 连接失败: ${connection.message}`, 'warning');
+                    }
+                }
+            } else {
+                console.log('ℹ️ 未设置 GitHub Token，仅使用本地数据');
+            }
+            
+            // 监听管理员模式变化
+            document.addEventListener('adminModeChanged', (event) => {
+                console.log('管理员模式变化:', event.detail);
+                
+                if (event.detail.isAdmin && event.detail.editMode) {
+                    console.log('🛑 管理员编辑模式，暂停自动同步');
+                    this.stopAutoSync();
+                } else {
+                    console.log('▶️ 退出编辑模式，恢复自动同步');
+                    this.startAutoSync();
+                }
+            });
+            
+            // 监听数据更新事件
+            document.addEventListener('dataUpdated', (event) => {
+                console.log('数据更新事件:', event.detail);
+                
+                // 触发页面重新渲染
+                if (window.labWebsite) {
+                    const currentFilter = localStorage.getItem('project_filter_state') || 'all';
+                    window.labWebsite.renderProjects(currentFilter);
+                    window.labWebsite.renderAdvisors();
+                    window.labWebsite.renderStudents();
+                    window.labWebsite.renderPublications();
+                    window.labWebsite.renderUpdates();
+                }
+            });
+            
+            console.log('✅ DataManager 初始化完成');
+            
+        } catch (error) {
+            console.error('❌ DataManager 初始化失败:', error);
+        }
     }
 
     // 设置GitHub Token
