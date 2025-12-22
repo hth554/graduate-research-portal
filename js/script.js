@@ -2156,6 +2156,536 @@ function showEditProjectForm(projectId = null) {
     setupModalClose(modal);
 }
 
+/**
+ * 显示导师编辑表单
+ */
+function showEditAdvisorForm(advisorId = null) {
+    // 检查权限
+    if (isReadOnlyMode) {
+        showToast('需要输入Token才能编辑数据', 'warning');
+        requestTokenForAdmin();
+        return;
+    }
+    
+    const advisor = advisorId ? 
+        advisorsData.find(a => a.id == advisorId) : 
+        {
+            name: '',
+            title: '',
+            field: '',
+            bio: '',
+            avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+            email: '',
+            website: ''
+        };
+    
+    const isEditMode = !!advisorId;
+    
+    const modal = createModal();
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>${isEditMode ? '编辑导师信息' : '添加新导师'} <span class="auth-badge authenticated">已认证</span></h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editAdvisorForm" class="edit-form">
+                    <div class="form-group">
+                        <label for="editAdvisorName">姓名 *</label>
+                        <input type="text" id="editAdvisorName" value="${advisor.name}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editAdvisorTitle">职称 *</label>
+                        <input type="text" id="editAdvisorTitle" value="${advisor.title}" required placeholder="教授，博士生导师">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editAdvisorField">研究领域 *</label>
+                        <input type="text" id="editAdvisorField" value="${advisor.field}" required placeholder="碳循环、水循环、生态系统功能和服务">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editAdvisorBio">个人简介 *</label>
+                        <textarea id="editAdvisorBio" rows="6" required>${advisor.bio}</textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editAdvisorEmail">邮箱</label>
+                            <input type="email" id="editAdvisorEmail" value="${advisor.email || ''}" placeholder="example@university.edu.cn">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editAdvisorWebsite">个人主页</label>
+                            <input type="url" id="editAdvisorWebsite" value="${advisor.website || ''}" placeholder="https://example.com/profile">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editAdvisorAvatar">头像URL</label>
+                        <input type="url" id="editAdvisorAvatar" value="${advisor.avatar || ''}" 
+                               placeholder="https://images.unsplash.com/photo-...">
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary cancel-btn">取消</button>
+                        <button type="submit" class="btn btn-primary">
+                            ${isEditMode ? '更新导师信息' : '添加导师'}
+                        </button>
+                        ${isEditMode ? `
+                            <button type="button" class="btn btn-danger delete-btn">
+                                <i class="fas fa-trash"></i> 删除导师
+                            </button>
+                        ` : ''}
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    setTimeout(() => modal.classList.add('show'), 10);
+    
+    const form = modal.querySelector('#editAdvisorForm');
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            name: modal.querySelector('#editAdvisorName').value,
+            title: modal.querySelector('#editAdvisorTitle').value,
+            field: modal.querySelector('#editAdvisorField').value,
+            bio: modal.querySelector('#editAdvisorBio').value,
+            avatar: modal.querySelector('#editAdvisorAvatar').value || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+            email: modal.querySelector('#editAdvisorEmail').value || '',
+            website: modal.querySelector('#editAdvisorWebsite').value || ''
+        };
+        
+        if (isEditMode) {
+            await updateAdvisor(advisorId, formData);
+        } else {
+            await addAdvisor(formData);
+        }
+        
+        closeModal(modal);
+    });
+    
+    if (isEditMode) {
+        modal.querySelector('.delete-btn').addEventListener('click', async function() {
+            if (confirm('确定要删除这位导师吗？此操作不可撤销。')) {
+                await deleteAdvisor(advisorId);
+                closeModal(modal);
+            }
+        });
+    }
+    
+    modal.querySelector('.cancel-btn').addEventListener('click', () => closeModal(modal));
+    setupModalClose(modal);
+}
+
+/**
+ * 显示学生编辑表单
+ */
+function showEditStudentForm(studentId = null) {
+    // 检查权限
+    if (isReadOnlyMode) {
+        showToast('需要输入Token才能编辑数据', 'warning');
+        requestTokenForAdmin();
+        return;
+    }
+    
+    const student = studentId ? 
+        studentsData.find(s => s.id == studentId) : 
+        {
+            name: '',
+            degree: '',
+            field: '',
+            supervisor: '',
+            research: '',
+            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+            email: '',
+            github: ''
+        };
+    
+    const isEditMode = !!studentId;
+    
+    const modal = createModal();
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>${isEditMode ? '编辑学生信息' : '添加新学生'} <span class="auth-badge authenticated">已认证</span></h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editStudentForm" class="edit-form">
+                    <div class="form-group">
+                        <label for="editStudentName">姓名 *</label>
+                        <input type="text" id="editStudentName" value="${student.name}" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editStudentDegree">学位 *</label>
+                            <select id="editStudentDegree" required>
+                                <option value="本科生" ${student.degree === '本科生' ? 'selected' : ''}>本科生</option>
+                                <option value="硕士研究生" ${student.degree === '硕士研究生' ? 'selected' : ''}>硕士研究生</option>
+                                <option value="博士研究生" ${student.degree === '博士研究生' ? 'selected' : ''}>博士研究生</option>
+                                <option value="博士后" ${student.degree === '博士后' ? 'selected' : ''}>博士后</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editStudentField">专业领域 *</label>
+                            <input type="text" id="editStudentField" value="${student.field}" required placeholder="计算机科学">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editStudentSupervisor">指导老师 *</label>
+                        <input type="text" id="editStudentSupervisor" value="${student.supervisor}" required placeholder="李四教授">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editStudentResearch">研究方向 *</label>
+                        <textarea id="editStudentResearch" rows="4" required>${student.research}</textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editStudentEmail">邮箱</label>
+                            <input type="email" id="editStudentEmail" value="${student.email || ''}" placeholder="student@university.edu.cn">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editStudentGithub">GitHub</label>
+                            <input type="url" id="editStudentGithub" value="${student.github || ''}" placeholder="https://github.com/username">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editStudentAvatar">头像URL</label>
+                        <input type="url" id="editStudentAvatar" value="${student.avatar || ''}" 
+                               placeholder="https://images.unsplash.com/photo-...">
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary cancel-btn">取消</button>
+                        <button type="submit" class="btn btn-primary">
+                            ${isEditMode ? '更新学生信息' : '添加学生'}
+                        </button>
+                        ${isEditMode ? `
+                            <button type="button" class="btn btn-danger delete-btn">
+                                <i class="fas fa-trash"></i> 删除学生
+                            </button>
+                        ` : ''}
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    setTimeout(() => modal.classList.add('show'), 10);
+    
+    const form = modal.querySelector('#editStudentForm');
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            name: modal.querySelector('#editStudentName').value,
+            degree: modal.querySelector('#editStudentDegree').value,
+            field: modal.querySelector('#editStudentField').value,
+            supervisor: modal.querySelector('#editStudentSupervisor').value,
+            research: modal.querySelector('#editStudentResearch').value,
+            avatar: modal.querySelector('#editStudentAvatar').value || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+            email: modal.querySelector('#editStudentEmail').value || '',
+            github: modal.querySelector('#editStudentGithub').value || ''
+        };
+        
+        if (isEditMode) {
+            await updateStudent(studentId, formData);
+        } else {
+            await addStudent(formData);
+        }
+        
+        closeModal(modal);
+    });
+    
+    if (isEditMode) {
+        modal.querySelector('.delete-btn').addEventListener('click', async function() {
+            if (confirm('确定要删除这位学生吗？此操作不可撤销。')) {
+                await deleteStudent(studentId);
+                closeModal(modal);
+            }
+        });
+    }
+    
+    modal.querySelector('.cancel-btn').addEventListener('click', () => closeModal(modal));
+    setupModalClose(modal);
+}
+
+/**
+ * 显示学术成果编辑表单
+ */
+function showEditPublicationForm(publicationId = null) {
+    // 检查权限
+    if (isReadOnlyMode) {
+        showToast('需要输入Token才能编辑数据', 'warning');
+        requestTokenForAdmin();
+        return;
+    }
+    
+    const publication = publicationId ? 
+        publicationsData.find(p => p.id == publicationId) : 
+        {
+            type: '期刊论文',
+            title: '',
+            authors: '',
+            venue: '',
+            abstract: '',
+            doi: '',
+            link: ''
+        };
+    
+    const isEditMode = !!publicationId;
+    
+    const modal = createModal();
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>${isEditMode ? '编辑学术成果' : '添加新学术成果'} <span class="auth-badge authenticated">已认证</span></h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editPublicationForm" class="edit-form">
+                    <div class="form-group">
+                        <label for="editPublicationType">成果类型 *</label>
+                        <select id="editPublicationType" required>
+                            <option value="期刊论文" ${publication.type === '期刊论文' ? 'selected' : ''}>期刊论文</option>
+                            <option value="会议论文" ${publication.type === '会议论文' ? 'selected' : ''}>会议论文</option>
+                            <option value="专利" ${publication.type === '专利' ? 'selected' : ''}>专利</option>
+                            <option value="专著" ${publication.type === '专著' ? 'selected' : ''}>专著</option>
+                            <option value="技术报告" ${publication.type === '技术报告' ? 'selected' : ''}>技术报告</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editPublicationTitle">标题 *</label>
+                        <input type="text" id="editPublicationTitle" value="${publication.title}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editPublicationAuthors">作者 *</label>
+                        <input type="text" id="editPublicationAuthors" value="${publication.authors}" required placeholder="张三, 李四, 王五">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editPublicationVenue">发表刊物/会议 *</label>
+                        <input type="text" id="editPublicationVenue" value="${publication.venue}" required placeholder="《计算机学报》, 2023, 31(5): 12-18">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editPublicationAbstract">摘要 *</label>
+                        <textarea id="editPublicationAbstract" rows="5" required>${publication.abstract}</textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editPublicationDoi">DOI</label>
+                            <input type="text" id="editPublicationDoi" value="${publication.doi || ''}" placeholder="10.1234/j.issn.1000-1234.2023.05.002">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editPublicationLink">链接</label>
+                            <input type="url" id="editPublicationLink" value="${publication.link || ''}" placeholder="https://example.com/paper1">
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary cancel-btn">取消</button>
+                        <button type="submit" class="btn btn-primary">
+                            ${isEditMode ? '更新学术成果' : '添加学术成果'}
+                        </button>
+                        ${isEditMode ? `
+                            <button type="button" class="btn btn-danger delete-btn">
+                                <i class="fas fa-trash"></i> 删除成果
+                            </button>
+                        ` : ''}
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    setTimeout(() => modal.classList.add('show'), 10);
+    
+    const form = modal.querySelector('#editPublicationForm');
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            type: modal.querySelector('#editPublicationType').value,
+            title: modal.querySelector('#editPublicationTitle').value,
+            authors: modal.querySelector('#editPublicationAuthors').value,
+            venue: modal.querySelector('#editPublicationVenue').value,
+            abstract: modal.querySelector('#editPublicationAbstract').value,
+            doi: modal.querySelector('#editPublicationDoi').value || '',
+            link: modal.querySelector('#editPublicationLink').value || ''
+        };
+        
+        if (isEditMode) {
+            await updatePublication(publicationId, formData);
+        } else {
+            await addPublication(formData);
+        }
+        
+        closeModal(modal);
+    });
+    
+    if (isEditMode) {
+        modal.querySelector('.delete-btn').addEventListener('click', async function() {
+            if (confirm('确定要删除这个学术成果吗？此操作不可撤销。')) {
+                await deletePublication(publicationId);
+                closeModal(modal);
+            }
+        });
+    }
+    
+    modal.querySelector('.cancel-btn').addEventListener('click', () => closeModal(modal));
+    setupModalClose(modal);
+}
+
+/**
+ * 显示研究近况编辑表单
+ */
+function showEditUpdateForm(updateId = null) {
+    // 检查权限
+    if (isReadOnlyMode) {
+        showToast('需要输入Token才能编辑数据', 'warning');
+        requestTokenForAdmin();
+        return;
+    }
+    
+    const update = updateId ? 
+        updatesData.find(u => u.id == updateId) : 
+        {
+            date: getCurrentTimestamp(),
+            title: '',
+            type: '项目进展',
+            content: '',
+            project: ''
+        };
+    
+    const isEditMode = !!updateId;
+    
+    const modal = createModal();
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>${isEditMode ? '编辑研究近况' : '添加新研究近况'} <span class="auth-badge authenticated">已认证</span></h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editUpdateForm" class="edit-form">
+                    <div class="form-group">
+                        <label for="editUpdateDate">日期 *</label>
+                        <input type="date" id="editUpdateDate" value="${update.date}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editUpdateTitle">标题 *</label>
+                        <input type="text" id="editUpdateTitle" value="${update.title}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editUpdateType">类型 *</label>
+                        <select id="editUpdateType" required>
+                            <option value="项目进展" ${update.type === '项目进展' ? 'selected' : ''}>项目进展</option>
+                            <option value="学术活动" ${update.type === '学术活动' ? 'selected' : ''}>学术活动</option>
+                            <option value="科研资助" ${update.type === '科研资助' ? 'selected' : ''}>科研资助</option>
+                            <option value="技术转化" ${update.type === '技术转化' ? 'selected' : ''}>技术转化</option>
+                            <option value="学生荣誉" ${update.type === '学生荣誉' ? 'selected' : ''}>学生荣誉</option>
+                            <option value="产学研合作" ${update.type === '产学研合作' ? 'selected' : ''}>产学研合作</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editUpdateContent">内容 *</label>
+                        <textarea id="editUpdateContent" rows="6" required>${update.content}</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editUpdateProject">相关项目</label>
+                        <select id="editUpdateProject">
+                            <option value="">无关联项目</option>
+                            ${projectsData.map(project => 
+                                `<option value="${project.title}" ${update.project === project.title ? 'selected' : ''}>
+                                    ${project.title}
+                                </option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary cancel-btn">取消</button>
+                        <button type="submit" class="btn btn-primary">
+                            ${isEditMode ? '更新研究近况' : '添加研究近况'}
+                        </button>
+                        ${isEditMode ? `
+                            <button type="button" class="btn btn-danger delete-btn">
+                                <i class="fas fa-trash"></i> 删除近况
+                            </button>
+                        ` : ''}
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    setTimeout(() => modal.classList.add('show'), 10);
+    
+    const form = modal.querySelector('#editUpdateForm');
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            date: modal.querySelector('#editUpdateDate').value,
+            title: modal.querySelector('#editUpdateTitle').value,
+            type: modal.querySelector('#editUpdateType').value,
+            content: modal.querySelector('#editUpdateContent').value,
+            project: modal.querySelector('#editUpdateProject').value || '',
+            projectId: modal.querySelector('#editUpdateProject').value ? 
+                projectsData.find(p => p.title === modal.querySelector('#editUpdateProject').value)?.id : null
+        };
+        
+        if (isEditMode) {
+            await updateUpdate(updateId, formData);
+        } else {
+            await addUpdate(formData);
+        }
+        
+        closeModal(modal);
+    });
+    
+    if (isEditMode) {
+        modal.querySelector('.delete-btn').addEventListener('click', async function() {
+            if (confirm('确定要删除这个研究近况吗？此操作不可撤销。')) {
+                await deleteUpdate(updateId);
+                closeModal(modal);
+            }
+        });
+    }
+    
+    modal.querySelector('.cancel-btn').addEventListener('click', () => closeModal(modal));
+    setupModalClose(modal);
+}
+
 // ============================
 // 管理面板功能（带权限控制）
 // ============================
