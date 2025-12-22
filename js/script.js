@@ -192,7 +192,7 @@ async function fetchPublicDataFromGitHub() {
                     loadedCount++;
                     console.log(`✅ 成功加载 ${filename} (${allData[key].length} 条记录)`);
                 } else {
-                    console.warn(`⚠️ 无法加载 ${filename}: ${response.status} ${response.statusText}`);
+                    console.warn(⚠️ 无法加载 ${filename}: ${response.status} ${response.statusText}`);
                     allData[key] = [];
                 }
             } catch (error) {
@@ -3897,14 +3897,22 @@ if (document.readyState === 'loading') {
 // 导出（如果需要）
 // ============================
 
+// ============================
+// 导出（如果需要）
+// ============================
+
 // 如果需要，可以将一些函数导出
 window.labWebsite = {
-    // 数据操作
+    // 数据变量
     projectsData,
     advisorsData,
     studentsData,
     publicationsData,
     updatesData,
+    
+    // 权限状态
+    isReadOnlyMode,
+    isAuthenticated,
     
     // CRUD操作
     addProject,
@@ -3938,5 +3946,10 @@ window.labWebsite = {
     
     // 工具函数
     saveAllDataToGitHub,
-    exportAllData
+    exportAllData,
+    
+    // 权限检查函数
+    checkAuthentication: async function() {
+        return checkAuthentication();
+    }
 };
