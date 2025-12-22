@@ -4,11 +4,11 @@
 
 // GitHub 数据文件名
 const GITHUB_FILES = {
-    PROJECTS: 'research-projects.json',
-    ADVISORS: 'research-advisors.json',
-    STUDENTS: 'research-students.json',
-    PUBLICATIONS: 'research-publications.json',
-    UPDATES: 'research-updates.json'
+    PROJECTS: 'advisors.json',
+    ADVISORS: 'students.json',
+    STUDENTS: 'projects.json',
+    PUBLICATIONS: 'publications.json',
+    UPDATES: 'updates.json'
 };
 
 // 本地存储键名（仅用于主题和过滤状态等用户偏好设置）
