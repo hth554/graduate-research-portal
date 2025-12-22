@@ -1,44 +1,198 @@
-// js/admin-system.js - 管理员系统（集成权限控制）
+// js/admin-system.js - 管理员系统（修复版）
+
 class AdminSystem {
     constructor() {
-        this.isAdmin = false; // 默认不是管理员
+        this.isAdmin = false;
         this.editMode = false;
         
         this.init();
-        
-        // 添加事件监听，确保脚本加载完成后再绑定事件
-        this.ensureEventBindings();
     }
 
-    // 初始化
     init() {
         this.bindEvents();
+        this.bindDirectEditEvents(); // 新增：直接事件绑定
         this.updateUI();
     }
 
-    // 新增方法：确保事件绑定
-    ensureEventBindings() {
-        // 监听页面加载完成
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                this.rebindEvents();
-            });
-        } else {
-            this.rebindEvents();
-        }
+    // 新增：直接事件绑定方法（使用事件委托）
+    bindDirectEditEvents() {
+        console.log('绑定直接编辑事件...');
+        
+        // 使用事件委托监听整个文档
+        document.addEventListener('click', (e) => {
+            // 检查点击的元素是否是编辑按钮
+            const target = e.target;
+            const button = target.closest('.advisor-edit-btn, .student-edit-btn, .edit-publication-btn, .edit-update-btn, .project-edit-btn');
+            
+            if (!button) return;
+            
+            console.log('编辑按钮被点击:', button.className);
+            
+            // 阻止默认行为
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // 检查权限
+            if (!this.isAdmin) {
+                console.log('用户不是管理员，需要登录');
+                this.showLoginMessage('请先进入管理员模式', 'warning');
+                
+                // 提示输入Token
+                if (confirm('需要GitHub Token才能编辑数据。现在输入Token？')) {
+                    this.promptForToken();
+                }
+                return;
+            }
+            
+            if (!this.editMode) {
+                console.log('未进入编辑模式，自动进入');
+                this.editMode = true;
+                this.updateEditModeUI();
+            }
+            
+            // 获取数据ID
+            const id = button.getAttribute('data-id');
+            const buttonClasses = button.className;
+            
+            console.log('按钮信息:', { id, buttonClasses });
+            
+            // 根据按钮类型调用相应函数
+            if (buttonClasses.includes('advisor-edit-btn')) {
+                this.handleEditAdvisor(id);
+            } else if (buttonClasses.includes('student-edit-btn')) {
+                this.handleEditStudent(id);
+            } else if (buttonClasses.includes('edit-publication-btn')) {
+                this.handleEditPublication(id);
+            } else if (buttonClasses.includes('edit-update-btn')) {
+                this.handleEditUpdate(id);
+            } else if (buttonClasses.includes('project-edit-btn')) {
+                this.handleEditProject(id);
+            }
+        });
     }
 
-    // 新增方法：重新绑定事件
-    rebindEvents() {
-        // 检查labWebsite是否已加载
-        if (!window.labWebsite) {
-            console.warn('labWebsite未加载，等待1秒后重试...');
-            setTimeout(() => this.rebindEvents(), 1000);
+    // 新增：处理各种编辑的函数
+    handleEditAdvisor(advisorId) {
+        console.log('编辑导师:', advisorId);
+        
+        // 方法1：优先使用 labWebsite 的函数
+        if (window.labWebsite && window.labWebsite.showEditAdvisorForm) {
+            window.labWebsite.showEditAdvisorForm(advisorId);
             return;
         }
         
-        console.log('重新绑定编辑按钮事件...');
-        this.bindEvents();
+        // 方法2：如果 labWebsite 不可用，尝试直接调用
+        if (typeof showEditAdvisorForm === 'function') {
+            showEditAdvisorForm(advisorId);
+            return;
+        }
+        
+        // 方法3：备用方案 - 显示提示
+        this.showLoginMessage('编辑功能加载中...', 'info');
+        console.warn('编辑函数未找到，请检查脚本加载顺序');
+    }
+
+    handleEditStudent(studentId) {
+        console.log('编辑学生:', studentId);
+        
+        if (window.labWebsite && window.labWebsite.showEditStudentForm) {
+            window.labWebsite.showEditStudentForm(studentId);
+            return;
+        }
+        
+        if (typeof showEditStudentForm === 'function') {
+            showEditStudentForm(studentId);
+            return;
+        }
+        
+        this.showLoginMessage('编辑功能加载中...', 'info');
+    }
+
+    handleEditPublication(publicationId) {
+        console.log('编辑学术成果:', publicationId);
+        
+        if (window.labWebsite && window.labWebsite.showEditPublicationForm) {
+            window.labWebsite.showEditPublicationForm(publicationId);
+            return;
+        }
+        
+        if (typeof showEditPublicationForm === 'function') {
+            showEditPublicationForm(publicationId);
+            return;
+        }
+        
+        this.showLoginMessage('编辑功能加载中...', 'info');
+    }
+
+    handleEditUpdate(updateId) {
+        console.log('编辑研究近况:', updateId);
+        
+        if (window.labWebsite && window.labWebsite.showEditUpdateForm) {
+            window.labWebsite.showEditUpdateForm(updateId);
+            return;
+        }
+        
+        if (typeof showEditUpdateForm === 'function') {
+            showEditUpdateForm(updateId);
+            return;
+        }
+        
+        this.showLoginMessage('编辑功能加载中...', 'info');
+    }
+
+    handleEditProject(projectId) {
+        console.log('编辑课题:', projectId);
+        
+        if (window.labWebsite && window.labWebsite.showEditProjectForm) {
+            window.labWebsite.showEditProjectForm(projectId);
+            return;
+        }
+        
+        if (typeof showEditProjectForm === 'function') {
+            showEditProjectForm(projectId);
+            return;
+        }
+        
+        this.showLoginMessage('编辑功能加载中...', 'info');
+    }
+
+    // 新增：提示输入Token
+    promptForToken() {
+        const token = prompt(
+            '请输入 GitHub Personal Access Token：\n\n' +
+            '格式要求：以 "ghp_" 或 "github_pat_" 开头\n' +
+            'Token 需要以下权限：repo, workflow\n\n' +
+            '（Token 将安全保存在您的浏览器本地）',
+            ''
+        );
+        
+        if (token && token.trim()) {
+            if (window.githubIssuesManager && window.githubIssuesManager.setToken(token)) {
+                // 保存到 dataManager
+                if (window.dataManager) {
+                    window.dataManager.setGitHubToken(token);
+                }
+                
+                // 保存到 localStorage
+                localStorage.setItem('github_pat_token', token);
+                localStorage.setItem('github_admin_token', token);
+                
+                // 进入管理员模式
+                this.isAdmin = true;
+                this.editMode = true;
+                this.showLoginMessage('Token验证成功，已进入管理员模式', 'success');
+                this.updateUI();
+                
+                // 重新加载数据
+                if (window.labWebsite && window.labWebsite.checkAuthentication) {
+                    window.labWebsite.checkAuthentication();
+                }
+                
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     // 绑定事件
@@ -146,32 +300,15 @@ class AdminSystem {
         }
     }
 
-    // 切换管理员模式（添加权限检查）
+    // 修改 toggleAdminMode 方法，添加Token检查
     toggleAdminMode() {
-        // 首先检查是否已认证
-        if (window.labWebsite && window.labWebsite.isReadOnlyMode) {
-            // 如果是只读模式，提示输入Token
-            if (confirm('需要GitHub Token才能进入管理员模式。现在输入Token？')) {
-                const token = prompt('请输入GitHub Token:');
-                if (token && window.githubIssuesManager.setToken(token)) {
-                    // 设置dataManager的Token
-                    if (window.dataManager) {
-                        window.dataManager.setGitHubToken(token);
-                    }
-                    
-                    // 重新检查认证状态
-                    if (window.labWebsite.checkAuthentication) {
-                        window.labWebsite.checkAuthentication().then(() => {
-                            // 进入管理员模式
-                            this.isAdmin = true;
-                            this.editMode = true;
-                            this.showLoginMessage('Token验证成功，已进入管理员模式', 'success');
-                            this.updateUI();
-                            this.reloadPageData();
-                        });
-                    }
-                }
-            }
+        // 首先检查是否有Token
+        const hasToken = window.githubIssuesManager && 
+                         window.githubIssuesManager.hasValidToken();
+        
+        if (!hasToken) {
+            console.log('未检测到Token，提示用户输入');
+            this.promptForToken();
             return;
         }
         
@@ -394,8 +531,8 @@ class AdminSystem {
                         btn.innerHTML = '<i class="fas fa-edit"></i> 编辑学术成果';
                         break;
                     case 'edit-updates-btn':
-                        btn.innerHTML = '<i class="fas fa-edit"></i> 编辑研究近况';
-                        break;
+                            btn.innerHTML = '<i class="fas fa-edit"></i> 编辑研究近况';
+                            break;
                 }
             });
             
