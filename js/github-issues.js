@@ -129,19 +129,49 @@ class GitHubIssuesManager {
         const path = `data/${filename}`;
         const url = `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${path}`;
 
-        // 1. 拿当前文件的 SHA（文件不存在会 404，此时 sha 保持 null 即可新建）
+        // 1. 确保 data 目录存在
+        await this.ensureDataDirectory();
+        
+        // 2. 拿当前文件的 SHA（文件不存在会 404，此时 sha 保持 null 即可新建）
         let sha = null;
-        try {
-            const getResp = await fetch(url, {
-                headers: { 
-                    'Authorization': `Bearer ${this.token}`,
-                    'Accept': 'application/vnd.github.v3+json'
+        let retryCount = 0;
+        const maxRetries = 2;
+        
+        while (retryCount <= maxRetries) {
+            try {
+                const getResp = await fetch(url, {
+                    headers: { 
+                        'Authorization': `Bearer ${this.token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                
+                if (getResp.ok) {
+                    const fileData = await getResp.json();
+                    sha = fileData.sha;
+                    break;
+                } else if (getResp.status === 404) {
+                    // 文件不存在是正常情况，sha 保持 null
+                    break;
+                } else if (getResp.status === 409 && retryCount < maxRetries) {
+                    // 409 冲突，等待后重试
+                    retryCount++;
+                    await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+                    continue;
+                } else {
+                    throw new Error(`获取文件信息失败: ${getResp.status}`);
                 }
-            });
-            if (getResp.ok) sha = (await getResp.json()).sha;
-        } catch {}
+            } catch (error) {
+                if (retryCount < maxRetries) {
+                    retryCount++;
+                    await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+                    continue;
+                }
+                throw error;
+            }
+        }
 
-        // 2. 提交新内容
+        // 3. 提交新内容
         const content = btoa(unescape(encodeURIComponent(JSON.stringify(dataObj, null, 2))));
         const body = JSON.stringify({
             message: `portal: 更新 ${filename} (${new Date().toLocaleString('zh-CN')})`,
@@ -149,21 +179,125 @@ class GitHubIssuesManager {
             sha
         });
 
-        const putResp = await fetch(url, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${this.token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/vnd.github.v3+json'
-            },
-            body
-        });
+        retryCount = 0;
+        while (retryCount <= maxRetries) {
+            try {
+                const putResp = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${this.token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    body
+                });
 
-        if (!putResp.ok) {
-            const txt = await putResp.text();
-            throw new Error(`写入 GitHub 失败 ${putResp.status}: ${txt}`);
+                if (putResp.ok) {
+                    return await putResp.json();
+                } else if (putResp.status === 409 && retryCount < maxRetries) {
+                    // 409 冲突，重新获取最新的 SHA 后重试
+                    retryCount++;
+                    console.log(`SHA 冲突，第 ${retryCount} 次重试...`);
+                    
+                    // 重新获取最新的 SHA
+                    const getResp = await fetch(url, {
+                        headers: { 
+                            'Authorization': `Bearer ${this.token}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+                    
+                    if (getResp.ok) {
+                        const fileData = await getResp.json();
+                        sha = fileData.sha;
+                        
+                        // 更新请求体中的 SHA
+                        const retryBody = JSON.stringify({
+                            message: `portal: 更新 ${filename} (${new Date().toLocaleString('zh-CN')}) - 重试`,
+                            content,
+                            sha
+                        });
+                        
+                        body = retryBody;
+                        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+                        continue;
+                    } else {
+                        throw new Error(`重试时获取文件失败: ${getResp.status}`);
+                    }
+                } else {
+                    const errorText = await putResp.text();
+                    let errorMsg = `写入 GitHub 失败 ${putResp.status}: ${errorText}`;
+                    
+                    // 提供更友好的错误信息
+                    if (putResp.status === 404) {
+                        errorMsg = `文件路径不存在 (404): 请确保 data 目录存在于仓库中，或检查仓库名是否正确`;
+                    } else if (putResp.status === 409) {
+                        errorMsg = `版本冲突 (409): 文件已被其他人修改，请刷新页面后重试`;
+                    } else if (putResp.status === 403) {
+                        errorMsg = `权限不足 (403): Token 可能缺少 write 权限，或 API 速率限制`;
+                    }
+                    
+                    throw new Error(errorMsg);
+                }
+            } catch (error) {
+                if (retryCount < maxRetries) {
+                    retryCount++;
+                    await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+                    continue;
+                }
+                throw error;
+            }
         }
-        return putResp.json();
+    }
+
+    /* ========== 新增：确保 data 目录存在 ========== */
+    async ensureDataDirectory() {
+        const dirUrl = `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/data`;
+        
+        try {
+            // 检查目录是否存在
+            const checkResp = await fetch(dirUrl, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            
+            if (checkResp.ok) {
+                // 目录已存在
+                return true;
+            } else if (checkResp.status === 404) {
+                // 目录不存在，创建目录（通过创建一个空文件）
+                console.log('data 目录不存在，正在创建...');
+                
+                // 创建 .gitkeep 文件来创建目录
+                const createDirResp = await fetch(`${this.apiBase}/repos/${this.owner}/${this.repo}/contents/data/.gitkeep`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${this.token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    body: JSON.stringify({
+                        message: 'portal: 创建 data 目录',
+                        content: btoa('') // 空文件
+                    })
+                });
+                
+                if (!createDirResp.ok) {
+                    const errorText = await createDirResp.text();
+                    console.warn(`创建 data 目录失败: ${createDirResp.status} - ${errorText}`);
+                    // 继续尝试，可能目录已通过其他方式创建
+                }
+                
+                return true;
+            }
+        } catch (error) {
+            console.warn('检查/创建 data 目录时出错:', error);
+            // 继续执行，让上层处理错误
+        }
+        
+        return false;
     }
 
     /* ========== 修改：读任意 JSON 文件（支持公开读取） ========== */
@@ -234,6 +368,9 @@ class GitHubIssuesManager {
         if (!this.hasValidToken()) throw new Error('无有效 GitHub Token');
         
         try {
+            // 确保 data 目录存在
+            await this.ensureDataDirectory();
+            
             const result = await this.writeJsonFile(filename, defaultData);
             console.log(`已创建空的 ${filename} 文件`);
             return result;
@@ -306,6 +443,90 @@ class GitHubIssuesManager {
             return {
                 exists: false,
                 error: error.message
+            };
+        }
+    }
+    
+    /* ========== 新增：检查仓库和 Token 权限 ========== */
+    async checkPermissions() {
+        if (!this.hasValidToken()) {
+            return {
+                hasToken: false,
+                message: '未设置 GitHub Token',
+                canWrite: false
+            };
+        }
+        
+        try {
+            // 检查 Token 有效性
+            const userResp = await fetch(`${this.apiBase}/user`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            
+            if (!userResp.ok) {
+                return {
+                    hasToken: true,
+                    isValid: false,
+                    message: `Token 无效: ${userResp.status}`,
+                    canWrite: false
+                };
+            }
+            
+            const userData = await userResp.json();
+            
+            // 检查仓库访问权限
+            const repoResp = await fetch(`${this.apiBase}/repos/${this.owner}/${this.repo}`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            
+            if (!repoResp.ok) {
+                return {
+                    hasToken: true,
+                    isValid: true,
+                    hasRepoAccess: false,
+                    message: `无法访问仓库: ${repoResp.status}`,
+                    canWrite: false,
+                    user: userData.login
+                };
+            }
+            
+            const repoData = await repoResp.json();
+            
+            // 检查写入权限（通过尝试获取仓库内容）
+            const testWriteResp = await fetch(`${this.apiBase}/repos/${this.owner}/${this.repo}/contents/test-permission-check`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            
+            // 只要不是 403，就认为有写入权限（404 是正常的，表示文件不存在）
+            const canWrite = testWriteResp.status !== 403;
+            
+            return {
+                hasToken: true,
+                isValid: true,
+                hasRepoAccess: true,
+                canWrite: canWrite,
+                message: canWrite ? 'Token 有效，有写入权限' : 'Token 有效，但无写入权限',
+                user: userData.login,
+                repo: repoData.full_name,
+                isPrivate: repoData.private,
+                permissions: repoData.permissions || {}
+            };
+            
+        } catch (error) {
+            return {
+                hasToken: true,
+                isValid: false,
+                message: `检查权限时出错: ${error.message}`,
+                canWrite: false
             };
         }
     }
