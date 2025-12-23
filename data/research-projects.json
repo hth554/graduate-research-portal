@@ -1,80 +1,20 @@
 [
   {
     "id": 1,
-    "title": "基于深度学习的医学图像分割算法研究",
-    "category": "medical",
-    "description": "本研究旨在开发一种高效的深度学习算法，用于医学图像中的器官与病变区域自动分割，提高诊断准确性与效率。",
-    "advisor": "张明教授",
+    "title": "基于深度学习的人脸识别系统",
+    "category": "engineering",
+    "description": "本项目研究基于深度学习的人脸识别算法，旨在提高识别准确率和实时性。",
+    "advisor": "李四教授",
     "status": "进行中",
-    "statusType": "in-progress",
-    "image": "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-    "createdAt": "2023-01-15",
-    "updatedAt": "2025-12-23T17:57:05.945Z",
-    "isDefault": true
+    "student": "张三"
   },
   {
     "id": 2,
-    "title": "可再生能源智能微电网优化控制策略",
-    "category": "engineering",
-    "description": "研究微电网中太阳能、风能等可再生能源的集成优化控制策略，提高能源利用效率与系统稳定性。",
-    "advisor": "李华教授",
-    "status": "进行中",
-    "statusType": "in-progress",
-    "image": "https://images.unsplash.com/photo-1466611653911-95081537e5b7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-    "createdAt": "2023-02-10",
-    "updatedAt": "2023-09-18",
-    "isDefault": true
-  },
-  {
-    "id": 3,
-    "title": "新型纳米材料在环境污染物去除中的应用",
+    "title": "量子计算在密码学中的应用",
     "category": "science",
-    "description": "探索新型纳米材料在废水处理与空气净化中的应用潜力，开发高效、低成本的环境修复技术。",
-    "advisor": "王静教授",
+    "description": "探索量子计算对现代密码学的影响及量子安全加密方案。",
+    "advisor": "赵六教授",
     "status": "已完成",
-    "statusType": "completed",
-    "image": "https://images.unsplash.com/photo-1581094794329-c8112b89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-    "createdAt": "2022-11-05",
-    "updatedAt": "2023-08-30",
-    "isDefault": true
-  },
-  {
-    "id": 4,
-    "title": "人工智能辅助的金融风险预测模型",
-    "category": "science",
-    "description": "构建基于机器学习与深度学习的金融风险预测模型，提高金融机构的风险识别与防范能力。",
-    "advisor": "赵伟教授",
-    "status": "进行中",
-    "statusType": "in-progress",
-    "image": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-    "createdAt": "2023-03-20",
-    "updatedAt": "2023-10-15",
-    "isDefault": true
-  },
-  {
-    "id": 5,
-    "title": "数字化转型对企业组织文化的影响研究",
-    "category": "humanities",
-    "description": "探究数字化转型过程中企业组织文化的变迁机制，为企业数字化转型提供管理策略建议。",
-    "advisor": "刘芳教授",
-    "status": "进行中",
-    "statusType": "in-progress",
-    "image": "https://images.unsplash.com/photo-1499750310107-5fef28a66643?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-    "createdAt": "2023-04-12",
-    "updatedAt": "2023-10-10",
-    "isDefault": true
-  },
-  {
-    "id": 6,
-    "title": "新型肿瘤靶向药物递送系统研究",
-    "category": "medical",
-    "description": "开发基于纳米技术的肿瘤靶向药物递送系统，提高抗癌药物在肿瘤部位的富集与疗效。",
-    "advisor": "陈晨教授",
-    "status": "筹备中",
-    "statusType": "preparation",
-    "image": "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-    "createdAt": "2023-09-01",
-    "updatedAt": "2023-09-01",
-    "isDefault": true
+    "student": "王五"
   }
 ]
