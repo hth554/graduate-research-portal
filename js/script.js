@@ -1,10 +1,10 @@
 // 配置常量
 const GITHUB_FILES = {
-    PROJECTS: 'projects.json',
-    ADVISORS: 'advisors.json', 
-    STUDENTS: 'students.json',
-    PUBLICATIONS: 'publications.json',
-    UPDATES: 'updates.json'
+    PROJECTS: 'research-projects.json',
+    ADVISORS: 'research-advisors.json',
+    STUDENTS: 'research-students.json',
+    PUBLICATIONS: 'research-publications.json',
+    UPDATES: 'research-updates.json'
 };
 
 const LOCAL_STORAGE_KEYS = {
@@ -198,7 +198,11 @@ async function fetchPublicDataFromGitHub() {
     
     try {
         const baseUrl = 'https://raw.githubusercontent.com/hth554/graduate-research-portal/main/data/';
-        const dataFiles = { projects: GITHUB_FILES.PROJECTS, advisors: GITHUB_FILES.ADVISORS, students: GITHUB_FILES.STUDENTS, publications: GITHUB_FILES.PUBLICATIONS, updates: GITHUB_FILES.UPDATES };
+        const dataFiles = { projects: 'research-projects.json', 
+                            advisors: 'research-advisors.json', 
+                            students: 'research-students.json', 
+                            publications: 'research-publications.json', 
+                            updates: 'research-updates.json' };
         const allData = {};
         let loadedCount = 0;
         
