@@ -1,475 +1,462 @@
+// js/data-manager.js - 数据管理和存储（重构版）
 class DataManager {
     constructor() {
+        // 默认数据（如果本地存储和GitHub都没有数据）
         this.defaultData = {
             advisors: [
-                {id: 1, name: "李四教授", avatar: "https://randomuser.me/api/portraits/men/32.jpg", title: "教授，博士生导师", field: "计算机视觉", bio: "长期从事计算机视觉研究，发表论文100余篇。", isDefault: true},
-                {id: 2, name: "赵六教授", avatar: "https://randomuser.me/api/portraits/women/44.jpg", title: "教授，博士生导师", field: "自然语言处理", bio: "在自然语言处理领域有深厚造诣，多项研究成果已产业化。", isDefault: true}
+                {
+                    id: 1,
+                    name: "李四教授",
+                    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
+                    title: "教授，博士生导师",
+                    field: "计算机视觉",
+                    bio: "长期从事计算机视觉研究，发表论文100余篇。"
+                },
+                {
+                    id: 2,
+                    name: "赵六教授",
+                    avatar: "https://randomuser.me/api/portraits/women/44.jpg",
+                    title: "教授，博士生导师",
+                    field: "自然语言处理",
+                    bio: "在自然语言处理领域有深厚造诣，多项研究成果已产业化。"
+                }
             ],
             students: [
-                {id: 1, name: "张三", avatar: "https://randomuser.me/api/portraits/men/22.jpg", degree: "硕士生", field: "计算机科学", supervisor: "李四教授", research: "深度学习在图像识别中的应用", isDefault: true},
-                {id: 2, name: "王五", avatar: "https://randomuser.me/api/portraits/women/33.jpg", degree: "博士生", field: "人工智能", supervisor: "赵六教授", research: "自然语言处理与机器翻译", isDefault: true}
+                {
+                    id: 1,
+                    name: "张三",
+                    avatar: "https://randomuser.me/api/portraits/men/22.jpg",
+                    degree: "硕士生",
+                    field: "计算机科学",
+                    supervisor: "李四教授",
+                    research: "深度学习在图像识别中的应用"
+                },
+                {
+                    id: 2,
+                    name: "王五",
+                    avatar: "https://randomuser.me/api/portraits/women/33.jpg",
+                    degree: "博士生",
+                    field: "人工智能",
+                    supervisor: "赵六教授",
+                    research: "自然语言处理与机器翻译"
+                }
             ],
             projects: [
-                {id: 1, title: "基于深度学习的人脸识别系统", category: "engineering", description: "本项目研究基于深度学习的人脸识别算法，旨在提高识别准确率和实时性。", advisor: "李四教授", status: "进行中", student: "张三", isDefault: true},
-                {id: 2, title: "量子计算在密码学中的应用", category: "science", description: "探索量子计算对现代密码学的影响及量子安全加密方案。", advisor: "赵六教授", status: "已完成", student: "王五", isDefault: true}
+                {
+                    id: 1,
+                    title: "基于深度学习的人脸识别系统",
+                    category: "engineering",
+                    description: "本项目研究基于深度学习的人脸识别算法，旨在提高识别准确率和实时性。",
+                    advisor: "李四教授",
+                    status: "进行中",
+                    student: "张三"
+                },
+                {
+                    id: 2,
+                    title: "量子计算在密码学中的应用",
+                    category: "science",
+                    description: "探索量子计算对现代密码学的影响及量子安全加密方案。",
+                    advisor: "赵六教授",
+                    status: "已完成",
+                    student: "王五"
+                }
             ],
             publications: [
-                {id: 1, type: "期刊论文", title: "基于Transformer的视觉识别模型研究", authors: "张三, 李四", venue: "计算机学报, 2023", abstract: "本文提出了一种改进的Transformer模型...", isDefault: true}
+                {
+                    id: 1,
+                    type: "期刊论文",
+                    title: "基于Transformer的视觉识别模型研究",
+                    authors: "张三, 李四",
+                    venue: "计算机学报, 2023",
+                    abstract: "本文提出了一种改进的Transformer模型..."
+                }
             ],
             updates: [
-                {id: 1, date: "2023-10-15", title: "实验室获得国家自然科学基金资助", type: "项目动态", content: "本实验室获得国家自然科学基金重点项目资助...", isDefault: true}
+                {
+                    id: 1,
+                    date: "2023-10-15",
+                    title: "实验室获得国家自然科学基金资助",
+                    type: "项目动态",
+                    content: "本实验室获得国家自然科学基金重点项目资助..."
+                }
             ]
         };
         
+        // 数据文件映射
         this.dataFiles = {
-            advisors: 'research-advisors.json',
-            students: 'research-students.json',
-            projects: 'research-projects.json',
-            publications: 'research-publications.json',
-            updates: 'research-updates.json'
+            advisors: 'advisors.json',
+            students: 'students.json',
+            projects: 'projects.json',
+            publications: 'publications.json',
+            updates: 'updates.json'
         };
         
+        // 仓库信息
         this.owner = 'HTH554';
         this.repo = 'graduate-research-portal';
+        
+        // GitHub Token（从localStorage获取）
         this.githubToken = localStorage.getItem('github_admin_token');
+        
+        // 数据版本号（用于检测更新）
         this.dataVersion = localStorage.getItem('data_version') || '0';
         this.lastSyncTime = localStorage.getItem('last_sync_time') || null;
-        this.syncInterval = 60000;
-        this.data = { ...this.defaultData };
-        this.publicDataCacheTime = localStorage.getItem('public_data_cache_time') || null;
-        this.publicDataCache = null;
-        this.autoSyncTimer = null;
         
+        // 自动同步间隔（毫秒）
+        this.syncInterval = 60000; // 1分钟
+        
+        // 当前数据
+        this.data = { ...this.defaultData };
+        
+        // 初始化
         this.init();
     }
 
+    // 初始化
     async init() {
-        try {
-            await this.loadPublicData();
-            
-            if (this.hasValidToken() && window.githubIssuesManager) {
-                window.githubIssuesManager.setToken(this.githubToken);
-                await this.syncFromGitHub();
-                this.startAutoSync();
-                this.updatePermissionStatus('authenticated');
-            } else {
-                this.updatePermissionStatus('guest');
-            }
-            
-            this.bindEvents();
-            console.log('✅ DataManager 初始化完成');
-        } catch (error) {
-            console.error('❌ DataManager 初始化失败:', error);
+        console.log('DataManager 初始化...');
+        
+        // 设置GitHub Token（如果已保存）
+        if (this.githubToken && window.githubIssuesManager) {
+            window.githubIssuesManager.setToken(this.githubToken);
         }
-    }
-
-    bindEvents() {
+        
+        // 加载数据
+        await this.loadData();
+        
+        // 开始自动同步
+        this.startAutoSync();
+        
+        // 监听管理员模式变化
         document.addEventListener('adminModeChanged', (event) => {
-            event.detail.isAdmin && event.detail.editMode ? 
-                this.stopAutoSync() : this.startAutoSync();
+            if (event.detail.isAdmin && event.detail.editMode) {
+                console.log('管理员模式启用，停止自动同步');
+                this.stopAutoSync();
+            } else {
+                console.log('退出管理员模式，恢复自动同步');
+                this.startAutoSync();
+            }
         });
         
-        document.addEventListener('dataUpdated', () => {
-            // 使用 labWebsite 的渲染函数（已修复）
-            if (window.labWebsite && window.labWebsite.renderProjects) {
-                const currentFilter = localStorage.getItem('project_filter_state') || 'all';
-                window.labWebsite.renderProjects(currentFilter);
-                window.labWebsite.renderAdvisors();
-                window.labWebsite.renderStudents();
-                window.labWebsite.renderPublications();
-                window.labWebsite.renderUpdates();
-            } else {
-                // 如果 labWebsite 未加载，直接触发自定义事件
-                this.dispatchCustomEvent('renderNeeded');
-            }
-        });
-    }
-    
-    dispatchCustomEvent(eventName, detail = {}) {
-        document.dispatchEvent(new CustomEvent(eventName, { detail }));
+        console.log('DataManager 初始化完成');
     }
 
-    updatePermissionStatus(status) {
-        if (window.labWebsite && window.labWebsite.showPermissionStatus) {
-            // 使用 labWebsite 的函数（如果可用）
-            const messages = {
-                'guest': '👤 游客模式，只能查看数据',
-                'authenticated': '🔗 已连接GitHub | 数据实时同步'
-            };
-            window.labWebsite.showPermissionStatus(messages[status] || status, status);
-        }
-    }
-
-    async loadPublicData() {
-        try {
-            // 优先检查本地存储的用户数据
-            const savedData = localStorage.getItem('research_portal_data');
-            if (savedData) {
-                const parsedData = JSON.parse(savedData);
-                // 合并本地数据和默认数据，但本地数据优先
-                this.mergeDataWithDefaults(parsedData);
-                this.saveToLocalStorage();
-                console.log('✅ 从本地存储加载数据成功');
-                return true;
-            }
-            
-            // 其次检查公共数据缓存
-            const cachedData = localStorage.getItem('public_data_cache');
-            const cacheTime = localStorage.getItem('public_data_cache_time');
-            
-            if (cachedData && cacheTime && Date.now() - parseInt(cacheTime) < 3600000) {
-                this.publicDataCache = JSON.parse(cachedData);
-                this.publicDataCacheTime = cacheTime;
-                this.mergeDataWithDefaults(this.publicDataCache);
-                console.log('✅ 从缓存加载公共数据成功');
-                return true;
-            }
-            
-            // 最后尝试从 GitHub 获取
-            const publicData = await this.fetchPublicData();
-            
-            if (publicData) {
-                localStorage.setItem('public_data_cache', JSON.stringify(publicData));
-                localStorage.setItem('public_data_cache_time', Date.now().toString());
-                this.publicDataCache = publicData;
-                this.publicDataCacheTime = Date.now().toString();
-                this.mergeDataWithDefaults(publicData);
-                console.log('✅ 从 GitHub 加载公共数据成功');
-                return true;
-            }
-            
-            // 所有方式都失败，使用默认数据
-            console.log('❌ 所有数据源加载失败，使用默认数据');
-            this.data = { ...this.defaultData };
-            this.saveToLocalStorage();
-            return false;
-            
-        } catch (error) {
-            console.error('❌ 加载公共数据失败:', error);
-            this.data = { ...this.defaultData };
-            this.saveToLocalStorage();
-            return false;
-        }
-    }
-    
-    mergeDataWithDefaults(externalData) {
-        // 合并外部数据和默认数据，外部数据优先
-        ['advisors', 'students', 'projects', 'publications', 'updates'].forEach(field => {
-            if (externalData[field] && Array.isArray(externalData[field])) {
-                // 过滤掉示例数据，只保留用户数据
-                const userData = externalData[field].filter(item => !item.isDefault);
-                // 合并用户数据和默认数据
-                this.data[field] = [...this.defaultData[field], ...userData];
-            } else {
-                this.data[field] = this.defaultData[field] || [];
-            }
-        });
-    }
-    
-    async fetchPublicData() {
-        try {
-            const files = [
-                'research-projects.json', 
-                'research-advisors.json', 
-                'research-students.json', 
-                'research-publications.json', 
-                'research-updates.json'
-            ];
-            const data = {};
-            let successCount = 0;
-            
-            for (const filename of files) {
-                try {
-                    const response = await fetch(
-                        `https://raw.githubusercontent.com/${this.owner}/${this.repo}/main/data/${filename}`,
-                        { cache: 'no-cache' }
-                    );
-                    
-                    if (response.ok) {
-                        const jsonData = await response.json();
-                        const key = filename.replace('.json', '').replace('research-', '');
-                        data[key] = jsonData;
-                        successCount++;
-                        console.log(`✅ 加载 ${filename} 成功`);
-                    } else {
-                        const key = filename.replace('.json', '').replace('research-', '');
-                        data[key] = this.defaultData[key] || [];
-                        console.log(`⚠️ 加载 ${filename} 失败: ${response.status}`);
-                    }
-                } catch (error) {
-                    const key = filename.replace('.json', '').replace('research-', '');
-                    data[key] = this.defaultData[key] || [];
-                    console.log(`❌ 加载 ${filename} 出错:`, error.message);
-                }
-            }
-            
-            return successCount > 0 ? data : null;
-        } catch (error) {
-            console.error('❌ 获取公开数据失败:', error);
-            return null;
-        }
-    }
-    
-    applyPublicData(publicData) {
-        this.mergeDataWithDefaults(publicData);
-        this.saveToLocalStorage();
-        this.dispatchDataUpdated();
-    }
-
+    // 设置GitHub Token
     setGitHubToken(token) {
         this.githubToken = token;
         localStorage.setItem('github_admin_token', token);
         
+        // 更新githubIssuesManager的Token
         if (window.githubIssuesManager) {
             window.githubIssuesManager.setToken(token);
         }
         
+        console.log('GitHub Token 已设置');
+        
+        // 尝试从GitHub加载数据
         this.syncFromGitHub();
     }
 
-    getGitHubToken() { return this.githubToken; }
+    // 获取GitHub Token
+    getGitHubToken() {
+        return this.githubToken;
+    }
 
+    // 检查GitHub Token是否有效
     hasValidToken() {
         return !!this.githubToken && 
                (this.githubToken.startsWith('ghp_') || 
                 this.githubToken.startsWith('github_pat_'));
     }
 
+    // 加载数据
     async loadData() {
+        console.log('开始加载数据...');
+        
         try {
+            // 首先尝试从GitHub加载
             if (this.hasValidToken()) {
+                console.log('尝试从GitHub加载数据...');
                 const success = await this.syncFromGitHub();
-                if (success) return;
+                if (success) {
+                    console.log('从GitHub加载数据成功');
+                    return;
+                }
             }
             
+            // 如果GitHub加载失败或没有Token，尝试从本地存储加载
+            console.log('从本地存储加载数据...');
             const savedData = localStorage.getItem('research_portal_data');
-            this.data = savedData ? JSON.parse(savedData) : { ...this.defaultData };
-            this.ensureDataStructure();
-            this.saveToLocalStorage();
+            
+            if (savedData) {
+                try {
+                    this.data = JSON.parse(savedData);
+                    this.ensureDataStructure();
+                    console.log('从本地存储加载数据成功');
+                } catch (e) {
+                    console.error('本地存储数据解析失败，使用默认数据:', e);
+                    this.data = { ...this.defaultData };
+                    this.saveToLocalStorage();
+                }
+            } else {
+                console.log('本地存储无数据，使用默认数据');
+                this.data = { ...this.defaultData };
+                this.saveToLocalStorage();
+            }
         } catch (error) {
-            console.error('❌ 加载数据失败:', error);
+            console.error('加载数据失败:', error);
             this.data = { ...this.defaultData };
         }
     }
 
-    ensureDataStructure(dataObj = this.data) {
-        ['advisors', 'students', 'projects', 'publications', 'updates'].forEach(field => {
-            if (!dataObj[field]) dataObj[field] = this.defaultData[field] || [];
+    // 确保数据结构完整
+    ensureDataStructure() {
+        const dataFields = ['advisors', 'students', 'projects', 'publications', 'updates'];
+        dataFields.forEach(field => {
+            if (!this.data[field]) {
+                this.data[field] = this.defaultData[field] || [];
+            }
         });
     }
 
+    // 从GitHub同步数据
     async syncFromGitHub() {
         if (!this.hasValidToken() || !window.githubIssuesManager) {
-            console.log('⚠️ 无法从GitHub同步：Token无效或githubIssuesManager未初始化');
+            console.log('无法从GitHub同步：Token无效或githubIssuesManager未初始化');
             return false;
         }
 
         try {
-            console.log('🔄 开始从GitHub同步数据...');
+            console.log('开始从GitHub同步数据...');
+            
+            // 并行加载所有数据文件
             const promises = Object.entries(this.dataFiles).map(async ([type, filename]) => {
                 try {
                     const data = await window.githubIssuesManager.readJsonFile(filename);
-                    return { type, data, success: true };
+                    return { type, data };
                 } catch (error) {
-                    console.warn(`❌ 无法从GitHub加载 ${filename}:`, error.message);
-                    return { type, data: this.defaultData[type] || [], success: false, error };
+                    console.warn(`无法从GitHub加载 ${filename}:`, error.message);
+                    // 如果GitHub文件不存在，使用默认数据
+                    return { type, data: this.defaultData[type] || [] };
                 }
             });
 
             const results = await Promise.all(promises);
-            let allSuccess = true;
             
-            results.forEach(({ type, data, success }) => {
-                if (success) {
-                    // 过滤掉示例数据，只保留用户数据
-                    const userData = data.filter(item => !item.isDefault);
-                    // 合并用户数据和默认数据
-                    this.data[type] = [...this.defaultData[type], ...userData];
-                } else {
-                    allSuccess = false;
-                    // 失败时保留现有数据
-                }
+            // 更新数据
+            results.forEach(({ type, data }) => {
+                this.data[type] = data;
             });
             
+            // 更新同步时间和版本号
             this.lastSyncTime = new Date().toISOString();
             this.dataVersion = Date.now().toString();
             
+            // 保存到本地存储
             this.saveToLocalStorage();
+            
+            // 保存同步信息
             localStorage.setItem('last_sync_time', this.lastSyncTime);
             localStorage.setItem('data_version', this.dataVersion);
             
+            console.log('从GitHub同步数据成功');
+            
+            // 触发数据更新事件
             this.dispatchDataUpdated();
-            console.log(`✅ 从GitHub同步数据${allSuccess ? '成功' : '部分成功'}`);
-            return allSuccess;
+            
+            return true;
         } catch (error) {
-            console.error('❌ 从GitHub同步数据失败:', error);
+            console.error('从GitHub同步数据失败:', error);
             return false;
         }
     }
 
+    // 保存数据到GitHub
     async syncToGitHub() {
         if (!this.hasValidToken() || !window.githubIssuesManager) {
-            if (typeof showToast === 'function') {
-                showToast('需要GitHub Token才能保存数据到云端', 'warning');
-            }
+            console.log('无法保存到GitHub：Token无效或githubIssuesManager未初始化');
+            
+            // 如果没有GitHub Token，只保存到本地
             this.saveToLocalStorage();
-            return { success: false, message: '无有效Token' };
+            return false;
         }
 
         try {
-            console.log('🔄 开始保存数据到GitHub...');
-            const results = [];
+            console.log('开始保存数据到GitHub...');
             
-            for (const [type, filename] of Object.entries(this.dataFiles)) {
+            // 并行保存所有数据文件
+            const promises = Object.entries(this.dataFiles).map(async ([type, filename]) => {
                 try {
-                    // 只保存非示例数据
-                    const userData = this.data[type].filter(item => !item.isDefault);
-                    await window.githubIssuesManager.writeJsonFile(filename, userData);
-                    results.push({ filename, success: true });
-                    console.log(`✅ 保存 ${filename} 成功`);
+                    await window.githubIssuesManager.writeJsonFile(filename, this.data[type]);
+                    console.log(`${filename} 保存成功`);
+                    return { filename, success: true };
                 } catch (error) {
-                    console.error(`❌ 保存 ${filename} 到GitHub失败:`, error);
-                    results.push({ filename, success: false, error: error.message });
+                    console.error(`保存 ${filename} 到GitHub失败:`, error);
+                    return { filename, success: false, error };
                 }
-            }
+            });
+
+            const results = await Promise.all(promises);
             
+            // 检查是否有失败
             const failed = results.filter(r => !r.success);
             
             if (failed.length > 0) {
-                const errorMsg = `部分文件保存失败: ${failed.map(f => f.filename).join(', ')}`;
-                console.error(`❌ ${errorMsg}`);
+                console.error(`部分文件保存失败: ${failed.map(f => f.filename).join(', ')}`);
                 
-                // 保存到本地存储作为备份
-                this.saveToLocalStorage();
+                // 即使部分失败，也更新同步信息
+                this.lastSyncTime = new Date().toISOString();
+                localStorage.setItem('last_sync_time', this.lastSyncTime);
                 
-                return {
-                    success: false,
-                    message: errorMsg,
-                    failedFiles: failed.map(f => f.filename),
-                    results: results
-                };
+                return false;
             }
             
+            // 更新同步时间和版本号
             this.lastSyncTime = new Date().toISOString();
             this.dataVersion = Date.now().toString();
+            
             localStorage.setItem('last_sync_time', this.lastSyncTime);
             localStorage.setItem('data_version', this.dataVersion);
             
+            console.log('所有数据已成功保存到GitHub');
+            
+            // 触发数据保存事件
             this.dispatchDataSaved();
-            console.log('✅ 所有数据保存到GitHub成功');
-            return {
-                success: true,
-                message: '数据保存成功',
-                results: results
-            };
+            
+            return true;
         } catch (error) {
-            console.error('❌ 保存数据到GitHub失败:', error);
+            console.error('保存数据到GitHub失败:', error);
+            
+            // 即使GitHub保存失败，也要保存到本地
             this.saveToLocalStorage();
-            return {
-                success: false,
-                message: `保存失败: ${error.message}`,
-                error: error
-            };
+            
+            return false;
         }
     }
 
+    // 开始自动同步
     startAutoSync() {
-        if (this.autoSyncTimer) clearInterval(this.autoSyncTimer);
+        console.log(`开始自动同步，间隔: ${this.syncInterval/1000}秒`);
         
+        // 清除现有定时器
+        if (this.autoSyncTimer) {
+            clearInterval(this.autoSyncTimer);
+        }
+        
+        // 设置新定时器
         this.autoSyncTimer = setInterval(async () => {
-            if (window.adminSystem && window.adminSystem.editMode) return;
+            console.log('自动同步检查...');
+            
+            // 检查是否有管理员正在编辑
+            if (window.adminSystem && window.adminSystem.editMode) {
+                console.log('管理员正在编辑，跳过自动同步');
+                return;
+            }
+            
             await this.syncFromGitHub();
         }, this.syncInterval);
     }
 
+    // 停止自动同步
     stopAutoSync() {
         if (this.autoSyncTimer) {
+            console.log('停止自动同步');
             clearInterval(this.autoSyncTimer);
             this.autoSyncTimer = null;
         }
     }
 
+    // 手动同步数据
     async manualSync() {
+        console.log('手动同步数据...');
+        
         try {
-            const syncResult = await this.syncToGitHub();
-            if (syncResult.success) {
-                await this.syncFromGitHub();
-                return { success: true, message: '同步成功' };
-            }
-            return syncResult;
-        } catch (error) {
-            console.error('❌ 手动同步失败:', error);
-            return { success: false, message: `同步失败: ${error.message}` };
-        }
-    }
-
-    saveToLocalStorage() {
-        try {
-            localStorage.setItem('research_portal_data', JSON.stringify(this.data));
-            localStorage.setItem('local_data_version', Date.now().toString());
+            // 先拉取最新数据
+            await this.syncFromGitHub();
+            
+            // 然后推送本地修改（如果有）
+            await this.syncToGitHub();
+            
             return true;
-        } catch (e) {
-            console.error('❌ 保存到本地存储失败:', e);
+        } catch (error) {
+            console.error('手动同步失败:', error);
             return false;
         }
     }
 
-    getData(type) { return this.data[type] || []; }
-    getAllData() { return { ...this.data }; }
+    // 保存到本地存储
+    saveToLocalStorage() {
+        try {
+            localStorage.setItem('research_portal_data', JSON.stringify(this.data));
+            
+            // 更新本地版本号
+            const localVersion = Date.now().toString();
+            localStorage.setItem('local_data_version', localVersion);
+            
+            console.log('数据已保存到本地存储');
+            return true;
+        } catch (e) {
+            console.error('保存到本地存储失败:', e);
+            return false;
+        }
+    }
 
+    // 获取数据
+    getData(type) {
+        return this.data[type] || [];
+    }
+
+    // 获取所有数据
+    getAllData() {
+        return { ...this.data };
+    }
+
+    // 获取数据统计
     getStats() {
-        const userData = {
-            advisors: this.data.advisors.filter(item => !item.isDefault).length,
-            students: this.data.students.filter(item => !item.isDefault).length,
-            projects: this.data.projects.filter(item => !item.isDefault).length,
-            publications: this.data.publications.filter(item => !item.isDefault).length,
-            updates: this.data.updates.filter(item => !item.isDefault).length
-        };
-        
         return {
-            total: {
-                advisors: this.data.advisors.length,
-                students: this.data.students.length,
-                projects: this.data.projects.length,
-                publications: this.data.publications.length,
-                updates: this.data.updates.length
-            },
-            user: userData,
-            default: {
-                advisors: this.data.advisors.filter(item => item.isDefault).length,
-                students: this.data.students.filter(item => item.isDefault).length,
-                projects: this.data.projects.filter(item => item.isDefault).length,
-                publications: this.data.publications.filter(item => item.isDefault).length,
-                updates: this.data.updates.filter(item => item.isDefault).length
-            },
+            advisors: this.data.advisors.length,
+            students: this.data.students.length,
+            projects: this.data.projects.length,
+            publications: this.data.publications.length,
+            updates: this.data.updates.length,
             lastSyncTime: this.lastSyncTime,
             dataVersion: this.dataVersion,
-            hasGitHubToken: this.hasValidToken(),
-            publicDataCacheTime: this.publicDataCacheTime
+            hasGitHubToken: this.hasValidToken()
         };
     }
 
+    // 更新数据
     async updateData(type, id, newData) {
         const items = this.data[type];
         const index = items.findIndex(item => item.id === id);
         
         if (index !== -1) {
+            // 更新数据
             this.data[type][index] = { 
                 ...this.data[type][index], 
                 ...newData,
-                updatedAt: new Date().toISOString(),
-                isDefault: false // 确保更新后不是示例数据
+                updatedAt: new Date().toISOString()
             };
             
+            // 保存到本地
             this.saveToLocalStorage();
-            this.syncToGitHub().catch(console.error);
+            
+            // 异步保存到GitHub
+            this.syncToGitHub().catch(error => {
+                console.error(`更新 ${type} 到GitHub失败:`, error);
+            });
+            
+            // 触发数据更新事件
             this.dispatchDataUpdated();
+            
             return true;
         }
         return false;
     }
 
+    // 添加数据
     async addData(type, newItem) {
+        // 生成新ID
         const items = this.data[type];
         const maxId = items.length > 0 ? Math.max(...items.map(item => item.id)) : 0;
         
@@ -477,44 +464,57 @@ class DataManager {
             ...newItem,
             id: maxId + 1,
             createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            isDefault: false // 新添加的数据不是示例数据
+            updatedAt: new Date().toISOString()
         };
         
         this.data[type].push(itemWithId);
+        
+        // 保存到本地
         this.saveToLocalStorage();
-        this.syncToGitHub().catch(console.error);
+        
+        // 异步保存到GitHub
+        this.syncToGitHub().catch(error => {
+            console.error(`添加 ${type} 到GitHub失败:`, error);
+        });
+        
+        // 触发数据更新事件
         this.dispatchDataUpdated();
+        
         return itemWithId.id;
     }
 
+    // 删除数据
     async deleteData(type, id) {
         const items = this.data[type];
         const index = items.findIndex(item => item.id === id);
         
         if (index !== -1) {
-            // 检查是否为示例数据
-            if (items[index].isDefault) {
-                console.log('⚠️ 尝试删除示例数据，已阻止');
-                return false;
-            }
-            
             this.data[type].splice(index, 1);
+            
+            // 保存到本地
             this.saveToLocalStorage();
-            this.syncToGitHub().catch(console.error);
+            
+            // 异步保存到GitHub
+            this.syncToGitHub().catch(error => {
+                console.error(`删除 ${type} 到GitHub失败:`, error);
+            });
+            
+            // 触发数据更新事件
             this.dispatchDataUpdated();
+            
             return true;
         }
         return false;
     }
 
+    // 批量更新数据
     async batchUpdate(type, updates) {
         const items = this.data[type];
         let updatedCount = 0;
         
         updates.forEach(update => {
             const index = items.findIndex(item => item.id === update.id);
-            if (index !== -1 && !items[index].isDefault) {
+            if (index !== -1) {
                 this.data[type][index] = {
                     ...this.data[type][index],
                     ...update.data,
@@ -525,82 +525,85 @@ class DataManager {
         });
         
         if (updatedCount > 0) {
+            // 保存到本地
             this.saveToLocalStorage();
-            this.syncToGitHub().catch(console.error);
+            
+            // 异步保存到GitHub
+            this.syncToGitHub().catch(error => {
+                console.error(`批量更新 ${type} 到GitHub失败:`, error);
+            });
+            
+            // 触发数据更新事件
             this.dispatchDataUpdated();
         }
         
         return updatedCount;
     }
 
+    // 导出数据
     exportData() {
-        // 只导出用户数据
-        const userData = {
-            advisors: this.data.advisors.filter(item => !item.isDefault),
-            students: this.data.students.filter(item => !item.isDefault),
-            projects: this.data.projects.filter(item => !item.isDefault),
-            publications: this.data.publications.filter(item => !item.isDefault),
-            updates: this.data.updates.filter(item => !item.isDefault)
-        };
-        
-        return JSON.stringify({
-            ...userData,
+        const exportData = {
+            ...this.data,
             exportInfo: {
                 exportedAt: new Date().toISOString(),
                 version: this.dataVersion,
-                source: 'research_portal',
-                note: '仅包含用户添加的数据，不包含示例数据'
+                source: 'research_portal'
             }
-        }, null, 2);
+        };
+        
+        return JSON.stringify(exportData, null, 2);
     }
 
+    // 导入数据
     async importData(jsonString) {
         try {
             const newData = JSON.parse(jsonString);
+            
+            // 验证数据格式
             const requiredFields = ['advisors', 'students', 'projects', 'publications', 'updates'];
             const isValid = requiredFields.every(field => Array.isArray(newData[field]));
             
-            if (!isValid) throw new Error('导入的数据格式不正确');
+            if (!isValid) {
+                throw new Error('导入的数据格式不正确');
+            }
             
-            // 标记导入的数据为用户数据
-            requiredFields.forEach(field => {
-                if (newData[field]) {
-                    newData[field].forEach(item => {
-                        item.isDefault = false;
-                        if (!item.createdAt) item.createdAt = new Date().toISOString();
-                        if (!item.updatedAt) item.updatedAt = new Date().toISOString();
-                    });
-                }
-            });
-            
-            // 合并导入的数据和默认数据
-            requiredFields.forEach(field => {
-                this.data[field] = [...this.defaultData[field], ...newData[field]];
-            });
-            
+            // 更新数据
+            this.data = newData;
             this.ensureDataStructure();
+            
+            // 保存到本地
             this.saveToLocalStorage();
-            const syncResult = await this.syncToGitHub();
+            
+            // 保存到GitHub
+            const success = await this.syncToGitHub();
+            
+            // 触发数据更新事件
             this.dispatchDataUpdated();
-            return syncResult.success;
+            
+            return success;
         } catch (e) {
-            console.error('❌ 导入数据失败:', e);
+            console.error('导入数据失败:', e);
             return false;
         }
     }
 
+    // 重置为默认数据
     async resetToDefault() {
-        // 只重置为用户数据为空，保留默认数据
-        ['advisors', 'students', 'projects', 'publications', 'updates'].forEach(field => {
-            this.data[field] = this.defaultData[field];
-        });
+        this.data = { ...this.defaultData };
         
+        // 保存到本地
         this.saveToLocalStorage();
-        const syncResult = await this.syncToGitHub();
+        
+        // 保存到GitHub
+        const success = await this.syncToGitHub();
+        
+        // 触发数据更新事件
         this.dispatchDataUpdated();
-        return syncResult.success;
+        
+        return success;
     }
 
+    // 检查GitHub连接
     async checkGitHubConnection() {
         if (!this.hasValidToken()) {
             return { connected: false, message: '未设置GitHub Token' };
@@ -608,7 +611,9 @@ class DataManager {
         
         try {
             const response = await fetch('https://api.github.com/user', {
-                headers: { 'Authorization': `Bearer ${this.githubToken}` }
+                headers: {
+                    'Authorization': `Bearer ${this.githubToken}`
+                }
             });
             
             if (response.ok) {
@@ -620,61 +625,53 @@ class DataManager {
                     rateLimit: response.headers.get('X-RateLimit-Limit'),
                     rateRemaining: response.headers.get('X-RateLimit-Remaining')
                 };
+            } else {
+                return { 
+                    connected: false, 
+                    message: `连接失败: ${response.status}` 
+                };
             }
-            return { connected: false, message: `连接失败: ${response.status}` };
         } catch (error) {
-            return { connected: false, message: `连接错误: ${error.message}` };
+            return { 
+                connected: false, 
+                message: `连接错误: ${error.message}` 
+            };
         }
     }
 
+    // 分发数据更新事件
     dispatchDataUpdated() {
-        document.dispatchEvent(new CustomEvent('dataUpdated', {
+        const event = new CustomEvent('dataUpdated', {
             detail: { 
-                timestamp: new Date().toISOString(), 
-                dataVersion: this.dataVersion,
-                stats: this.getStats()
+                timestamp: new Date().toISOString(),
+                dataVersion: this.dataVersion 
             }
-        }));
+        });
+        document.dispatchEvent(event);
     }
 
+    // 分发数据保存事件
     dispatchDataSaved() {
-        document.dispatchEvent(new CustomEvent('dataSaved', {
+        const event = new CustomEvent('dataSaved', {
             detail: { 
-                timestamp: new Date().toISOString(), 
-                dataVersion: this.dataVersion,
-                message: '数据已保存到GitHub'
+                timestamp: new Date().toISOString(),
+                dataVersion: this.dataVersion 
             }
-        }));
+        });
+        document.dispatchEvent(event);
     }
 
+    // 获取同步状态
     getSyncStatus() {
         return {
             lastSyncTime: this.lastSyncTime,
             dataVersion: this.dataVersion,
             hasGitHubToken: this.hasValidToken(),
             isAutoSyncing: !!this.autoSyncTimer,
-            syncInterval: this.syncInterval,
-            publicDataCacheTime: this.publicDataCacheTime,
-            stats: this.getStats()
-        };
-    }
-    
-    // 新增方法：获取用户数据（过滤示例数据）
-    getUserData(type) {
-        if (!this.data[type]) return [];
-        return this.data[type].filter(item => !item.isDefault);
-    }
-    
-    // 新增方法：获取所有用户数据
-    getAllUserData() {
-        return {
-            advisors: this.getUserData('advisors'),
-            students: this.getUserData('students'),
-            projects: this.getUserData('projects'),
-            publications: this.getUserData('publications'),
-            updates: this.getUserData('updates')
+            syncInterval: this.syncInterval
         };
     }
 }
 
+// 创建全局实例
 window.dataManager = new DataManager();
