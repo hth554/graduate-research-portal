@@ -1,7 +1,7 @@
 [
   {
     "id": 1,
-    "name": "李明",
+    "name": "张",
     "degree": "博士研究生",
     "field": "计算机科学与技术",
     "supervisor": "张明教授",
@@ -10,7 +10,7 @@
     "email": "liming@example.com",
     "github": "https://github.com/liming",
     "createdAt": "2022-09-01",
-    "updatedAt": "2023-10-15",
+    "updatedAt": "2025-12-23T18:34:09.532Z",
     "isDefault": true
   },
   {
