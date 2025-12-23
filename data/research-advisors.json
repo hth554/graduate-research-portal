@@ -1,15 +1,15 @@
 [
   {
     "id": 2,
-    "name": "赵淑清",
+    "name": "刘曙光",
     "title": "教授，博士生导师",
-    "field": "城市生态学",
-    "bio": "创新性建立了城市化对植被生长影响的理论与定量方法，在 PNAS 发文证实城市环境对植被生长的普遍促进作用，该成果被学界广泛验证应用；提出解释城市化生物多样性梯度的 '热促进和胁迫平衡假说'，构建了我国城市生态系统有机碳储量评估体系，还搭建了北京城乡生态梯度长期研究平台（BES）。",
-    "avatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    "field": "碳循环、水循环、生态系统功能和服务",
+    "bio": "国家海外引进高级人才、中组部'千人计划'入选者，与中科院合作证实成熟森林土壤可累积碳，推翻经典理论，成果发表于<<SCIENCE>>并入选'中国科学10大进展';研发GEMS生物地球化学循环模型、SkyCenterESM生态系统服务核算模型，主导完成美国全域生态系统固碳与减排潜力评估。",
+    "avatar": "https://s41.ax1x.com/2025/12/14/pZMqFfI.png",
     "email": "zhaosq@example.com",
     "website": "https://example.com/zhaosq",
     "createdAt": "2022-02-15",
-    "updatedAt": "2023-09-15",
+    "updatedAt": "2025-12-23T18:10:33.714Z",
     "isDefault": true
   },
   {
@@ -37,5 +37,17 @@
     "createdAt": "2022-03-05",
     "updatedAt": "2023-10-05",
     "isDefault": true
+  },
+  {
+    "name": "刘曙光",
+    "title": "教授，博士生导师",
+    "field": "碳循环、水循环、生态系统功能和服务",
+    "bio": "1",
+    "avatar": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    "email": "liusg@example.com",
+    "website": "https://example.com/liusg",
+    "createdAt": "2025-12-23T18:00:08.490Z",
+    "updatedAt": "2025-12-23T18:00:08.490Z",
+    "id": 5
   }
 ]
