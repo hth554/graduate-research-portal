@@ -736,6 +736,23 @@ const studentCRUD = createCRUD(studentsData, renderStudents, GITHUB_FILES.STUDEN
 const publicationCRUD = createCRUD(publicationsData, renderPublications, GITHUB_FILES.PUBLICATIONS, '学术成果');
 const updateCRUD = createCRUD(updatesData, renderUpdates, GITHUB_FILES.UPDATES, '研究近况');
 
+// 绑定 CRUD 方法到全局操作函数
+const addProject = projectCRUD.add;
+const updateProject = projectCRUD.update;
+const deleteProject = projectCRUD.delete;
+const addAdvisor = advisorCRUD.add;
+const updateAdvisor = advisorCRUD.update;
+const deleteAdvisor = advisorCRUD.delete;
+const addStudent = studentCRUD.add;
+const updateStudent = studentCRUD.update;
+const deleteStudent = studentCRUD.delete;
+const addPublication = publicationCRUD.add;
+const updatePublication = publicationCRUD.update;
+const deletePublication = publicationCRUD.delete;
+const addUpdate = updateCRUD.add;
+const updateUpdate = updateCRUD.update;
+const deleteUpdate = updateCRUD.delete;
+
 // 渲染函数
 function renderProjects(filter = 'all') {
     if (!DOM.projectsGrid) return;
@@ -1739,19 +1756,17 @@ function handleAdminModeChanged(event) {
     const { editMode, isAdmin } = event.detail;
     
     // 更新本地权限状态
+    isReadOnlyMode = !isAdmin; // 关键修改：根据isAdmin更新isReadOnlyMode
+    
+    // 重新渲染以显示/隐藏编辑按钮
+    renderAllData();
+    
+    // 显示提示
     if (isAdmin && editMode) {
-        if (isReadOnlyMode) { 
-            showToast('需要输入Token才能编辑数据', 'warning'); 
-            requestTokenForAdmin(); 
-            return; 
-        }
         showToast('已进入管理员编辑模式', 'success');
     } else {
         if (isAdmin) showToast('已退出编辑模式', 'info');
     }
-    
-    // 重新渲染以显示/隐藏编辑按钮
-    renderAllData();
 }
 
 // 初始化
