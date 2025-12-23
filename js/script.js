@@ -465,50 +465,50 @@ async function saveDataToGitHub(filename, data) {
 // 默认数据（简化版本）
 function getDefaultProjects() {
     return [
-        { id: 1, title: "基于深度学习的医学图像分割算法研究", category: "medical", description: "本研究旨在开发一种高效的深度学习算法，用于医学图像中的器官与病变区域自动分割，提高诊断准确性与效率。", advisor: "张明教授", status: "进行中", statusType: "in-progress", image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80", createdAt: "2023-01-15", updatedAt: "2023-10-20", isDefault: true },
-        { id: 2, title: "可再生能源智能微电网优化控制策略", category: "engineering", description: "研究微电网中太阳能、风能等可再生能源的集成优化控制策略，提高能源利用效率与系统稳定性。", advisor: "李华教授", status: "进行中", statusType: "in-progress", image: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80", createdAt: "2023-02-10", updatedAt: "2023-09-18", isDefault: true },
-        { id: 3, title: "新型纳米材料在环境污染物去除中的应用", category: "science", description: "探索新型纳米材料在废水处理与空气净化中的应用潜力，开发高效、低成本的环境修复技术。", advisor: "王静教授", status: "已完成", statusType: "completed", image: "https://images.unsplash.com/photo-1581094794329-c8112b89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80", createdAt: "2022-11-05", updatedAt: "2023-08-30", isDefault: true },
-        { id: 4, title: "人工智能辅助的金融风险预测模型", category: "science", description: "构建基于机器学习与深度学习的金融风险预测模型，提高金融机构的风险识别与防范能力。", advisor: "赵伟教授", status: "进行中", statusType: "in-progress", image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80", createdAt: "2023-03-20", updatedAt: "2023-10-15", isDefault: true },
-        { id: 5, title: "数字化转型对企业组织文化的影响研究", category: "humanities", description: "探究数字化转型过程中企业组织文化的变迁机制，为企业数字化转型提供管理策略建议。", advisor: "刘芳教授", status: "进行中", statusType: "in-progress", image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80", createdAt: "2023-04-12", updatedAt: "2023-10-10", isDefault: true },
-        { id: 6, title: "新型肿瘤靶向药物递送系统研究", category: "medical", description: "开发基于纳米技术的肿瘤靶向药物递送系统，提高抗癌药物在肿瘤部位的富集与疗效。", advisor: "陈晨教授", status: "筹备中", statusType: "preparation", image: "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80", createdAt: "2023-09-01", updatedAt: "2023-09-01", isDefault: true }
+        { id: 1, title: "基于深度学习的医学图像分割算法研究", category: "medical", description: "本研究旨在开发一种高效的深度学习算法，用于医学图像中的器官与病变区域自动分割，提高诊断准确性与效率。", advisor: "张明教授", status: "进行中", statusType: "in-progress", image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80", createdAt: "2023-01-15", updatedAt: "2023-10-20" },
+        { id: 2, title: "可再生能源智能微电网优化控制策略", category: "engineering", description: "研究微电网中太阳能、风能等可再生能源的集成优化控制策略，提高能源利用效率与系统稳定性。", advisor: "李华教授", status: "进行中", statusType: "in-progress", image: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80", createdAt: "2023-02-10", updatedAt: "2023-09-18" },
+        { id: 3, title: "新型纳米材料在环境污染物去除中的应用", category: "science", description: "探索新型纳米材料在废水处理与空气净化中的应用潜力，开发高效、低成本的环境修复技术。", advisor: "王静教授", status: "已完成", statusType: "completed", image: "https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80", createdAt: "2022-11-05", updatedAt: "2023-08-30" },
+        { id: 4, title: "人工智能辅助的金融风险预测模型", category: "science", description: "构建基于机器学习与深度学习的金融风险预测模型，提高金融机构的风险识别与防范能力。", advisor: "赵伟教授", status: "进行中", statusType: "in-progress", image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80", createdAt: "2023-03-20", updatedAt: "2023-10-15" },
+        { id: 5, title: "数字化转型对企业组织文化的影响研究", category: "humanities", description: "探究数字化转型过程中企业组织文化的变迁机制，为企业数字化转型提供管理策略建议。", advisor: "刘芳教授", status: "进行中", statusType: "in-progress", image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80", createdAt: "2023-04-12", updatedAt: "2023-10-10" },
+        { id: 6, title: "新型肿瘤靶向药物递送系统研究", category: "medical", description: "开发基于纳米技术的肿瘤靶向药物递送系统，提高抗癌药物在肿瘤部位的富集与疗效。", advisor: "陈晨教授", status: "筹备中", statusType: "preparation", image: "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80", createdAt: "2023-09-01", updatedAt: "2023-09-01" }
     ];
 }
 
 function getDefaultAdvisors() {
     return [
-        { id: 1, name: "刘曙光", title: "教授，博士生导师", field: "碳循环、水循环、生态系统功能和服务", bio: "国家海外引进高级人才、中组部 '千人计划' 入选者，与中科院合作证实成熟森林土壤可累积碳，推翻经典理论，成果发表于《SCIENCE》并入选 '中国科学10大进展'；研发 GEMS 生物地球化学循环模型、SkyCenterESM 生态系统服务核算模型，主导完成美国全域生态系统固碳与减排潜力评估。", avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", email: "liusg@example.com", website: "https://example.com/liusg", createdAt: "2022-01-10", updatedAt: "2023-10-20", isDefault: true },
-        { id: 2, name: "赵淑清", title: "教授，博士生导师", field: "城市生态学", bio: "创新性建立了城市化对植被生长影响的理论与定量方法，在 PNAS 发文证实城市环境对植被生长的普遍促进作用，该成果被学界广泛验证应用；提出解释城市化生物多样性梯度的 '热促进和胁迫平衡假说'，构建了我国城市生态系统有机碳储量评估体系，还搭建了北京城乡生态梯度长期研究平台（BES）。", avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", email: "zhaosq@example.com", website: "https://example.com/zhaosq", createdAt: "2022-02-15", updatedAt: "2023-09-15", isDefault: true },
-        { id: 3, name: "王静", title: "教授，博士生导师", field: "环境工程，纳米材料", bio: "浙江大学环境学院教授，长江学者特聘教授，致力于环境功能材料与污染控制技术研究，在国际知名期刊发表论文150余篇，获国家科技进步二等奖2项。", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", email: "wangjing@example.com", website: "https://example.com/wangjing", createdAt: "2021-11-20", updatedAt: "2023-08-25", isDefault: true },
-        { id: 4, name: "赵伟", title: "教授，博士生导师", field: "金融工程，人工智能", bio: "上海交通大学安泰经济与管理学院教授，研究方向为金融科技、风险管理与人工智能，主持国家自然科学基金重点项目3项，出版专著5部。", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", email: "zhaowei@example.com", website: "https://example.com/zhaowei", createdAt: "2022-03-05", updatedAt: "2023-10-05", isDefault: true }
+        { id: 1, name: "刘曙光", title: "教授，博士生导师", field: "碳循环、水循环、生态系统功能和服务", bio: "国家海外引进高级人才、中组部 '千人计划' 入选者，与中科院合作证实成熟森林土壤可累积碳，推翻经典理论，成果发表于《SCIENCE》并入选 '中国科学10大进展'；研发 GEMS 生物地球化学循环模型、SkyCenterESM 生态系统服务核算模型，主导完成美国全域生态系统固碳与减排潜力评估。", avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", email: "liusg@example.com", website: "https://example.com/liusg", createdAt: "2022-01-10", updatedAt: "2023-10-20" },
+        { id: 2, name: "赵淑清", title: "教授，博士生导师", field: "城市生态学", bio: "创新性建立了城市化对植被生长影响的理论与定量方法，在 PNAS 发文证实城市环境对植被生长的普遍促进作用，该成果被学界广泛验证应用；提出解释城市化生物多样性梯度的 '热促进和胁迫平衡假说'，构建了我国城市生态系统有机碳储量评估体系，还搭建了北京城乡生态梯度长期研究平台（BES）。", avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", email: "zhaosq@example.com", website: "https://example.com/zhaosq", createdAt: "2022-02-15", updatedAt: "2023-09-15" },
+        { id: 3, name: "王静", title: "教授，博士生导师", field: "环境工程，纳米材料", bio: "浙江大学环境学院教授，长江学者特聘教授，致力于环境功能材料与污染控制技术研究，在国际知名期刊发表论文150余篇，获国家科技进步二等奖2项。", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", email: "wangjing@example.com", website: "https://example.com/wangjing", createdAt: "2021-11-20", updatedAt: "2023-08-25" },
+        { id: 4, name: "赵伟", title: "教授，博士生导师", field: "金融工程，人工智能", bio: "上海交通大学安泰经济与管理学院教授，研究方向为金融科技、风险管理与人工智能，主持国家自然科学基金重点项目3项，出版专著5部。", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", email: "zhaowei@example.com", website: "https://example.com/zhaowei", createdAt: "2022-03-05", updatedAt: "2023-10-05" }
     ];
 }
 
 function getDefaultStudents() {
     return [
-        { id: 1, name: "李明", degree: "博士研究生", field: "计算机科学与技术", supervisor: "张明教授", research: "研究方向为医学图像处理与深度学习，主要研究基于注意力机制的医学图像分割算法。", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", email: "liming@example.com", github: "https://github.com/liming", createdAt: "2022-09-01", updatedAt: "2023-10-15", isDefault: true },
-        { id: 2, name: "王芳", degree: "硕士研究生", field: "电气工程", supervisor: "李华教授", research: "研究方向为智能电网优化控制，主要研究可再生能源微电网的调度策略与稳定性分析。", avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", email: "wangfang@example.com", github: "https://github.com/wangfang", createdAt: "2023-03-10", updatedAt: "2023-09-20", isDefault: true },
-        { id: 3, name: "张伟", degree: "博士研究生", field: "环境工程", supervisor: "王静教授", research: "研究方向为环境功能材料，主要研究新型纳米材料在水污染治理中的应用与机理。", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", email: "zhangwei@example.com", github: "https://github.com/zhangwei", createdAt: "2021-11-15", updatedAt: "2023-08-30", isDefault: true },
-        { id: 4, name: "刘洋", degree: "硕士研究生", field: "金融工程", supervisor: "赵伟教授", research: "研究方向为金融科技与风险管理，主要研究基于深度学习的金融市场预测模型。", avatar: "https://images.unsplash.com/photo-1507591064344-4c6ce005b128?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", email: "liuyang@example.com", github: "https://github.com/liuyang", createdAt: "2023-02-20", updatedAt: "2023-10-10", isDefault: true }
+        { id: 1, name: "李明", degree: "博士研究生", field: "计算机科学与技术", supervisor: "张明教授", research: "研究方向为医学图像处理与深度学习，主要研究基于注意力机制的医学图像分割算法。", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", email: "liming@example.com", github: "https://github.com/liming", createdAt: "2022-09-01", updatedAt: "2023-10-15" },
+        { id: 2, name: "王芳", degree: "硕士研究生", field: "电气工程", supervisor: "李华教授", research: "研究方向为智能电网优化控制，主要研究可再生能源微电网的调度策略与稳定性分析。", avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", email: "wangfang@example.com", github: "https://github.com/wangfang", createdAt: "2023-03-10", updatedAt: "2023-09-20" },
+        { id: 3, name: "张伟", degree: "博士研究生", field: "环境工程", supervisor: "王静教授", research: "研究方向为环境功能材料，主要研究新型纳米材料在水污染治理中的应用与机理。", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", email: "zhangwei@example.com", github: "https://github.com/zhangwei", createdAt: "2021-11-15", updatedAt: "2023-08-30" },
+        { id: 4, name: "刘洋", degree: "硕士研究生", field: "金融工程", supervisor: "赵伟教授", research: "研究方向为金融科技与风险管理，主要研究基于深度学习的金融市场预测模型。", avatar: "https://images.unsplash.com/photo-1507591064344-4c6ce005b128?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", email: "liuyang@example.com", github: "https://github.com/liuyang", createdAt: "2023-02-20", updatedAt: "2023-10-10" }
     ];
 }
 
 function getDefaultPublications() {
     return [
-        { id: 1, type: "期刊论文", title: "基于注意力机制的医学图像分割算法研究", authors: "张明, 李雷, 韩梅梅", venue: "《中国医学影像学杂志》, 2023, 31(5): 12-18", abstract: "本文提出了一种基于注意力机制的深度学习模型，用于医学图像中的器官分割，通过自注意力机制有效捕捉图像中的长距离依赖关系，在多个公开数据集上取得了最优性能。", doi: "10.1234/j.issn.1000-1234.2023.05.002", link: "https://example.com/paper1", createdAt: "2023-05-15", updatedAt: "2023-10-20", isDefault: true },
-        { id: 2, type: "会议论文", title: "可再生能源微电网的优化调度策略", authors: "李华, 王强, 张伟", venue: "IEEE电力与能源系统国际会议, 2023", abstract: "本文提出了一种基于强化学习的微电网优化调度策略，有效提高了可再生能源的消纳能力，降低了系统运行成本，并通过仿真验证了其有效性。", doi: "10.1109/ICPES.2023.1234567", link: "https://example.com/paper2", createdAt: "2023-08-10", updatedAt: "2023-10-15", isDefault: true },
-        { id: 3, type: "专利", title: "一种高效去除重金属离子的纳米复合材料制备方法", authors: "王静, 刘洋, 陈晨", venue: "中国发明专利, ZL202310123456.7, 2023", abstract: "本发明公开了一种高效去除水中重金属离子的纳米复合材料及其制备方法，该材料具有高吸附容量和良好的再生性能，适用于工业废水处理。", link: "https://example.com/patent1", createdAt: "2023-06-20", updatedAt: "2023-09-25", isDefault: true },
-        { id: 4, type: "期刊论文", title: "数字化转型背景下组织文化变革路径研究", authors: "刘芳, 赵明, 孙丽", venue: "《管理科学学报》, 2023, 26(3): 45-56", abstract: "本研究基于组织变革理论，探讨了数字化转型过程中企业组织文化的变革路径与影响因素，提出了适应数字时代的企业文化构建框架。", doi: "10.1234/j.cnki.1671-9301.2023.03.005", link: "https://example.com/paper3", createdAt: "2023-03-30", updatedAt: "2023-10-05", isDefault: true }
+        { id: 1, type: "期刊论文", title: "基于注意力机制的医学图像分割算法研究", authors: "张明, 李雷, 韩梅梅", venue: "《中国医学影像学杂志》, 2023, 31(5): 12-18", abstract: "本文提出了一种基于注意力机制的深度学习模型，用于医学图像中的器官分割，通过自注意力机制有效捕捉图像中的长距离依赖关系，在多个公开数据集上取得了最优性能。", doi: "10.1234/j.issn.1000-1234.2023.05.002", link: "https://example.com/paper1", createdAt: "2023-05-15", updatedAt: "2023-10-20" },
+        { id: 2, type: "会议论文", title: "可再生能源微电网的优化调度策略", authors: "李华, 王强, 张伟", venue: "IEEE电力与能源系统国际会议, 2023", abstract: "本文提出了一种基于强化学习的微电网优化调度策略，有效提高了可再生能源的消纳能力，降低了系统运行成本，并通过仿真验证了其有效性。", doi: "10.1109/ICPES.2023.1234567", link: "https://example.com/paper2", createdAt: "2023-08-10", updatedAt: "2023-10-15" },
+        { id: 3, type: "专利", title: "一种高效去除重金属离子的纳米复合材料制备方法", authors: "王静, 刘洋, 陈晨", venue: "中国发明专利, ZL202310123456.7, 2023", abstract: "本发明公开了一种高效去除水中重金属离子的纳米复合材料及其制备方法，该材料具有高吸附容量和良好的再生性能，适用于工业废水处理。", link: "https://example.com/patent1", createdAt: "2023-06-20", updatedAt: "2023-09-25" },
+        { id: 4, type: "期刊论文", title: "数字化转型背景下组织文化变革路径研究", authors: "刘芳, 赵明, 孙丽", venue: "《管理科学学报》, 2023, 26(3): 45-56", abstract: "本研究基于组织变革理论，探讨了数字化转型过程中企业组织文化的变革路径与影响因素，提出了适应数字时代的企业文化构建框架。", doi: "10.1234/j.cnki.1671-9301.2023.03.005", link: "https://example.com/paper3", createdAt: "2023-03-30", updatedAt: "2023-10-05" }
     ];
 }
 
 function getDefaultUpdates() {
     return [
-        { id: 1, date: "2023-10-15", title: "医学图像分割项目取得重要进展", type: "项目进展", content: "课题组在医学图像分割算法研究中取得重要突破，新提出的注意力机制模型在公开数据集上的分割准确率达到了95.2%，较现有方法提升了3.1%。", project: "基于深度学习的医学图像分割算法研究", projectId: 1, createdAt: "2023-10-15", updatedAt: "2023-10-15", isDefault: true },
-        { id: 2, date: "2023-10-08", title: "课题组参加国际学术会议", type: "学术活动", content: "课题组三名研究生参加了在杭州举办的国际人工智能大会，展示了最新的研究成果，并与国内外同行进行了深入交流。", project: "人工智能辅助的金融风险预测模型", projectId: 4, createdAt: "2023-10-08", updatedAt: "2023-10-08", isDefault: true },
-        { id: 3, date: "2023-09-25", title: "纳米材料研究获得国家自然科学基金资助", type: "科研资助", content: "课题组申报的'新型纳米材料在环境污染物去除中的机理与应用研究'项目获得国家自然科学基金面上项目资助，资助金额80万元。", project: "新型纳米材料在环境污染物去除中的应用", projectId: 3, createdAt: "2023-09-25", updatedAt: "2023-09-25", isDefault: true },
-        { id: 4, date: "2023-09-18", title: "微电网控制策略实现现场应用", type: "技术转化", content: "课题组研发的可再生能源微电网优化控制策略在某工业园区实现现场应用，系统运行稳定性显著提升，能源利用率提高了18%。", project: "可再生能源智能微电网优化控制策略", projectId: 2, createdAt: "2023-09-18", updatedAt: "2023-09-18", isDefault: true },
-        { id: 5, title: "博士生李明获得优秀研究生称号", date: "2023-09-10", type: "学生荣誉", content: "课题组博士生李明因在医学图像分割领域的突出研究成果，获得学校'优秀研究生'荣誉称号。", project: "基于深度学习的医学图像分割算法研究", projectId: 1, createdAt: "2023-09-10", updatedAt: "2023-09-10", isDefault: true },
-        { id: 6, title: "课题组与企业签订合作研究协议", date: "2023-09-05", type: "产学研合作", content: "课题组与某知名金融科技公司签订合作研究协议，共同开展金融风险智能预警系统的研发与应用。", project: "人工智能辅助的金融风险预测模型", projectId: 4, createdAt: "2023-09-05", updatedAt: "2023-09-05", isDefault: true }
+        { id: 1, date: "2023-10-15", title: "医学图像分割项目取得重要进展", type: "项目进展", content: "课题组在医学图像分割算法研究中取得重要突破，新提出的注意力机制模型在公开数据集上的分割准确率达到了95.2%，较现有方法提升了3.1%。", project: "基于深度学习的医学图像分割算法研究", projectId: 1, createdAt: "2023-10-15", updatedAt: "2023-10-15" },
+        { id: 2, date: "2023-10-08", title: "课题组参加国际学术会议", type: "学术活动", content: "课题组三名研究生参加了在杭州举办的国际人工智能大会，展示了最新的研究成果，并与国内外同行进行了深入交流。", project: "人工智能辅助的金融风险预测模型", projectId: 4, createdAt: "2023-10-08", updatedAt: "2023-10-08" },
+        { id: 3, date: "2023-09-25", title: "纳米材料研究获得国家自然科学基金资助", type: "科研资助", content: "课题组申报的'新型纳米材料在环境污染物去除中的机理与应用研究'项目获得国家自然科学基金面上项目资助，资助金额80万元。", project: "新型纳米材料在环境污染物去除中的应用", projectId: 3, createdAt: "2023-09-25", updatedAt: "2023-09-25" },
+        { id: 4, date: "2023-09-18", title: "微电网控制策略实现现场应用", type: "技术转化", content: "课题组研发的可再生能源微电网优化控制策略在某工业园区实现现场应用，系统运行稳定性显著提升，能源利用率提高了18%。", project: "可再生能源智能微电网优化控制策略", projectId: 2, createdAt: "2023-09-18", updatedAt: "2023-09-18" },
+        { id: 5, title: "博士生李明获得优秀研究生称号", date: "2023-09-10", type: "学生荣誉", content: "课题组博士生李明因在医学图像分割领域的突出研究成果，获得学校'优秀研究生'荣誉称号。", project: "基于深度学习的医学图像分割算法研究", projectId: 1, createdAt: "2023-09-10", updatedAt: "2023-09-10" },
+        { id: 6, title: "课题组与企业签订合作研究协议", date: "2023-09-05", type: "产学研合作", content: "课题组与某知名金融科技公司签订合作研究协议，共同开展金融风险智能预警系统的研发与应用。", project: "人工智能辅助的金融风险预测模型", projectId: 4, createdAt: "2023-09-05", updatedAt: "2023-09-05" }
     ];
 }
 
@@ -629,8 +629,7 @@ const createCRUD = (dataArray, renderFn, filename, name) => {
                 const itemWithTimestamp = {
                     ...data,
                     createdAt: getCurrentTimestamp(),
-                    updatedAt: getCurrentTimestamp(),
-                    isDefault: false // 新添加的数据不是示例数据
+                    updatedAt: getCurrentTimestamp()
                 };
                 
                 debugLog(`添加${name}:`, itemWithTimestamp);
@@ -662,13 +661,6 @@ const createCRUD = (dataArray, renderFn, filename, name) => {
             }
             
             try {
-                // 检查是否为示例数据
-                const item = dataArray.find(item => item.id == id);
-                if (item && item.isDefault) {
-                    showToast(`示例数据不能修改，请先创建自己的${name}`, 'warning');
-                    return false;
-                }
-                
                 // 添加更新时间戳
                 const itemWithTimestamp = {
                     ...updatedData,
@@ -711,13 +703,6 @@ const createCRUD = (dataArray, renderFn, filename, name) => {
             }
             
             try {
-                // 检查是否为示例数据
-                const item = dataArray.find(item => item.id == id);
-                if (item && item.isDefault) {
-                    showToast(`示例数据不能删除，请先创建自己的${name}`, 'warning');
-                    return false;
-                }
-                
                 debugLog(`删除${name} ID ${id}`);
                 const numericId = parseInt(id);
                 const success = await window.dataManager.deleteData(type, numericId);
@@ -786,7 +771,6 @@ function renderProjects(filter = 'all') {
     filteredProjects.forEach(project => {
         const statusColor = CONFIG.STATUS_COLORS[project.statusType] || '#1abc9c';
         const showEditButton = !isReadOnlyMode && window.adminSystem && window.adminSystem.editMode;
-        const isDefaultData = project.isDefault || dataSourceInfo.type === 'default';
         const projectCard = document.createElement('div');
         projectCard.className = 'project-card';
         projectCard.setAttribute('data-category', project.category);
@@ -796,7 +780,7 @@ function renderProjects(filter = 'all') {
             <div class="project-image">
                 <img src="${project.image}" alt="${project.title}" loading="lazy">
                 <div class="project-status-tag" style="background-color: ${statusColor}20; color: ${statusColor}">${project.status}</div>
-                ${isDefaultData ? '<div class="readonly-badge">示例数据</div>' : ''}
+                ${dataSourceInfo.type === 'default' ? '<div class="readonly-badge">示例数据</div>' : ''}
             </div>
             <div class="project-content">
                 <span class="project-category">${getCategoryName(project.category)}</span>
@@ -808,7 +792,7 @@ function renderProjects(filter = 'all') {
                 </div>
                 <div class="project-actions">
                     <button class="btn btn-outline project-details-btn" data-id="${project.id}">查看详情</button>
-                    ${showEditButton ? `<button class="btn btn-outline project-edit-btn" data-id="${project.id}" title="编辑课题" ${isDefaultData ? 'disabled' : ''}><i class="fas fa-edit"></i></button>` : 
+                    ${showEditButton ? `<button class="btn btn-outline project-edit-btn" data-id="${project.id}" title="编辑课题"><i class="fas fa-edit"></i></button>` : 
                       isReadOnlyMode ? `<button class="btn btn-outline project-edit-btn disabled" title="需要登录才能编辑"><i class="fas fa-edit"></i> 编辑 (需要登录)</button>` : ''}
                 </div>
                 <div class="project-meta-footer"><small class="text-muted">更新于: ${formatDate(project.updatedAt)}</small></div>
@@ -822,13 +806,8 @@ function renderProjects(filter = 'all') {
     });
     
     if (!isReadOnlyMode && window.adminSystem && window.adminSystem.editMode) {
-        document.querySelectorAll('.project-edit-btn:not(:disabled)').forEach(btn => {
+        document.querySelectorAll('.project-edit-btn').forEach(btn => {
             btn.addEventListener('click', function() { showEditProjectForm(this.getAttribute('data-id')); });
-        });
-        document.querySelectorAll('.project-edit-btn[disabled]').forEach(btn => {
-            btn.addEventListener('click', function() { 
-                showToast('示例数据不能编辑，请先创建自己的课题', 'warning'); 
-            });
         });
     }
 }
@@ -840,19 +819,18 @@ function renderAdvisors() {
     DOM.advisorsGrid.innerHTML = '';
     advisorsData.forEach(advisor => {
         const showEditButton = !isReadOnlyMode && window.adminSystem && window.adminSystem.editMode;
-        const isDefaultData = advisor.isDefault || dataSourceInfo.type === 'default';
         const advisorCard = document.createElement('div');
         advisorCard.className = 'advisor-card';
         advisorCard.setAttribute('data-id', advisor.id);
         advisorCard.innerHTML = `
-            <div class="advisor-avatar"><img src="${advisor.avatar}" alt="${advisor.name}" loading="lazy">${isDefaultData ? '<div class="readonly-badge">示例数据</div>' : ''}</div>
+            <div class="advisor-avatar"><img src="${advisor.avatar}" alt="${advisor.name}" loading="lazy">${dataSourceInfo.type === 'default' ? '<div class="readonly-badge">示例数据</div>' : ''}</div>
             <h3 class="advisor-name">${advisor.name}</h3><p class="advisor-title">${advisor.title}</p><p class="advisor-field">${advisor.field}</p>
             <p class="advisor-bio">${advisor.bio}</p>
             <div class="advisor-contact">
                 <a href="mailto:${advisor.email}" title="发送邮件"><i class="fas fa-envelope"></i></a>
                 <a href="${advisor.website}" target="_blank" title="个人主页"><i class="fas fa-globe"></i></a>
                 <a href="#" title="学术主页"><i class="fab fa-google-scholar"></i></a>
-                ${showEditButton ? `<button class="advisor-edit-btn" data-id="${advisor.id}" title="编辑导师信息" ${isDefaultData ? 'disabled' : ''}><i class="fas fa-edit"></i></button>` : 
+                ${showEditButton ? `<button class="advisor-edit-btn" data-id="${advisor.id}" title="编辑导师信息"><i class="fas fa-edit"></i></button>` : 
                   isReadOnlyMode ? `<button class="advisor-edit-btn disabled" title="需要登录才能编辑"><i class="fas fa-edit"></i> (需要登录)</button>` : ''}
             </div>
             <div class="advisor-meta-footer"><small class="text-muted">更新于: ${formatDate(advisor.updatedAt)}</small></div>
@@ -861,13 +839,8 @@ function renderAdvisors() {
     });
     
     if (!isReadOnlyMode && window.adminSystem && window.adminSystem.editMode) {
-        document.querySelectorAll('.advisor-edit-btn:not(:disabled)').forEach(btn => {
+        document.querySelectorAll('.advisor-edit-btn').forEach(btn => {
             btn.addEventListener('click', function() { showEditAdvisorForm(this.getAttribute('data-id')); });
-        });
-        document.querySelectorAll('.advisor-edit-btn[disabled]').forEach(btn => {
-            btn.addEventListener('click', function() { 
-                showToast('示例数据不能编辑，请先创建自己的导师信息', 'warning'); 
-            });
         });
     }
 }
@@ -879,19 +852,18 @@ function renderStudents() {
     DOM.studentsGrid.innerHTML = '';
     studentsData.forEach(student => {
         const showEditButton = !isReadOnlyMode && window.adminSystem && window.adminSystem.editMode;
-        const isDefaultData = student.isDefault || dataSourceInfo.type === 'default';
         const studentCard = document.createElement('div');
         studentCard.className = 'student-card';
         studentCard.setAttribute('data-id', student.id);
         studentCard.innerHTML = `
-            <div class="student-avatar"><img src="${student.avatar}" alt="${student.name}" loading="lazy">${isDefaultData ? '<div class="readonly-badge">示例数据</div>' : ''}</div>
+            <div class="student-avatar"><img src="${student.avatar}" alt="${student.name}" loading="lazy">${dataSourceInfo.type === 'default' ? '<div class="readonly-badge">示例数据</div>' : ''}</div>
             <h3 class="student-name">${student.name}</h3><p class="student-degree">${student.degree}</p><p class="student-field">${student.field}</p>
             <p class="student-supervisor"><i class="fas fa-user-tie"></i><span>${student.supervisor}</span></p>
             <p class="student-research">${student.research}</p>
             <div class="student-contact">
                 <a href="mailto:${student.email}" title="发送邮件"><i class="fas fa-envelope"></i></a>
                 <a href="${student.github}" target="_blank" title="GitHub主页"><i class="fab fa-github"></i></a>
-                ${showEditButton ? `<button class="student-edit-btn" data-id="${student.id}" title="编辑学生信息" ${isDefaultData ? 'disabled' : ''}><i class="fas fa-edit"></i></button>` : 
+                ${showEditButton ? `<button class="student-edit-btn" data-id="${student.id}" title="编辑学生信息"><i class="fas fa-edit"></i></button>` : 
                   isReadOnlyMode ? `<button class="student-edit-btn disabled" title="需要登录才能编辑"><i class="fas fa-edit"></i> (需要登录)</button>` : ''}
             </div>
             <div class="student-meta-footer"><small class="text-muted">更新于: ${formatDate(student.updatedAt)}</small></div>
@@ -900,13 +872,8 @@ function renderStudents() {
     });
     
     if (!isReadOnlyMode && window.adminSystem && window.adminSystem.editMode) {
-        document.querySelectorAll('.student-edit-btn:not(:disabled)').forEach(btn => {
+        document.querySelectorAll('.student-edit-btn').forEach(btn => {
             btn.addEventListener('click', function() { showEditStudentForm(this.getAttribute('data-id')); });
-        });
-        document.querySelectorAll('.student-edit-btn[disabled]').forEach(btn => {
-            btn.addEventListener('click', function() { 
-                showToast('示例数据不能编辑，请先创建自己的学生信息', 'warning'); 
-            });
         });
     }
 }
@@ -919,14 +886,13 @@ function renderPublications() {
     publicationsData.forEach(publication => {
         const typeColor = CONFIG.TYPE_COLORS[publication.type] || '#3498db';
         const showEditButton = !isReadOnlyMode && window.adminSystem && window.adminSystem.editMode;
-        const isDefaultData = publication.isDefault || dataSourceInfo.type === 'default';
         const publicationCard = document.createElement('div');
         publicationCard.className = 'publication-card';
         publicationCard.setAttribute('data-id', publication.id);
         publicationCard.innerHTML = `
             <div class="publication-header">
                 <span class="publication-type" style="background-color: ${typeColor}20; color: ${typeColor}">${publication.type}</span>
-                ${isDefaultData ? '<span class="readonly-badge">示例数据</span>' : ''}
+                ${dataSourceInfo.type === 'default' ? '<span class="readonly-badge">示例数据</span>' : ''}
                 <h3 class="publication-title">${publication.title}</h3>
                 <p class="publication-authors"><i class="fas fa-users"></i>${publication.authors}</p>
                 <p class="publication-venue"><i class="fas fa-book"></i>${publication.venue}</p>
@@ -937,8 +903,8 @@ function renderPublications() {
                 <div class="publication-actions">
                     ${publication.link ? `<a href="${publication.link}" target="_blank" class="btn btn-outline"><i class="fas fa-external-link-alt"></i>查看全文</a>` : ''}
                     ${showEditButton ? `
-                        <button class="btn btn-outline edit-publication-btn" data-id="${publication.id}" ${isDefaultData ? 'disabled' : ''}><i class="fas fa-edit"></i> 编辑</button>
-                        <button class="btn btn-outline delete-publication-btn" data-id="${publication.id}" ${isDefaultData ? 'disabled' : ''}><i class="fas fa-trash"></i> 删除</button>
+                        <button class="btn btn-outline edit-publication-btn" data-id="${publication.id}"><i class="fas fa-edit"></i> 编辑</button>
+                        <button class="btn btn-outline delete-publication-btn" data-id="${publication.id}"><i class="fas fa-trash"></i> 删除</button>
                     ` : isReadOnlyMode ? `<button class="btn btn-outline disabled" title="需要登录才能编辑"><i class="fas fa-edit"></i> 编辑 (需要登录)</button>` : ''}
                 </div>
             </div>
@@ -947,16 +913,11 @@ function renderPublications() {
     });
     
     if (!isReadOnlyMode && window.adminSystem && window.adminSystem.editMode) {
-        document.querySelectorAll('.edit-publication-btn:not(:disabled)').forEach(btn => {
+        document.querySelectorAll('.edit-publication-btn').forEach(btn => {
             btn.addEventListener('click', function() { showEditPublicationForm(this.getAttribute('data-id')); });
         });
-        document.querySelectorAll('.delete-publication-btn:not(:disabled)').forEach(btn => {
+        document.querySelectorAll('.delete-publication-btn').forEach(btn => {
             btn.addEventListener('click', function() { if (confirm('确定要删除这个学术成果吗？')) deletePublication(this.getAttribute('data-id')); });
-        });
-        document.querySelectorAll('.edit-publication-btn[disabled], .delete-publication-btn[disabled]').forEach(btn => {
-            btn.addEventListener('click', function() { 
-                showToast('示例数据不能编辑或删除，请先创建自己的学术成果', 'warning'); 
-            });
         });
     }
 }
@@ -971,7 +932,6 @@ function renderUpdates() {
     sortedUpdates.forEach(update => {
         const typeColor = CONFIG.TYPE_COLORS[update.type] || '#3498db';
         const showEditButton = !isReadOnlyMode && window.adminSystem && window.adminSystem.editMode;
-        const isDefaultData = update.isDefault || dataSourceInfo.type === 'default';
         const updateCard = document.createElement('div');
         updateCard.className = 'update-card';
         updateCard.setAttribute('data-id', update.id);
@@ -979,7 +939,7 @@ function renderUpdates() {
             <div class="update-header">
                 <div class="update-date-wrapper">
                     <span class="update-date" style="background-color: ${typeColor}20; color: ${typeColor}">${formatDate(update.date)}</span>
-                    ${isDefaultData ? '<span class="readonly-badge">示例数据</span>' : ''}
+                    ${dataSourceInfo.type === 'default' ? '<span class="readonly-badge">示例数据</span>' : ''}
                     <span class="update-type" style="color: ${typeColor}">${update.type}</span>
                 </div>
                 <h3 class="update-title">${update.title}</h3>
@@ -990,8 +950,8 @@ function renderUpdates() {
                     <div class="update-project"><i class="fas fa-project-diagram"></i><span>${update.project}</span></div>
                     ${showEditButton ? `
                         <div class="update-actions">
-                            <button class="btn btn-outline edit-update-btn" data-id="${update.id}" ${isDefaultData ? 'disabled' : ''}><i class="fas fa-edit"></i> 编辑</button>
-                            <button class="btn btn-outline delete-update-btn" data-id="${update.id}" ${isDefaultData ? 'disabled' : ''}><i class="fas fa-trash"></i> 删除</button>
+                            <button class="btn btn-outline edit-update-btn" data-id="${update.id}"><i class="fas fa-edit"></i> 编辑</button>
+                            <button class="btn btn-outline delete-update-btn" data-id="${update.id}"><i class="fas fa-trash"></i> 删除</button>
                         </div>
                     ` : isReadOnlyMode ? `<div class="update-actions"><button class="btn btn-outline disabled" title="需要登录才能编辑"><i class="fas fa-edit"></i> 编辑 (需要登录)</button></div>` : ''}
                 </div>
@@ -1001,16 +961,11 @@ function renderUpdates() {
     });
     
     if (!isReadOnlyMode && window.adminSystem && window.adminSystem.editMode) {
-        document.querySelectorAll('.edit-update-btn:not(:disabled)').forEach(btn => {
+        document.querySelectorAll('.edit-update-btn').forEach(btn => {
             btn.addEventListener('click', function() { showEditUpdateForm(this.getAttribute('data-id')); });
         });
-        document.querySelectorAll('.delete-update-btn:not(:disabled)').forEach(btn => {
+        document.querySelectorAll('.delete-update-btn').forEach(btn => {
             btn.addEventListener('click', function() { if (confirm('确定要删除这个研究近况吗？')) deleteUpdate(this.getAttribute('data-id')); });
-        });
-        document.querySelectorAll('.edit-update-btn[disabled], .delete-update-btn[disabled]').forEach(btn => {
-            btn.addEventListener('click', function() { 
-                showToast('示例数据不能编辑或删除，请先创建自己的研究近况', 'warning'); 
-            });
         });
     }
 }
@@ -1025,13 +980,6 @@ function showEditProjectForm(projectId = null) {
     
     const project = projectId ? projectsData.find(p => p.id == projectId) : { title: '', category: 'science', description: '', advisor: '', status: '筹备中', statusType: 'preparation', image: 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80' };
     const isEditMode = !!projectId;
-    const isDefaultData = project.isDefault;
-    
-    if (isEditMode && isDefaultData) {
-        showToast('示例数据不能编辑，请先创建自己的课题', 'warning');
-        return;
-    }
-    
     const modal = createModal();
     
     modal.innerHTML = `
@@ -1066,7 +1014,7 @@ function showEditProjectForm(projectId = null) {
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary cancel-btn">取消</button>
                         <button type="submit" class="btn btn-primary">${isEditMode ? '更新课题' : '添加课题'}</button>
-                        ${isEditMode && !isDefaultData ? `<button type="button" class="btn btn-danger delete-btn"><i class="fas fa-trash"></i> 删除课题</button>` : ''}
+                        ${isEditMode ? `<button type="button" class="btn btn-danger delete-btn"><i class="fas fa-trash"></i> 删除课题</button>` : ''}
                     </div>
                 </form>
             </div>
@@ -1085,8 +1033,7 @@ function showEditProjectForm(projectId = null) {
             advisor: modal.querySelector('#editAdvisor').value,
             status: getStatusText(modal.querySelector('#editStatus').value),
             statusType: modal.querySelector('#editStatus').value,
-            image: modal.querySelector('#editImage').value || 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-            isDefault: false
+            image: modal.querySelector('#editImage').value || 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80'
         };
         if (isEditMode) {
             await updateProject(projectId, formData);
@@ -1096,7 +1043,7 @@ function showEditProjectForm(projectId = null) {
         closeModal(modal);
     });
     
-    if (isEditMode && !isDefaultData) {
+    if (isEditMode) {
         modal.querySelector('.delete-btn').addEventListener('click', async function() {
             if (confirm('确定要删除这个课题吗？此操作不可撤销。')) {
                 await deleteProject(projectId);
@@ -1118,13 +1065,6 @@ function showEditAdvisorForm(advisorId = null) {
     
     const advisor = advisorId ? advisorsData.find(a => a.id == advisorId) : { name: '', title: '', field: '', bio: '', avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80', email: '', website: '' };
     const isEditMode = !!advisorId;
-    const isDefaultData = advisor.isDefault;
-    
-    if (isEditMode && isDefaultData) {
-        showToast('示例数据不能编辑，请先创建自己的导师信息', 'warning');
-        return;
-    }
-    
     const modal = createModal();
     
     modal.innerHTML = `
@@ -1147,7 +1087,7 @@ function showEditAdvisorForm(advisorId = null) {
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary cancel-btn">取消</button>
                         <button type="submit" class="btn btn-primary">${isEditMode ? '更新导师信息' : '添加导师'}</button>
-                        ${isEditMode && !isDefaultData ? `<button type="button" class="btn btn-danger delete-btn"><i class="fas fa-trash"></i> 删除导师</button>` : ''}
+                        ${isEditMode ? `<button type="button" class="btn btn-danger delete-btn"><i class="fas fa-trash"></i> 删除导师</button>` : ''}
                     </div>
                 </form>
             </div>
@@ -1166,8 +1106,7 @@ function showEditAdvisorForm(advisorId = null) {
             bio: modal.querySelector('#editAdvisorBio').value,
             avatar: modal.querySelector('#editAdvisorAvatar').value || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
             email: modal.querySelector('#editAdvisorEmail').value || '',
-            website: modal.querySelector('#editAdvisorWebsite').value || '',
-            isDefault: false
+            website: modal.querySelector('#editAdvisorWebsite').value || ''
         };
         if (isEditMode) {
             await updateAdvisor(advisorId, formData);
@@ -1177,7 +1116,7 @@ function showEditAdvisorForm(advisorId = null) {
         closeModal(modal);
     });
     
-    if (isEditMode && !isDefaultData) {
+    if (isEditMode) {
         modal.querySelector('.delete-btn').addEventListener('click', async function() {
             if (confirm('确定要删除这位导师吗？此操作不可撤销。')) {
                 await deleteAdvisor(advisorId);
@@ -1199,13 +1138,6 @@ function showEditStudentForm(studentId = null) {
     
     const student = studentId ? studentsData.find(s => s.id == studentId) : { name: '', degree: '', field: '', supervisor: '', research: '', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80', email: '', github: '' };
     const isEditMode = !!studentId;
-    const isDefaultData = student.isDefault;
-    
-    if (isEditMode && isDefaultData) {
-        showToast('示例数据不能编辑，请先创建自己的学生信息', 'warning');
-        return;
-    }
-    
     const modal = createModal();
     
     modal.innerHTML = `
@@ -1238,7 +1170,7 @@ function showEditStudentForm(studentId = null) {
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary cancel-btn">取消</button>
                         <button type="submit" class="btn btn-primary">${isEditMode ? '更新学生信息' : '添加学生'}</button>
-                        ${isEditMode && !isDefaultData ? `<button type="button" class="btn btn-danger delete-btn"><i class="fas fa-trash"></i> 删除学生</button>` : ''}
+                        ${isEditMode ? `<button type="button" class="btn btn-danger delete-btn"><i class="fas fa-trash"></i> 删除学生</button>` : ''}
                     </div>
                 </form>
             </div>
@@ -1258,8 +1190,7 @@ function showEditStudentForm(studentId = null) {
             research: modal.querySelector('#editStudentResearch').value,
             avatar: modal.querySelector('#editStudentAvatar').value || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
             email: modal.querySelector('#editStudentEmail').value || '',
-            github: modal.querySelector('#editStudentGithub').value || '',
-            isDefault: false
+            github: modal.querySelector('#editStudentGithub').value || ''
         };
         if (isEditMode) {
             await updateStudent(studentId, formData);
@@ -1269,7 +1200,7 @@ function showEditStudentForm(studentId = null) {
         closeModal(modal);
     });
     
-    if (isEditMode && !isDefaultData) {
+    if (isEditMode) {
         modal.querySelector('.delete-btn').addEventListener('click', async function() {
             if (confirm('确定要删除这位学生吗？此操作不可撤销。')) {
                 await deleteStudent(studentId);
@@ -1291,13 +1222,6 @@ function showEditPublicationForm(publicationId = null) {
     
     const publication = publicationId ? publicationsData.find(p => p.id == publicationId) : { type: '期刊论文', title: '', authors: '', venue: '', abstract: '', doi: '', link: '' };
     const isEditMode = !!publicationId;
-    const isDefaultData = publication.isDefault;
-    
-    if (isEditMode && isDefaultData) {
-        showToast('示例数据不能编辑，请先创建自己的学术成果', 'warning');
-        return;
-    }
-    
     const modal = createModal();
     
     modal.innerHTML = `
@@ -1328,7 +1252,7 @@ function showEditPublicationForm(publicationId = null) {
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary cancel-btn">取消</button>
                         <button type="submit" class="btn btn-primary">${isEditMode ? '更新学术成果' : '添加学术成果'}</button>
-                        ${isEditMode && !isDefaultData ? `<button type="button" class="btn btn-danger delete-btn"><i class="fas fa-trash"></i> 删除成果</button>` : ''}
+                        ${isEditMode ? `<button type="button" class="btn btn-danger delete-btn"><i class="fas fa-trash"></i> 删除成果</button>` : ''}
                     </div>
                 </form>
             </div>
@@ -1347,8 +1271,7 @@ function showEditPublicationForm(publicationId = null) {
             venue: modal.querySelector('#editPublicationVenue').value,
             abstract: modal.querySelector('#editPublicationAbstract').value,
             doi: modal.querySelector('#editPublicationDoi').value || '',
-            link: modal.querySelector('#editPublicationLink').value || '',
-            isDefault: false
+            link: modal.querySelector('#editPublicationLink').value || ''
         };
         if (isEditMode) {
             await updatePublication(publicationId, formData);
@@ -1358,7 +1281,7 @@ function showEditPublicationForm(publicationId = null) {
         closeModal(modal);
     });
     
-    if (isEditMode && !isDefaultData) {
+    if (isEditMode) {
         modal.querySelector('.delete-btn').addEventListener('click', async function() {
             if (confirm('确定要删除这个学术成果吗？此操作不可撤销。')) {
                 await deletePublication(publicationId);
@@ -1380,13 +1303,6 @@ function showEditUpdateForm(updateId = null) {
     
     const update = updateId ? updatesData.find(u => u.id == updateId) : { date: getCurrentTimestamp(), title: '', type: '项目进展', content: '', project: '' };
     const isEditMode = !!updateId;
-    const isDefaultData = update.isDefault;
-    
-    if (isEditMode && isDefaultData) {
-        showToast('示例数据不能编辑，请先创建自己的研究近况', 'warning');
-        return;
-    }
-    
     const modal = createModal();
     
     modal.innerHTML = `
@@ -1419,7 +1335,7 @@ function showEditUpdateForm(updateId = null) {
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary cancel-btn">取消</button>
                         <button type="submit" class="btn btn-primary">${isEditMode ? '更新研究近况' : '添加研究近况'}</button>
-                        ${isEditMode && !isDefaultData ? `<button type="button" class="btn btn-danger delete-btn"><i class="fas fa-trash"></i> 删除近况</button>` : ''}
+                        ${isEditMode ? `<button type="button" class="btn btn-danger delete-btn"><i class="fas fa-trash"></i> 删除近况</button>` : ''}
                     </div>
                 </form>
             </div>
@@ -1437,8 +1353,7 @@ function showEditUpdateForm(updateId = null) {
             type: modal.querySelector('#editUpdateType').value,
             content: modal.querySelector('#editUpdateContent').value,
             project: modal.querySelector('#editUpdateProject').value || '',
-            projectId: modal.querySelector('#editUpdateProject').value ? projectsData.find(p => p.title === modal.querySelector('#editUpdateProject').value)?.id : null,
-            isDefault: false
+            projectId: modal.querySelector('#editUpdateProject').value ? projectsData.find(p => p.title === modal.querySelector('#editUpdateProject').value)?.id : null
         };
         if (isEditMode) {
             await updateUpdate(updateId, formData);
@@ -1448,7 +1363,7 @@ function showEditUpdateForm(updateId = null) {
         closeModal(modal);
     });
     
-    if (isEditMode && !isDefaultData) {
+    if (isEditMode) {
         modal.querySelector('.delete-btn').addEventListener('click', async function() {
             if (confirm('确定要删除这个研究近况吗？此操作不可撤销。')) {
                 await deleteUpdate(updateId);
@@ -1561,7 +1476,7 @@ function exportAllData() {
 }
 
 async function resetDataToDefault() {
-    if (confirm('确定要重置所有数据为默认值吗？此操作不可撤销，将丢失所有自定义数据。')) {
+    if (confirm('确定要重置所有数据为默认值吗？此操作不可撤销。')) {
         try {
             projectsData = getDefaultProjects();
             advisorsData = getDefaultAdvisors();
@@ -1747,18 +1662,11 @@ function setupEditButtonEvents() {
             e.stopPropagation();
             
             const projectId = projectEditBtn.getAttribute('data-id');
-            const project = projectsData.find(p => p.id == projectId);
             
             // 检查权限
             if (!window.dataManager || !window.dataManager.hasValidToken()) {
                 showToast('需要GitHub Token才能编辑', 'warning');
                 requestTokenForAdmin();
-                return;
-            }
-            
-            // 检查是否为示例数据
-            if (project && project.isDefault) {
-                showToast('示例数据不能编辑，请先创建自己的课题', 'warning');
                 return;
             }
             
@@ -1772,16 +1680,10 @@ function setupEditButtonEvents() {
             e.stopPropagation();
             
             const advisorId = advisorEditBtn.getAttribute('data-id');
-            const advisor = advisorsData.find(a => a.id == advisorId);
             
             if (!window.dataManager || !window.dataManager.hasValidToken()) {
                 showToast('需要GitHub Token才能编辑', 'warning');
                 requestTokenForAdmin();
-                return;
-            }
-            
-            if (advisor && advisor.isDefault) {
-                showToast('示例数据不能编辑，请先创建自己的导师信息', 'warning');
                 return;
             }
             
@@ -1795,16 +1697,10 @@ function setupEditButtonEvents() {
             e.stopPropagation();
             
             const studentId = studentEditBtn.getAttribute('data-id');
-            const student = studentsData.find(s => s.id == studentId);
             
             if (!window.dataManager || !window.dataManager.hasValidToken()) {
                 showToast('需要GitHub Token才能编辑', 'warning');
                 requestTokenForAdmin();
-                return;
-            }
-            
-            if (student && student.isDefault) {
-                showToast('示例数据不能编辑，请先创建自己的学生信息', 'warning');
                 return;
             }
             
@@ -1818,16 +1714,10 @@ function setupEditButtonEvents() {
             e.stopPropagation();
             
             const publicationId = publicationEditBtn.getAttribute('data-id');
-            const publication = publicationsData.find(p => p.id == publicationId);
             
             if (!window.dataManager || !window.dataManager.hasValidToken()) {
                 showToast('需要GitHub Token才能编辑', 'warning');
                 requestTokenForAdmin();
-                return;
-            }
-            
-            if (publication && publication.isDefault) {
-                showToast('示例数据不能编辑，请先创建自己的学术成果', 'warning');
                 return;
             }
             
@@ -1841,16 +1731,10 @@ function setupEditButtonEvents() {
             e.stopPropagation();
             
             const updateId = updateEditBtn.getAttribute('data-id');
-            const update = updatesData.find(u => u.id == updateId);
             
             if (!window.dataManager || !window.dataManager.hasValidToken()) {
                 showToast('需要GitHub Token才能编辑', 'warning');
                 requestTokenForAdmin();
-                return;
-            }
-            
-            if (update && update.isDefault) {
-                showToast('示例数据不能编辑，请先创建自己的研究近况', 'warning');
                 return;
             }
             
@@ -1964,8 +1848,6 @@ function addDataSourceStyles() {
         .btn.disabled { opacity: 0.6; cursor: not-allowed; background-color: #9ca3af; border-color: #9ca3af; position: relative; }
         .btn.disabled:hover::after { content: "需要登录才能编辑"; position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: #374151; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; white-space: nowrap; z-index: 10; pointer-events: none; }
         .advisor-edit-btn.disabled, .student-edit-btn.disabled { display: inline-flex; align-items: center; justify-content: center; background: #9ca3af; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 0.85em; cursor: not-allowed; opacity: 0.6; }
-        .btn[disabled] { opacity: 0.5; cursor: not-allowed; }
-        .btn[disabled]:hover::after { content: "示例数据不能编辑"; position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: #374151; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; white-space: nowrap; z-index: 10; pointer-events: none; }
     `;
     document.head.appendChild(style);
 }
@@ -2086,7 +1968,7 @@ if (document.readyState === 'loading') {
     init();
 }
 
-// 导出 - 修复：添加渲染函数到全局对象
+// 导出
 window.labWebsite = {
     projectsData, advisorsData, studentsData, publicationsData, updatesData,
     isReadOnlyMode, isAuthenticated,
@@ -2105,18 +1987,8 @@ window.labWebsite = {
     addUpdate: updateCRUD.add, 
     updateUpdate: updateCRUD.update, 
     deleteUpdate: updateCRUD.delete,
-    // 添加渲染函数
-    renderProjects,
-    renderAdvisors,
-    renderStudents,
-    renderPublications,
-    renderUpdates,
-    renderAllData,
     showEditProjectForm, showEditAdvisorForm, showEditStudentForm, showEditPublicationForm, showEditUpdateForm, showAdminPanel,
     exportAllData,
-    showToast,
-    updateDataSourceHint,
-    showProjectDetails,
     checkAuthentication: async () => checkAuthentication(),
     getDataManager: () => window.dataManager,
     syncData: async () => {
