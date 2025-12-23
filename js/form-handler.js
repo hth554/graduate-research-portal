@@ -1,193 +1,248 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const manager = window.githubIssuesManager;
-    const projectForm = document.getElementById('project-form');
-    const formMessage = document.getElementById('form-message');
-    const tokenAlert = document.getElementById('token-alert');
-    const submitBtn = document.getElementById('submit-btn');
-    const submitText = document.getElementById('submit-text');
-    const submitLoading = document.getElementById('submit-loading');
-    const projectsList = document.getElementById('projects-list');
-
-    if (!manager.hasValidToken() && tokenAlert) {
-        tokenAlert.style.display = 'block';
+class GitHubIssuesManager {
+    constructor() {
+        this.owner = 'HTH554';
+        this.repo = 'graduate-research-portal';
+        this.apiBase = 'https://api.github.com';
+        this.issuesUrl = `${this.apiBase}/repos/${this.owner}/${this.repo}/issues`;
+        this.token = localStorage.getItem('github_pat_token');
     }
 
-    window.saveGitHubToken = function() {
-        const tokenInput = document.getElementById('github-token-input');
-        const token = tokenInput.value.trim();
-        
-        if (!token) {
-            alert('请输入 GitHub Token');
-            return;
+    setToken(token) {
+        if (token && (token.startsWith('ghp_') || token.startsWith('github_pat_'))) {
+            this.token = token;
+            localStorage.setItem('github_pat_token', token);
+            return true;
         }
-        
-        if (manager.setToken(token)) {
-            if (tokenAlert) {
-                tokenAlert.innerHTML = `
-                    <div class="alert alert-success">
-                        <h4>✅ Token 设置成功！</h4>
-                        <p>现在可以提交课题了。Token 已安全保存在您的浏览器中。</p>
-                    </div>
-                `;
-            }
-            loadProjects();
-        } else {
-            alert('Token 格式不正确，请检查！');
-        }
-    };
-
-    if (projectForm) {
-        projectForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            if (!manager.hasValidToken()) {
-                if (formMessage) {
-                    formMessage.innerHTML = `
-                        <div class="alert alert-warning">
-                            <h4>⚠️ 需要设置 Token</h4>
-                            <p>请先在上方设置 GitHub Token 以提交课题。</p>
-                        </div>
-                    `;
-                }
-                if (tokenAlert) tokenAlert.style.display = 'block';
-                return;
-            }
-
-            const formData = {
-                title: document.getElementById('project-title').value.trim(),
-                description: document.getElementById('project-description').value.trim(),
-                student: document.getElementById('student-name').value.trim(),
-                supervisor: document.getElementById('supervisor-name').value.trim(),
-                tags: document.getElementById('project-tags').value.trim()
-            };
-
-            if (!formData.title || !formData.description) {
-                if (formMessage) {
-                    formMessage.innerHTML = `
-                        <div class="alert alert-warning">
-                            <h4>⚠️ 请填写完整</h4>
-                            <p>课题名称和描述是必填项。</p>
-                        </div>
-                    `;
-                }
-                return;
-            }
-
-            setLoadingState(true);
-
-            try {
-                const result = await manager.submitNewProject(formData);
-                
-                if (formMessage) {
-                    formMessage.innerHTML = `
-                        <div class="alert alert-success">
-                            <h4>🎉 提交成功！</h4>
-                            <p><strong>${formData.title}</strong> 已提交审核。</p>
-                            <p>Issue 编号: <a href="${result.issueUrl}" target="_blank" style="color: #155724; font-weight: bold;">#${result.issueNumber}</a></p>
-                            <p>审核通过后将在网站展示，您可以在 GitHub 上跟踪审核进度。</p>
-                            <button onclick="loadProjects()" class="btn btn-primary" style="margin-top: 15px;">刷新课题列表</button>
-                        </div>
-                    `;
-                }
-                
-                projectForm.reset();
-                setTimeout(loadProjects, 2000);
-                
-            } catch (error) {
-                if (formMessage) {
-                    formMessage.innerHTML = `
-                        <div class="alert alert-error">
-                            <h4>❌ 提交失败</h4>
-                            <p><strong>错误信息：</strong> ${error.message}</p>
-                            <p>可能的原因：</p>
-                            <ul>
-                                <li>Token 无效或已过期</li>
-                                <li>网络连接问题</li>
-                                <li>GitHub API 限制</li>
-                            </ul>
-                            <p>请检查 Token 设置或稍后重试。</p>
-                        </div>
-                    `;
-                }
-                console.error('提交错误:', error);
-            } finally {
-                setLoadingState(false);
-            }
-        });
+        return false;
     }
 
-    function setLoadingState(isLoading) {
-        if (submitText) submitText.style.display = isLoading ? 'none' : 'inline';
-        if (submitLoading) submitLoading.style.display = isLoading ? 'inline' : 'none';
-        if (submitBtn) submitBtn.disabled = isLoading;
-    }
+    hasValidToken() { return !!this.token && this.token.length > 30; }
 
-    async function loadProjects() {
-        if (!projectsList) return;
+    async submitNewProject(projectData) {
+        if (!this.hasValidToken()) throw new Error('请先设置有效的 GitHub Token');
         
-        projectsList.innerHTML = `
-            <div class="loading-spinner">
-                <div class="spinner"></div>
-                <p>加载课题中...</p>
-            </div>
-        `;
+        const issueTitle = `[课题提交] ${projectData.title.substring(0, 100)}`;
+        const issueBody = this.formatIssueBody(projectData);
         
         try {
-            const projects = await manager.getAllProjects();
+            const response = await fetch(this.issuesUrl, {
+                method: 'POST',
+                headers: this.getHeaders(),
+                body: JSON.stringify({
+                    title: issueTitle,
+                    body: issueBody,
+                    labels: [
+                        '课题提交',
+                        '待审核',
+                        projectData.tags ? projectData.tags.split(',')[0].trim() : '其他'
+                    ].filter(Boolean)
+                })
+            });
             
-            if (projects.length === 0) {
-                projectsList.innerHTML = `
-                    <div class="empty-state">
-                        <p>📭 暂无已提交的课题</p>
-                        <p>成为第一个提交课题的研究生！</p>
-                    </div>
-                `;
-                return;
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`GitHub API 错误: ${response.status} - ${errorText}`);
             }
             
-            projectsList.innerHTML = projects.map(project => `
-                <div class="project-card" data-status="${project.status.toLowerCase()}">
-                    <div class="project-header">
-                        <span class="project-status ${getStatusClass(project.status)}">
-                            ${getStatusIcon(project.status)} ${project.status}
-                        </span>
-                        <span class="project-number">#${project.number}</span>
-                    </div>
-                    <h4 class="project-title">${project.title}</h4>
-                    <p class="project-desc">${project.description.substring(0, 120)}...</p>
-                    <div class="project-meta">
-                        <span>👨‍🎓 ${project.student}</span>
-                        <span>👨‍🏫 ${project.supervisor}</span>
-                        <span class="project-date">📅 ${project.createdAt}</span>
-                    </div>
-                    <div class="project-tags">
-                        ${project.tags.split(',').map(tag => 
-                            `<span class="tag">${tag.trim()}</span>`).join('')}
-                    </div>
-                    <a href="${project.url}" target="_blank" class="project-link">查看详情 →</a>
-                </div>
-            `).join('');
-            
+            const result = await response.json();
+            return {
+                success: true,
+                issueNumber: result.number,
+                issueUrl: result.html_url,
+                title: result.title,
+                createdAt: new Date(result.created_at).toLocaleString()
+            };
         } catch (error) {
-            projectsList.innerHTML = `
-                <div class="error-state">
-                    <p>⚠️ 加载课题列表失败</p>
-                    <p>${error.message}</p>
-                </div>
-            `;
+            console.error('提交失败:', error);
+            throw error;
         }
     }
 
-    function getStatusIcon(status) {
-        const icons = { '待审核': '⏳', '审核通过': '✅', '已发布': '🚀', '需要修改': '📝', '新提交': '🆕' };
-        return icons[status] || '📄';
+    formatIssueBody(data) {
+        return `## 课题基本信息\n\n**课题名称：** ${data.title}\n\n**研究生：** ${data.student || '未填写'}\n\n**指导老师：** ${data.supervisor || '未填写'}\n\n**研究标签：** ${data.tags || '未分类'}\n\n---\n\n## 课题描述\n${data.description}\n\n---\n\n## 提交信息\n- **提交时间：** ${new Date().toLocaleString()}\n- **状态：** 待审核\n- **审核意见：** \n\n---\n\n## 审核清单\n- [ ] 格式检查\n- [ ] 内容审核\n- [ ] 导师确认\n- [ ] 网站发布\n\n---\n*此 Issue 由研究生课题门户网站自动生成*`;
     }
 
-    function getStatusClass(status) {
-        const classes = { '待审核': 'status-pending', '审核通过': 'status-approved', '已发布': 'status-published', '需要修改': 'status-revision', '新提交': 'status-new' };
-        return classes[status] || 'status-default';
+    async getAllProjects() {
+        try {
+            const response = await fetch(`${this.issuesUrl}?labels=课题提交&per_page=20&sort=created&direction=desc`);
+            if (!response.ok) throw new Error(`获取失败: ${response.status}`);
+            
+            const issues = await response.json();
+            return issues.map(issue => ({
+                id: issue.id,
+                number: issue.number,
+                title: issue.title.replace('[课题提交] ', ''),
+                description: this.extractDescription(issue.body),
+                student: this.extractField(issue.body, '研究生：'),
+                supervisor: this.extractField(issue.body, '指导老师：'),
+                tags: this.extractField(issue.body, '研究标签：'),
+                status: this.getStatusFromLabels(issue.labels),
+                createdAt: new Date(issue.created_at).toLocaleDateString('zh-CN'),
+                url: issue.html_url,
+                state: issue.state
+            }));
+        } catch (error) {
+            console.error('获取课题列表失败:', error);
+            return [];
+        }
     }
 
-    if (manager.hasValidToken()) loadProjects();
-    window.loadProjects = loadProjects;
-});
+    extractDescription(body) {
+        if (!body) return '暂无描述';
+        const match = body.match(/## 课题描述\s*\n([\s\S]*?)\n\s*---/);
+        return match ? match[1].trim() : body.substring(0, 200) + '...';
+    }
+
+    extractField(body, fieldName) {
+        if (!body) return '未知';
+        const regex = new RegExp(`\\*\\*${fieldName}\\*\\*\\s*(.+?)\\s*\\n`);
+        const match = body.match(regex);
+        return match ? match[1].trim() : '未知';
+    }
+
+    getStatusFromLabels(labels) {
+        const labelNames = labels.map(l => l.name);
+        if (labelNames.includes('已发布')) return '已发布';
+        if (labelNames.includes('审核通过')) return '审核通过';
+        if (labelNames.includes('待审核')) return '待审核';
+        if (labelNames.includes('需要修改')) return '需要修改';
+        return labelNames[0] || '新提交';
+    }
+
+    clearToken() {
+        this.token = null;
+        localStorage.removeItem('github_pat_token');
+    }
+
+    async writeJsonFile(filename, dataObj) {
+        if (!this.hasValidToken()) throw new Error('无有效 GitHub Token');
+        
+        const path = `data/${filename}`;
+        const url = `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${path}`;
+        let sha = null;
+        
+        try {
+            const getResp = await fetch(url, { headers: this.getHeaders() });
+            if (getResp.ok) sha = (await getResp.json()).sha;
+        } catch {}
+        
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(dataObj, null, 2))));
+        const body = JSON.stringify({
+            message: `portal: 更新 ${filename} (${new Date().toLocaleString('zh-CN')})`,
+            content,
+            sha
+        });
+        
+        const putResp = await fetch(url, {
+            method: 'PUT',
+            headers: this.getHeaders('application/json'),
+            body
+        });
+        
+        if (!putResp.ok) {
+            const txt = await putResp.text();
+            throw new Error(`写入 GitHub 失败 ${putResp.status}: ${txt}`);
+        }
+        return putResp.json();
+    }
+
+    async readJsonFile(filename) {
+        const path = `data/${filename}`;
+        const url = `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${path}`;
+        
+        try {
+            const publicResp = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
+            if (publicResp.ok) {
+                const { content } = await publicResp.json();
+                const decodedContent = JSON.parse(decodeURIComponent(escape(atob(content))));
+                console.log(`从 GitHub 公开读取 ${filename} 成功，${decodedContent?.length || 0} 条记录`);
+                return decodedContent;
+            } else if (publicResp.status === 404) {
+                console.log(`GitHub 上不存在 ${filename}`);
+                return null;
+            }
+            throw new Error('Public read failed');
+        } catch (publicError) {
+            console.log(`${filename} 公开读取失败: ${publicError.message}`);
+            
+            if (this.hasValidToken()) {
+                try {
+                    const authResp = await fetch(url, { headers: this.getHeaders() });
+                    if (authResp.ok) {
+                        const { content } = await authResp.json();
+                        const decodedContent = JSON.parse(decodeURIComponent(escape(atob(content))));
+                        console.log(`带 Token 读取 ${filename} 成功，${decodedContent?.length || 0} 条记录`);
+                        return decodedContent;
+                    } else if (authResp.status === 404) {
+                        console.log(`GitHub 上不存在 ${filename} (带 Token)`);
+                        return null;
+                    }
+                    throw new Error(`带 Token 读取失败 ${authResp.status}`);
+                } catch (authError) {
+                    console.error(`带 Token 读取 ${filename} 失败:`, authError);
+                    throw new Error(`无法读取 ${filename}: ${authError.message}`);
+                }
+            }
+            
+            console.log(`既无法公开读取 ${filename}，也没有 Token`);
+            throw new Error(`无法读取 ${filename}，请确保仓库是公开的或提供 GitHub Token`);
+        }
+    }
+
+    async createEmptyJsonFile(filename, defaultData = []) {
+        if (!this.hasValidToken()) throw new Error('无有效 GitHub Token');
+        return await this.writeJsonFile(filename, defaultData);
+    }
+
+    async checkRepositoryVisibility() {
+        const url = `${this.apiBase}/repos/${this.owner}/${this.repo}`;
+        
+        try {
+            const response = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
+            if (response.ok) {
+                const repoInfo = await response.json();
+                return {
+                    isPublic: !repoInfo.private,
+                    visibility: repoInfo.private ? 'private' : 'public',
+                    name: repoInfo.full_name,
+                    description: repoInfo.description
+                };
+            }
+            throw new Error(`无法访问仓库: ${response.status}`);
+        } catch (error) {
+            console.error('检查仓库可见性失败:', error);
+            return { isPublic: false, visibility: 'unknown', error: error.message };
+        }
+    }
+
+    async checkDataDirectory() {
+        const url = `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/data`;
+        
+        try {
+            const response = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
+            if (response.ok) {
+                const contents = await response.json();
+                return {
+                    exists: true,
+                    fileCount: Array.isArray(contents) ? contents.length : 0,
+                    files: Array.isArray(contents) ? contents.map(file => file.name) : []
+                };
+            } else if (response.status === 404) {
+                return { exists: false, error: 'data 目录不存在' };
+            }
+            throw new Error(`检查目录失败: ${response.status}`);
+        } catch (error) {
+            console.error('检查数据目录失败:', error);
+            return { exists: false, error: error.message };
+        }
+    }
+
+    getHeaders(contentType) {
+        const headers = { 'Accept': 'application/vnd.github.v3+json' };
+        if (contentType) headers['Content-Type'] = contentType;
+        if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+        return headers;
+    }
+}
+
+window.githubIssuesManager = new GitHubIssuesManager();
