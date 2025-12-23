@@ -1,46 +1,54 @@
 [
   {
+    "id": 1,
+    "name": "李明",
+    "degree": "博士研究生",
+    "field": "计算机科学与技术",
+    "supervisor": "张明教授",
+    "research": "研究方向为医学图像处理与深度学习，主要研究基于注意力机制的医学图像分割算法。",
+    "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    "email": "liming@example.com",
+    "github": "https://github.com/liming",
+    "createdAt": "2022-09-01",
+    "updatedAt": "2023-10-15"
+  },
+  {
+    "id": 2,
     "name": "王芳",
     "degree": "硕士研究生",
     "field": "电气工程",
     "supervisor": "李华教授",
-    "research": "aaa",
+    "research": "研究方向为智能电网优化控制，主要研究可再生能源微电网的调度策略与稳定性分析。",
+    "avatar": "https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
     "email": "wangfang@example.com",
     "github": "https://github.com/wangfang",
-    "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-    "id": 1766290409724,
-    "createdAt": "2025-12-21",
-    "updatedAt": "2025-12-21"
+    "createdAt": "2023-03-10",
+    "updatedAt": "2023-09-20"
   },
   {
-    "id": 1,
-    "name": "张三",
-    "avatar": "https://randomuser.me/api/portraits/men/22.jpg",
-    "degree": "硕士生",
-    "field": "计算机科学",
-    "supervisor": "李四教授",
-    "research": "深度学习在图像识别中的应用"
+    "id": 3,
+    "name": "张伟",
+    "degree": "博士研究生",
+    "field": "环境工程",
+    "supervisor": "王静教授",
+    "research": "研究方向为环境功能材料，主要研究新型纳米材料在水污染治理中的应用与机理。",
+    "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    "email": "zhangwei@example.com",
+    "github": "https://github.com/zhangwei",
+    "createdAt": "2021-11-15",
+    "updatedAt": "2023-08-30"
   },
   {
-    "id": 2,
-    "name": "王五",
-    "avatar": "https://randomuser.me/api/portraits/women/33.jpg",
-    "degree": "博士生",
-    "field": "人工智能",
-    "supervisor": "赵六教授",
-    "research": "自然语言处理与机器翻译"
-  },
-  {
-    "name": "李明",
-    "degree": "本科生",
-    "field": "计算机科学与技术",
-    "supervisor": "张明教授",
-    "research": "q",
-    "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-    "email": "liming@example.com",
-    "github": "https://github.com/liming",
-    "createdAt": "2025-12-23T16:42:38.604Z",
-    "updatedAt": "2025-12-23T16:42:38.604Z",
-    "id": 1766290409725
+    "id": 4,
+    "name": "刘洋",
+    "degree": "硕士研究生",
+    "field": "金融工程",
+    "supervisor": "赵伟教授",
+    "research": "研究方向为金融科技与风险管理，主要研究基于深度学习的金融市场预测模型。",
+    "avatar": "https://images.unsplash.com/photo-1507591064344-4c6ce005b128?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    "email": "liuyang@example.com",
+    "github": "https://github.com/liuyang",
+    "createdAt": "2023-02-20",
+    "updatedAt": "2023-10-10"
   }
 ]
