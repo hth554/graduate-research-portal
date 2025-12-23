@@ -22,11 +22,11 @@ class DataManager {
         };
         
         this.dataFiles = {
-            advisors: 'advisors.json',
-            students: 'students.json',
-            projects: 'projects.json',
-            publications: 'publications.json',
-            updates: 'updates.json'
+            advisors: 'research-advisors.json',
+            students: 'research-students.json',
+            projects: 'research-projects.json',
+            publications: 'research-publications.json',
+            updates: 'research-updates.json'
         };
         
         this.owner = 'HTH554';
@@ -125,8 +125,13 @@ class DataManager {
     
     async fetchPublicData() {
         try {
-            const files = ['projects.json', 'advisors.json', 'students.json', 
-                          'publications.json', 'updates.json'];
+            const files =[
+            'research-projects.json', 
+            'research-advisors.json', 
+            'research-students.json', 
+            'research-publications.json', 
+            'research-updates.json'
+        ];
             const data = {};
             let successCount = 0;
             
