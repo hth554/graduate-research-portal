@@ -10,7 +10,8 @@
     "email": "liming@example.com",
     "github": "https://github.com/liming",
     "createdAt": "2022-09-01",
-    "updatedAt": "2023-10-15"
+    "updatedAt": "2023-10-15",
+    "isDefault": true
   },
   {
     "id": 2,
@@ -23,7 +24,8 @@
     "email": "wangfang@example.com",
     "github": "https://github.com/wangfang",
     "createdAt": "2023-03-10",
-    "updatedAt": "2023-09-20"
+    "updatedAt": "2023-09-20",
+    "isDefault": true
   },
   {
     "id": 3,
@@ -36,7 +38,8 @@
     "email": "zhangwei@example.com",
     "github": "https://github.com/zhangwei",
     "createdAt": "2021-11-15",
-    "updatedAt": "2023-08-30"
+    "updatedAt": "2023-08-30",
+    "isDefault": true
   },
   {
     "id": 4,
@@ -49,6 +52,7 @@
     "email": "liuyang@example.com",
     "github": "https://github.com/liuyang",
     "createdAt": "2023-02-20",
-    "updatedAt": "2023-10-10"
+    "updatedAt": "2023-10-10",
+    "isDefault": true
   }
 ]
