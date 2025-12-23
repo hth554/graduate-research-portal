@@ -8,14 +8,48 @@ const GITHUB_FILES = {
 };
 
 const LOCAL_STORAGE_KEYS = {
-    THEME: 'lab_theme_preference', PROJECT_FILTER: 'project_filter_state',
-    PUBLIC_DATA_CACHE: 'public_data_cache', PUBLIC_DATA_CACHE_TIME: 'public_data_cache_timestamp'
+    THEME: 'lab_theme_preference',
+    PROJECT_FILTER: 'project_filter_state',
+    PUBLIC_DATA_CACHE: 'public_data_cache',
+    PUBLIC_DATA_CACHE_TIME: 'public_data_cache_timestamp'
 };
 
 const CONFIG = {
     STATUS_COLORS: { 'preparation': '#f39c12', 'in-progress': '#3498db', 'completed': '#2ecc71', 'pending': '#ff6b6b' },
     TYPE_COLORS: { '期刊论文': '#2ecc71', '会议论文': '#9b59b6', '专利': '#e74c3c', '专著': '#f39c12', '项目进展': '#2ecc71', '学术活动': '#9b59b6', '科研资助': '#e74c3c', '技术转化': '#f39c12', '学生荣誉': '#1abc9c', '产学研合作': '#34495e' }
 };
+
+// 调试模式
+const DEBUG = true;
+
+function debugLog(...args) {
+    if (DEBUG) {
+        console.log('[LabWebsite]', ...args);
+    }
+}
+
+function debugError(...args) {
+    if (DEBUG) {
+        console.error('[LabWebsite]', ...args);
+    }
+}
+
+// 辅助函数：等待条件满足
+function waitFor(condition, timeout = 5000, interval = 100) {
+    return new Promise((resolve, reject) => {
+        const startTime = Date.now();
+        const check = () => {
+            if (condition()) {
+                resolve();
+            } else if (Date.now() - startTime > timeout) {
+                reject(new Error(`等待超时: ${timeout}ms`));
+            } else {
+                setTimeout(check, interval);
+            }
+        };
+        check();
+    });
+}
 
 // 数据变量
 let projectsData = [], advisorsData = [], studentsData = [], publicationsData = [], updatesData = [];
@@ -43,6 +77,8 @@ const DOM = {
 
 // 辅助函数：应用数据
 function applyData(allData) {
+    debugLog('应用数据到本地变量');
+    
     projectsData = allData.projects || [];
     advisorsData = allData.advisors || [];
     studentsData = allData.students || [];
@@ -62,17 +98,21 @@ function applyData(allData) {
 
 // 权限控制
 async function checkAuthentication() {
-    // 确保 dataManager 已初始化
-    if (!window.dataManager) {
-        console.error('DataManager 未加载，使用游客模式');
+    debugLog('开始检查认证状态');
+    
+    // 确保 dataManager 和 githubIssuesManager 已初始化
+    if (!window.dataManager || !window.githubIssuesManager) {
+        debugLog('数据管理器未加载，使用游客模式');
         isAuthenticated = false;
         isReadOnlyMode = true;
-        showPermissionStatus('👤 数据管理器未加载，使用游客模式', 'guest');
+        showPermissionStatus('🔧 数据管理器加载中，请稍候...', 'guest');
         await loadPublicData();
         return false;
     }
     
-    const hasToken = window.dataManager.hasValidToken();
+    // 统一验证逻辑
+    const hasToken = window.dataManager.hasValidToken() || 
+                    window.githubIssuesManager.hasValidToken();
     
     if (hasToken) {
         isAuthenticated = true;
@@ -83,7 +123,7 @@ async function checkAuthentication() {
             // 尝试从 GitHub 同步数据
             const success = await window.dataManager.syncFromGitHub();
             if (!success) {
-                console.log('GitHub同步失败，使用本地数据');
+                debugLog('GitHub同步失败，使用本地数据');
             }
             
             // 获取所有数据
@@ -94,7 +134,7 @@ async function checkAuthentication() {
             window.dataManager.startAutoSync();
             return true;
         } catch (error) {
-            console.error('认证后数据加载失败:', error);
+            debugError('认证后数据加载失败:', error);
             // 加载本地数据作为后备
             await loadPublicData();
             return false;
@@ -111,6 +151,8 @@ async function checkAuthentication() {
 }
 
 async function loadPublicData() {
+    debugLog('开始加载公共数据');
+    
     // 如果有 dataManager，优先使用它
     if (window.dataManager) {
         try {
@@ -119,7 +161,7 @@ async function loadPublicData() {
             applyData(allData);
             return allData;
         } catch (error) {
-            console.error('通过dataManager加载公共数据失败:', error);
+            debugError('通过dataManager加载公共数据失败:', error);
             // 继续使用原有的后备方案
         }
     }
@@ -150,7 +192,7 @@ async function fetchPublicDataFromGitHub() {
                 return publicData;
             }
         } catch (error) {
-            console.error('通过dataManager获取GitHub数据失败:', error);
+            debugError('通过dataManager获取GitHub数据失败:', error);
         }
     }
     
@@ -193,8 +235,10 @@ async function fetchPublicDataFromGitHub() {
         }
         
         const defaultData = {
-            projects: getDefaultProjects(), advisors: getDefaultAdvisors(),
-            students: getDefaultStudents(), publications: getDefaultPublications(),
+            projects: getDefaultProjects(),
+            advisors: getDefaultAdvisors(),
+            students: getDefaultStudents(),
+            publications: getDefaultPublications(),
             updates: getDefaultUpdates()
         };
         applyPublicData(defaultData, 'default');
@@ -204,6 +248,8 @@ async function fetchPublicDataFromGitHub() {
 }
 
 function applyPublicData(allData, sourceType) {
+    debugLog(`应用公共数据，来源: ${sourceType}`);
+    
     projectsData = allData.projects || getDefaultProjects();
     advisorsData = allData.advisors || getDefaultAdvisors();
     studentsData = allData.students || getDefaultStudents();
@@ -362,12 +408,22 @@ async function loadAllDataFromGitHub() {
 }
 
 function saveToLocalStorage() {
-    const data = { projects: projectsData, advisors: advisorsData, students: studentsData, publications: publicationsData, updates: updatesData };
-    localStorage.setItem('research_portal_data', JSON.stringify(data));
+    try {
+        const data = { projects: projectsData, advisors: advisorsData, students: studentsData, publications: publicationsData, updates: updatesData };
+        localStorage.setItem('research_portal_data', JSON.stringify(data));
+        localStorage.setItem('local_data_version', Date.now().toString());
+        return true;
+    } catch (e) {
+        debugError('保存到本地存储失败:', e);
+        return false;
+    }
 }
 
 async function saveAllDataToGitHub() {
-    if (isReadOnlyMode) { showToast('游客模式不能保存数据到GitHub', 'warning'); return false; }
+    if (isReadOnlyMode) { 
+        showToast('游客模式不能保存数据到GitHub', 'warning'); 
+        return false; 
+    }
     try {
         if (!window.githubIssuesManager.hasValidToken()) {
             showToast('需要GitHub Token才能保存数据', 'warning');
@@ -396,7 +452,10 @@ async function saveDataToGitHub(filename, data) {
     try {
         await window.githubIssuesManager.writeJsonFile(filename, data);
         return true;
-    } catch (error) { return false; }
+    } catch (error) { 
+        debugError(`保存数据到GitHub失败:`, error);
+        return false; 
+    }
 }
 
 // 默认数据（简化版本）
@@ -569,17 +628,18 @@ const createCRUD = (dataArray, renderFn, filename, name) => {
                     updatedAt: getCurrentTimestamp()
                 };
                 
+                debugLog(`添加${name}:`, itemWithTimestamp);
                 const newId = await window.dataManager.addData(type, itemWithTimestamp);
                 showToast(`${name}添加成功！`, 'success');
                 
                 // 更新本地数据数组
-                const newItem = { ...itemWithTimestamp, id: newId };
+                const newItem = { ...itemWithTimestamp, id: parseInt(newId) };
                 dataArray.unshift(newItem);
                 renderFn();
                 
                 return newItem;
             } catch (error) {
-                console.error(`添加${name}失败:`, error);
+                debugError(`添加${name}失败:`, error);
                 showToast(`${name}添加失败: ${error.message}`, 'error');
                 return null;
             }
@@ -603,12 +663,15 @@ const createCRUD = (dataArray, renderFn, filename, name) => {
                     updatedAt: getCurrentTimestamp()
                 };
                 
-                const success = await window.dataManager.updateData(type, parseInt(id), itemWithTimestamp);
+                debugLog(`更新${name} ID ${id}:`, itemWithTimestamp);
+                const numericId = parseInt(id);
+                const success = await window.dataManager.updateData(type, numericId, itemWithTimestamp);
+                
                 if (success) {
                     showToast(`${name}更新成功！`, 'success');
                     
                     // 更新本地数据数组
-                    const index = dataArray.findIndex(item => item.id == id);
+                    const index = dataArray.findIndex(item => item.id === numericId);
                     if (index !== -1) {
                         dataArray[index] = { ...dataArray[index], ...itemWithTimestamp };
                         renderFn();
@@ -618,7 +681,7 @@ const createCRUD = (dataArray, renderFn, filename, name) => {
                 }
                 return false;
             } catch (error) {
-                console.error(`更新${name}失败:`, error);
+                debugError(`更新${name}失败:`, error);
                 showToast(`${name}更新失败: ${error.message}`, 'error');
                 return false;
             }
@@ -636,12 +699,15 @@ const createCRUD = (dataArray, renderFn, filename, name) => {
             }
             
             try {
-                const success = await window.dataManager.deleteData(type, parseInt(id));
+                debugLog(`删除${name} ID ${id}`);
+                const numericId = parseInt(id);
+                const success = await window.dataManager.deleteData(type, numericId);
+                
                 if (success) {
                     showToast(`${name}已删除`, 'success');
                     
                     // 更新本地数据数组
-                    const index = dataArray.findIndex(item => item.id == id);
+                    const index = dataArray.findIndex(item => item.id === numericId);
                     if (index !== -1) {
                         dataArray.splice(index, 1);
                         renderFn();
@@ -651,7 +717,7 @@ const createCRUD = (dataArray, renderFn, filename, name) => {
                 }
                 return false;
             } catch (error) {
-                console.error(`删除${name}失败:`, error);
+                debugError(`删除${name}失败:`, error);
                 showToast(`${name}删除失败: ${error.message}`, 'error');
                 return false;
             }
@@ -669,6 +735,8 @@ const updateCRUD = createCRUD(updatesData, renderUpdates, GITHUB_FILES.UPDATES, 
 // 渲染函数
 function renderProjects(filter = 'all') {
     if (!DOM.projectsGrid) return;
+    debugLog(`渲染项目，过滤器: ${filter}`);
+    
     DOM.projectsGrid.innerHTML = '';
     currentFilter = filter;
     let filteredProjects = projectsData;
@@ -725,6 +793,8 @@ function renderProjects(filter = 'all') {
 
 function renderAdvisors() {
     if (!DOM.advisorsGrid) return;
+    debugLog('渲染导师数据');
+    
     DOM.advisorsGrid.innerHTML = '';
     advisorsData.forEach(advisor => {
         const showEditButton = !isReadOnlyMode && window.adminSystem && window.adminSystem.editMode;
@@ -756,6 +826,8 @@ function renderAdvisors() {
 
 function renderStudents() {
     if (!DOM.studentsGrid) return;
+    debugLog('渲染学生数据');
+    
     DOM.studentsGrid.innerHTML = '';
     studentsData.forEach(student => {
         const showEditButton = !isReadOnlyMode && window.adminSystem && window.adminSystem.editMode;
@@ -787,6 +859,8 @@ function renderStudents() {
 
 function renderPublications() {
     if (!DOM.publicationsGrid) return;
+    debugLog('渲染学术成果数据');
+    
     DOM.publicationsGrid.innerHTML = '';
     publicationsData.forEach(publication => {
         const typeColor = CONFIG.TYPE_COLORS[publication.type] || '#3498db';
@@ -829,6 +903,8 @@ function renderPublications() {
 
 function renderUpdates() {
     if (!DOM.updatesGrid) return;
+    debugLog('渲染研究近况数据');
+    
     DOM.updatesGrid.innerHTML = '';
     const sortedUpdates = [...updatesData].sort((a, b) => new Date(b.date) - new Date(a.date));
     
@@ -875,7 +951,12 @@ function renderUpdates() {
 
 // 编辑界面函数
 function showEditProjectForm(projectId = null) {
-    if (isReadOnlyMode) { showToast('需要输入Token才能编辑数据', 'warning'); requestTokenForAdmin(); return; }
+    if (isReadOnlyMode) { 
+        showToast('需要输入Token才能编辑数据', 'warning'); 
+        requestTokenForAdmin(); 
+        return; 
+    }
+    
     const project = projectId ? projectsData.find(p => p.id == projectId) : { title: '', category: 'science', description: '', advisor: '', status: '筹备中', statusType: 'preparation', image: 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80' };
     const isEditMode = !!projectId;
     const modal = createModal();
@@ -925,13 +1006,19 @@ function showEditProjectForm(projectId = null) {
     modal.querySelector('#editProjectForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         const formData = {
-            title: modal.querySelector('#editTitle').value, category: modal.querySelector('#editCategory').value,
-            description: modal.querySelector('#editDescription').value, advisor: modal.querySelector('#editAdvisor').value,
-            status: getStatusText(modal.querySelector('#editStatus').value), statusType: modal.querySelector('#editStatus').value,
+            title: modal.querySelector('#editTitle').value,
+            category: modal.querySelector('#editCategory').value,
+            description: modal.querySelector('#editDescription').value,
+            advisor: modal.querySelector('#editAdvisor').value,
+            status: getStatusText(modal.querySelector('#editStatus').value),
+            statusType: modal.querySelector('#editStatus').value,
             image: modal.querySelector('#editImage').value || 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80'
         };
-        if (isEditMode) await updateProject(projectId, formData);
-        else await addProject(formData);
+        if (isEditMode) {
+            await updateProject(projectId, formData);
+        } else {
+            await addProject(formData);
+        }
         closeModal(modal);
     });
     
@@ -949,7 +1036,12 @@ function showEditProjectForm(projectId = null) {
 }
 
 function showEditAdvisorForm(advisorId = null) {
-    if (isReadOnlyMode) { showToast('需要输入Token才能编辑数据', 'warning'); requestTokenForAdmin(); return; }
+    if (isReadOnlyMode) { 
+        showToast('需要输入Token才能编辑数据', 'warning'); 
+        requestTokenForAdmin(); 
+        return; 
+    }
+    
     const advisor = advisorId ? advisorsData.find(a => a.id == advisorId) : { name: '', title: '', field: '', bio: '', avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80', email: '', website: '' };
     const isEditMode = !!advisorId;
     const modal = createModal();
@@ -987,13 +1079,19 @@ function showEditAdvisorForm(advisorId = null) {
     modal.querySelector('#editAdvisorForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         const formData = {
-            name: modal.querySelector('#editAdvisorName').value, title: modal.querySelector('#editAdvisorTitle').value,
-            field: modal.querySelector('#editAdvisorField').value, bio: modal.querySelector('#editAdvisorBio').value,
+            name: modal.querySelector('#editAdvisorName').value,
+            title: modal.querySelector('#editAdvisorTitle').value,
+            field: modal.querySelector('#editAdvisorField').value,
+            bio: modal.querySelector('#editAdvisorBio').value,
             avatar: modal.querySelector('#editAdvisorAvatar').value || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-            email: modal.querySelector('#editAdvisorEmail').value || '', website: modal.querySelector('#editAdvisorWebsite').value || ''
+            email: modal.querySelector('#editAdvisorEmail').value || '',
+            website: modal.querySelector('#editAdvisorWebsite').value || ''
         };
-        if (isEditMode) await updateAdvisor(advisorId, formData);
-        else await addAdvisor(formData);
+        if (isEditMode) {
+            await updateAdvisor(advisorId, formData);
+        } else {
+            await addAdvisor(formData);
+        }
         closeModal(modal);
     });
     
@@ -1011,7 +1109,12 @@ function showEditAdvisorForm(advisorId = null) {
 }
 
 function showEditStudentForm(studentId = null) {
-    if (isReadOnlyMode) { showToast('需要输入Token才能编辑数据', 'warning'); requestTokenForAdmin(); return; }
+    if (isReadOnlyMode) { 
+        showToast('需要输入Token才能编辑数据', 'warning'); 
+        requestTokenForAdmin(); 
+        return; 
+    }
+    
     const student = studentId ? studentsData.find(s => s.id == studentId) : { name: '', degree: '', field: '', supervisor: '', research: '', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80', email: '', github: '' };
     const isEditMode = !!studentId;
     const modal = createModal();
@@ -1059,14 +1162,20 @@ function showEditStudentForm(studentId = null) {
     modal.querySelector('#editStudentForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         const formData = {
-            name: modal.querySelector('#editStudentName').value, degree: modal.querySelector('#editStudentDegree').value,
-            field: modal.querySelector('#editStudentField').value, supervisor: modal.querySelector('#editStudentSupervisor').value,
+            name: modal.querySelector('#editStudentName').value,
+            degree: modal.querySelector('#editStudentDegree').value,
+            field: modal.querySelector('#editStudentField').value,
+            supervisor: modal.querySelector('#editStudentSupervisor').value,
             research: modal.querySelector('#editStudentResearch').value,
             avatar: modal.querySelector('#editStudentAvatar').value || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-            email: modal.querySelector('#editStudentEmail').value || '', github: modal.querySelector('#editStudentGithub').value || ''
+            email: modal.querySelector('#editStudentEmail').value || '',
+            github: modal.querySelector('#editStudentGithub').value || ''
         };
-        if (isEditMode) await updateStudent(studentId, formData);
-        else await addStudent(formData);
+        if (isEditMode) {
+            await updateStudent(studentId, formData);
+        } else {
+            await addStudent(formData);
+        }
         closeModal(modal);
     });
     
@@ -1084,7 +1193,12 @@ function showEditStudentForm(studentId = null) {
 }
 
 function showEditPublicationForm(publicationId = null) {
-    if (isReadOnlyMode) { showToast('需要输入Token才能编辑数据', 'warning'); requestTokenForAdmin(); return; }
+    if (isReadOnlyMode) { 
+        showToast('需要输入Token才能编辑数据', 'warning'); 
+        requestTokenForAdmin(); 
+        return; 
+    }
+    
     const publication = publicationId ? publicationsData.find(p => p.id == publicationId) : { type: '期刊论文', title: '', authors: '', venue: '', abstract: '', doi: '', link: '' };
     const isEditMode = !!publicationId;
     const modal = createModal();
@@ -1130,13 +1244,19 @@ function showEditPublicationForm(publicationId = null) {
     modal.querySelector('#editPublicationForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         const formData = {
-            type: modal.querySelector('#editPublicationType').value, title: modal.querySelector('#editPublicationTitle').value,
-            authors: modal.querySelector('#editPublicationAuthors').value, venue: modal.querySelector('#editPublicationVenue').value,
-            abstract: modal.querySelector('#editPublicationAbstract').value, doi: modal.querySelector('#editPublicationDoi').value || '',
+            type: modal.querySelector('#editPublicationType').value,
+            title: modal.querySelector('#editPublicationTitle').value,
+            authors: modal.querySelector('#editPublicationAuthors').value,
+            venue: modal.querySelector('#editPublicationVenue').value,
+            abstract: modal.querySelector('#editPublicationAbstract').value,
+            doi: modal.querySelector('#editPublicationDoi').value || '',
             link: modal.querySelector('#editPublicationLink').value || ''
         };
-        if (isEditMode) await updatePublication(publicationId, formData);
-        else await addPublication(formData);
+        if (isEditMode) {
+            await updatePublication(publicationId, formData);
+        } else {
+            await addPublication(formData);
+        }
         closeModal(modal);
     });
     
@@ -1154,7 +1274,12 @@ function showEditPublicationForm(publicationId = null) {
 }
 
 function showEditUpdateForm(updateId = null) {
-    if (isReadOnlyMode) { showToast('需要输入Token才能编辑数据', 'warning'); requestTokenForAdmin(); return; }
+    if (isReadOnlyMode) { 
+        showToast('需要输入Token才能编辑数据', 'warning'); 
+        requestTokenForAdmin(); 
+        return; 
+    }
+    
     const update = updateId ? updatesData.find(u => u.id == updateId) : { date: getCurrentTimestamp(), title: '', type: '项目进展', content: '', project: '' };
     const isEditMode = !!updateId;
     const modal = createModal();
@@ -1202,13 +1327,18 @@ function showEditUpdateForm(updateId = null) {
     modal.querySelector('#editUpdateForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         const formData = {
-            date: modal.querySelector('#editUpdateDate').value, title: modal.querySelector('#editUpdateTitle').value,
-            type: modal.querySelector('#editUpdateType').value, content: modal.querySelector('#editUpdateContent').value,
+            date: modal.querySelector('#editUpdateDate').value,
+            title: modal.querySelector('#editUpdateTitle').value,
+            type: modal.querySelector('#editUpdateType').value,
+            content: modal.querySelector('#editUpdateContent').value,
             project: modal.querySelector('#editUpdateProject').value || '',
             projectId: modal.querySelector('#editUpdateProject').value ? projectsData.find(p => p.title === modal.querySelector('#editUpdateProject').value)?.id : null
         };
-        if (isEditMode) await updateUpdate(updateId, formData);
-        else await addUpdate(formData);
+        if (isEditMode) {
+            await updateUpdate(updateId, formData);
+        } else {
+            await addUpdate(formData);
+        }
         closeModal(modal);
     });
     
@@ -1227,7 +1357,12 @@ function showEditUpdateForm(updateId = null) {
 
 // 管理面板
 function showAdminPanel() {
-    if (isReadOnlyMode) { showToast('需要输入Token才能进入管理面板', 'warning'); requestTokenForAdmin(); return; }
+    if (isReadOnlyMode) { 
+        showToast('需要输入Token才能进入管理面板', 'warning'); 
+        requestTokenForAdmin(); 
+        return; 
+    }
+    
     const modal = createModal();
     modal.innerHTML = `
         <div class="modal-content admin-panel">
@@ -1267,20 +1402,49 @@ function showAdminPanel() {
     document.body.appendChild(modal);
     setTimeout(() => modal.classList.add('show'), 10);
     
-    modal.querySelector('#addProjectBtn').addEventListener('click', () => { closeModal(modal); setTimeout(() => showEditProjectForm(), 100); });
-    modal.querySelector('#addAdvisorBtn').addEventListener('click', () => { closeModal(modal); setTimeout(() => showEditAdvisorForm(), 100); });
-    modal.querySelector('#addStudentBtn').addEventListener('click', () => { closeModal(modal); setTimeout(() => showEditStudentForm(), 100); });
-    modal.querySelector('#addPublicationBtn').addEventListener('click', () => { closeModal(modal); setTimeout(() => showEditPublicationForm(), 100); });
-    modal.querySelector('#addUpdateBtn').addEventListener('click', () => { closeModal(modal); setTimeout(() => showEditUpdateForm(), 100); });
+    modal.querySelector('#addProjectBtn').addEventListener('click', () => { 
+        closeModal(modal); 
+        setTimeout(() => showEditProjectForm(), 100); 
+    });
+    modal.querySelector('#addAdvisorBtn').addEventListener('click', () => { 
+        closeModal(modal); 
+        setTimeout(() => showEditAdvisorForm(), 100); 
+    });
+    modal.querySelector('#addStudentBtn').addEventListener('click', () => { 
+        closeModal(modal); 
+        setTimeout(() => showEditStudentForm(), 100); 
+    });
+    modal.querySelector('#addPublicationBtn').addEventListener('click', () => { 
+        closeModal(modal); 
+        setTimeout(() => showEditPublicationForm(), 100); 
+    });
+    modal.querySelector('#addUpdateBtn').addEventListener('click', () => { 
+        closeModal(modal); 
+        setTimeout(() => showEditUpdateForm(), 100); 
+    });
     modal.querySelector('#exportDataBtn').addEventListener('click', exportAllData);
-    modal.querySelector('#saveToGitHubBtn').addEventListener('click', async () => { const success = await saveAllDataToGitHub(); if (success) showToast('数据已保存到GitHub', 'success'); });
+    modal.querySelector('#saveToGitHubBtn').addEventListener('click', async () => { 
+        const success = await saveAllDataToGitHub(); 
+        if (success) showToast('数据已保存到GitHub', 'success'); 
+    });
     modal.querySelector('#resetDataBtn').addEventListener('click', resetDataToDefault);
-    modal.querySelector('#clearTokenBtn').addEventListener('click', () => { closeModal(modal); clearAuthentication(); });
+    modal.querySelector('#clearTokenBtn').addEventListener('click', () => { 
+        closeModal(modal); 
+        clearAuthentication(); 
+    });
     setupModalClose(modal);
 }
 
 function exportAllData() {
-    const allData = { projects: projectsData, advisors: advisorsData, students: studentsData, publications: publicationsData, updates: updatesData, exportDate: new Date().toISOString(), source: isReadOnlyMode ? '示例数据' : 'GitHub数据' };
+    const allData = { 
+        projects: projectsData, 
+        advisors: advisorsData, 
+        students: studentsData, 
+        publications: publicationsData, 
+        updates: updatesData, 
+        exportDate: new Date().toISOString(), 
+        source: isReadOnlyMode ? '示例数据' : 'GitHub数据' 
+    };
     const dataStr = JSON.stringify(allData, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     const linkElement = document.createElement('a');
@@ -1299,7 +1463,11 @@ async function resetDataToDefault() {
             publicationsData = getDefaultPublications();
             updatesData = getDefaultUpdates();
             saveToLocalStorage();
-            if (!isReadOnlyMode && await initializeGitHubToken()) await saveAllDataToGitHub();
+            
+            if (!isReadOnlyMode && await initializeGitHubToken()) {
+                await saveAllDataToGitHub();
+            }
+            
             renderProjects(currentFilter);
             renderAdvisors();
             renderStudents();
@@ -1313,17 +1481,31 @@ async function resetDataToDefault() {
 }
 
 // 模态框函数
-function createModal() { const modal = document.createElement('div'); modal.className = 'modal'; return modal; }
-function closeModal(modal) { modal.classList.remove('show'); setTimeout(() => { if (modal.parentNode) modal.parentNode.removeChild(modal); }, 300); }
+function createModal() { 
+    const modal = document.createElement('div'); 
+    modal.className = 'modal'; 
+    return modal; 
+}
+
+function closeModal(modal) { 
+    modal.classList.remove('show'); 
+    setTimeout(() => { 
+        if (modal.parentNode) modal.parentNode.removeChild(modal); 
+    }, 300); 
+}
+
 function setupModalClose(modal) {
     modal.querySelector('.modal-close').addEventListener('click', () => closeModal(modal));
-    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(modal); });
+    modal.addEventListener('click', (e) => { 
+        if (e.target === modal) closeModal(modal); 
+    });
 }
 
 // 现有功能函数
 function showProjectDetails(projectId) {
     const project = projectsData.find(p => p.id == projectId);
     if (!project) return;
+    
     const modal = createModal();
     modal.innerHTML = `
         <div class="modal-content">
@@ -1342,6 +1524,7 @@ function showProjectDetails(projectId) {
             </div>
         </div>
     `;
+    
     document.body.appendChild(modal);
     setTimeout(() => modal.classList.add('show'), 10);
     setupModalClose(modal);
@@ -1395,6 +1578,7 @@ function setupMobileMenu() {
         this.classList.toggle('active');
         DOM.navMenu.classList.toggle('active');
     });
+    
     DOM.navLinks.forEach(link => {
         link.addEventListener('click', function() {
             DOM.hamburger.classList.remove('active');
@@ -1407,6 +1591,7 @@ function setupBackToTop() {
     const scrollHandler = throttle(function() {
         DOM.backToTop.classList.toggle('show', window.pageYOffset > 300);
     }, 100);
+    
     window.addEventListener('scroll', scrollHandler);
     DOM.backToTop.addEventListener('click', function() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1433,11 +1618,13 @@ function setupSmoothScroll() {
 function addAdminButton() {
     const navActions = document.querySelector('.nav-actions');
     if (!navActions || navActions.querySelector('.admin-btn')) return;
+    
     const adminBtn = document.createElement('button');
     adminBtn.className = 'btn btn-outline admin-btn';
     adminBtn.innerHTML = '<i class="fas fa-cog"></i> 管理面板';
     adminBtn.title = '打开管理面板';
     adminBtn.addEventListener('click', showAdminPanel);
+    
     const themeToggle = navActions.querySelector('#theme-toggle');
     if (themeToggle) navActions.insertBefore(adminBtn, themeToggle);
     else navActions.appendChild(adminBtn);
@@ -1535,13 +1722,56 @@ function setupEditButtonEvents() {
     });
 }
 
+// 事件监听处理函数
+function handleDataUpdated(event) {
+    debugLog('数据已更新，重新渲染页面');
+    if (window.dataManager) {
+        const allData = window.dataManager.getAllData();
+        applyData(allData);
+    }
+}
+
+function handleAdminModeChanged(event) {
+    const { editMode, isAdmin } = event.detail;
+    
+    // 更新本地权限状态
+    if (isAdmin && editMode) {
+        if (isReadOnlyMode) { 
+            showToast('需要输入Token才能编辑数据', 'warning'); 
+            requestTokenForAdmin(); 
+            return; 
+        }
+        showToast('已进入管理员编辑模式', 'success');
+    } else {
+        if (isAdmin) showToast('已退出编辑模式', 'info');
+    }
+    
+    // 重新渲染以显示/隐藏编辑按钮
+    renderAllData();
+}
+
 // 初始化
 async function init() {
     try {
-        // 等待数据管理器初始化
+        debugLog('开始初始化网站...');
+        
+        // 等待必要的全局对象初始化
         if (!window.dataManager) {
-            console.warn('DataManager 未加载，等待1秒重试...');
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            debugLog('等待 DataManager 初始化...');
+            try {
+                await waitFor(() => !!window.dataManager, 5000, 100);
+            } catch (error) {
+                debugError('DataManager 初始化超时:', error);
+            }
+        }
+        
+        if (!window.githubIssuesManager) {
+            debugLog('等待 GitHubIssuesManager 初始化...');
+            try {
+                await waitFor(() => !!window.githubIssuesManager, 5000, 100);
+            } catch (error) {
+                debugError('GitHubIssuesManager 初始化超时:', error);
+            }
         }
         
         await checkAuthentication();
@@ -1558,44 +1788,19 @@ async function init() {
         addPermissionStyles();
         addDataSourceStyles();
         
-        // 添加编辑按钮事件监听（新增）
+        // 添加编辑按钮事件监听
         setupEditButtonEvents();
         
         // 监听数据更新事件
-        document.addEventListener('dataUpdated', function(event) {
-            console.log('数据已更新，重新渲染页面');
-            const allData = window.dataManager.getAllData();
-            applyData(allData);
-        });
+        document.addEventListener('dataUpdated', handleDataUpdated);
         
         // 监听管理员模式变化
-        document.addEventListener('adminModeChanged', function(event) {
-            const { editMode, isAdmin } = event.detail;
-            if (isAdmin && editMode) {
-                if (isReadOnlyMode) { 
-                    showToast('需要输入Token才能编辑数据', 'warning'); 
-                    requestTokenForAdmin(); 
-                    return; 
-                }
-                renderProjects(currentFilter);
-                renderAdvisors();
-                renderStudents();
-                renderPublications();
-                renderUpdates();
-                showToast('已进入管理员编辑模式', 'success');
-            } else {
-                renderProjects(currentFilter);
-                renderAdvisors();
-                renderStudents();
-                renderPublications();
-                renderUpdates();
-                if (isAdmin) showToast('已退出编辑模式', 'info');
-            }
-        });
+        document.addEventListener('adminModeChanged', handleAdminModeChanged);
         
-        console.log('网站初始化完成');
+        debugLog('网站初始化完成');
+        
     } catch (error) {
-        console.error('初始化失败:', error);
+        debugError('初始化失败:', error);
         showToast(`初始化失败: ${error.message}`, 'error');
         
         // 显示错误信息
@@ -1738,24 +1943,35 @@ function addAdminStyles() {
 }
 
 // 页面加载
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-else init();
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
 
 // 导出
 window.labWebsite = {
     projectsData, advisorsData, studentsData, publicationsData, updatesData,
     isReadOnlyMode, isAuthenticated,
-    addProject: projectCRUD.add, updateProject: projectCRUD.update, deleteProject: projectCRUD.delete,
-    addAdvisor: advisorCRUD.add, updateAdvisor: advisorCRUD.update, deleteAdvisor: advisorCRUD.delete,
-    addStudent: studentCRUD.add, updateStudent: studentCRUD.update, deleteStudent: studentCRUD.delete,
-    addPublication: publicationCRUD.add, updatePublication: publicationCRUD.update, deletePublication: publicationCRUD.delete,
-    addUpdate: updateCRUD.add, updateUpdate: updateCRUD.update, deleteUpdate: updateCRUD.delete,
+    addProject: projectCRUD.add, 
+    updateProject: projectCRUD.update, 
+    deleteProject: projectCRUD.delete,
+    addAdvisor: advisorCRUD.add, 
+    updateAdvisor: advisorCRUD.update, 
+    deleteAdvisor: advisorCRUD.delete,
+    addStudent: studentCRUD.add, 
+    updateStudent: studentCRUD.update, 
+    deleteStudent: studentCRUD.delete,
+    addPublication: publicationCRUD.add, 
+    updatePublication: publicationCRUD.update, 
+    deletePublication: publicationCRUD.delete,
+    addUpdate: updateCRUD.add, 
+    updateUpdate: updateCRUD.update, 
+    deleteUpdate: updateCRUD.delete,
     showEditProjectForm, showEditAdvisorForm, showEditStudentForm, showEditPublicationForm, showEditUpdateForm, showAdminPanel,
     exportAllData,
     checkAuthentication: async () => checkAuthentication(),
-    // 新增：数据管理器访问
     getDataManager: () => window.dataManager,
-    // 新增：手动同步函数
     syncData: async () => {
         if (window.dataManager) {
             return await window.dataManager.manualSync();
