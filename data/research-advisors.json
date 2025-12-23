@@ -27,7 +27,7 @@
   },
   {
     "id": 4,
-    "name": "q",
+    "name": "周",
     "title": "教授，博士生导师",
     "field": "金融工程，人工智能",
     "bio": "上海交通大学安泰经济与管理学院教授，研究方向为金融科技、风险管理与人工智能，主持国家自然科学基金重点项目3项，出版专著5部。",
@@ -35,7 +35,7 @@
     "email": "zhaowei@example.com",
     "website": "https://example.com/zhaowei",
     "createdAt": "2022-03-05",
-    "updatedAt": "2025-12-23T18:26:42.590Z",
+    "updatedAt": "2025-12-23T18:26:54.119Z",
     "isDefault": true
   },
   {
