@@ -1,4 +1,3 @@
-// js/form-handler.js - 表单处理逻辑
 document.addEventListener('DOMContentLoaded', function() {
     const manager = window.githubIssuesManager;
     const projectForm = document.getElementById('project-form');
@@ -9,12 +8,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitLoading = document.getElementById('submit-loading');
     const projectsList = document.getElementById('projects-list');
 
-    // 初始化：检查 Token 并显示提示
     if (!manager.hasValidToken() && tokenAlert) {
         tokenAlert.style.display = 'block';
     }
 
-    // 全局保存 Token 函数
     window.saveGitHubToken = function() {
         const tokenInput = document.getElementById('github-token-input');
         const token = tokenInput.value.trim();
@@ -33,13 +30,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
             }
-            loadProjects(); // 加载已有课题
+            loadProjects();
         } else {
             alert('Token 格式不正确，请检查！');
         }
     };
 
-    // 表单提交处理
     if (projectForm) {
         projectForm.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -53,13 +49,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     `;
                 }
-                if (tokenAlert) {
-                    tokenAlert.style.display = 'block';
-                }
+                if (tokenAlert) tokenAlert.style.display = 'block';
                 return;
             }
 
-            // 收集表单数据
             const formData = {
                 title: document.getElementById('project-title').value.trim(),
                 description: document.getElementById('project-description').value.trim(),
@@ -68,7 +61,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 tags: document.getElementById('project-tags').value.trim()
             };
 
-            // 验证必填字段
             if (!formData.title || !formData.description) {
                 if (formMessage) {
                     formMessage.innerHTML = `
@@ -81,16 +73,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // 显示加载状态
-            if (submitText) submitText.style.display = 'none';
-            if (submitLoading) submitLoading.style.display = 'inline';
-            if (submitBtn) submitBtn.disabled = true;
+            setLoadingState(true);
 
             try {
-                // 提交到 GitHub Issues
                 const result = await manager.submitNewProject(formData);
                 
-                // 显示成功消息
                 if (formMessage) {
                     formMessage.innerHTML = `
                         <div class="alert alert-success">
@@ -103,14 +90,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
                 }
                 
-                // 清空表单
                 projectForm.reset();
-                
-                // 重新加载课题列表
                 setTimeout(loadProjects, 2000);
                 
             } catch (error) {
-                // 显示错误消息
                 if (formMessage) {
                     formMessage.innerHTML = `
                         <div class="alert alert-error">
@@ -127,17 +110,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
                 }
                 console.error('提交错误:', error);
-                
             } finally {
-                // 恢复按钮状态
-                if (submitText) submitText.style.display = 'inline';
-                if (submitLoading) submitLoading.style.display = 'none';
-                if (submitBtn) submitBtn.disabled = false;
+                setLoadingState(false);
             }
         });
     }
 
-    // 加载并显示课题列表
+    function setLoadingState(isLoading) {
+        if (submitText) submitText.style.display = isLoading ? 'none' : 'inline';
+        if (submitLoading) submitLoading.style.display = isLoading ? 'inline' : 'none';
+        if (submitBtn) submitBtn.disabled = isLoading;
+    }
+
     async function loadProjects() {
         if (!projectsList) return;
         
@@ -161,7 +145,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // 渲染课题列表
             projectsList.innerHTML = projects.map(project => `
                 <div class="project-card" data-status="${project.status.toLowerCase()}">
                     <div class="project-header">
@@ -179,12 +162,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="project-tags">
                         ${project.tags.split(',').map(tag => 
-                            `<span class="tag">${tag.trim()}</span>`
-                        ).join('')}
+                            `<span class="tag">${tag.trim()}</span>`).join('')}
                     </div>
-                    <a href="${project.url}" target="_blank" class="project-link">
-                        查看详情 →
-                    </a>
+                    <a href="${project.url}" target="_blank" class="project-link">查看详情 →</a>
                 </div>
             `).join('');
             
@@ -198,35 +178,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // 辅助函数：获取状态图标
     function getStatusIcon(status) {
-        const icons = {
-            '待审核': '⏳',
-            '审核通过': '✅',
-            '已发布': '🚀',
-            '需要修改': '📝',
-            '新提交': '🆕'
-        };
+        const icons = { '待审核': '⏳', '审核通过': '✅', '已发布': '🚀', '需要修改': '📝', '新提交': '🆕' };
         return icons[status] || '📄';
     }
 
-    // 辅助函数：获取状态 CSS 类
     function getStatusClass(status) {
-        const classes = {
-            '待审核': 'status-pending',
-            '审核通过': 'status-approved',
-            '已发布': 'status-published',
-            '需要修改': 'status-revision',
-            '新提交': 'status-new'
-        };
+        const classes = { '待审核': 'status-pending', '审核通过': 'status-approved', '已发布': 'status-published', '需要修改': 'status-revision', '新提交': 'status-new' };
         return classes[status] || 'status-default';
     }
 
-    // 页面加载时获取课题列表
-    if (manager.hasValidToken()) {
-        loadProjects();
-    }
-
-    // 使 loadProjects 在全局可用
+    if (manager.hasValidToken()) loadProjects();
     window.loadProjects = loadProjects;
 });
