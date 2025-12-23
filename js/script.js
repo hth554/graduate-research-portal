@@ -1,7 +1,9 @@
 // 配置常量
 const GITHUB_FILES = {
-    PROJECTS: 'advisors.json', ADVISORS: 'students.json',
-    STUDENTS: 'projects.json', PUBLICATIONS: 'publications.json',
+    PROJECTS: 'projects.json',
+    ADVISORS: 'advisors.json', 
+    STUDENTS: 'students.json',
+    PUBLICATIONS: 'publications.json',
     UPDATES: 'updates.json'
 };
 
@@ -39,27 +41,89 @@ const DOM = {
     logoutBtn: document.getElementById('logout-btn')
 };
 
+// 辅助函数：应用数据
+function applyData(allData) {
+    projectsData = allData.projects || [];
+    advisorsData = allData.advisors || [];
+    studentsData = allData.students || [];
+    publicationsData = allData.publications || [];
+    updatesData = allData.updates || [];
+    
+    dataSourceInfo = {
+        type: window.dataManager && window.dataManager.publicDataCache ? 'cached' : 'default',
+        timestamp: new Date(),
+        live: false
+    };
+    
+    saveToLocalStorage();
+    renderAllData();
+    updateDataSourceHint(dataSourceInfo.type);
+}
+
 // 权限控制
 async function checkAuthentication() {
-    const hasToken = window.githubIssuesManager && window.githubIssuesManager.hasValidToken();
+    // 确保 dataManager 已初始化
+    if (!window.dataManager) {
+        console.error('DataManager 未加载，使用游客模式');
+        isAuthenticated = false;
+        isReadOnlyMode = true;
+        showPermissionStatus('👤 数据管理器未加载，使用游客模式', 'guest');
+        await loadPublicData();
+        return false;
+    }
+    
+    const hasToken = window.dataManager.hasValidToken();
     
     if (hasToken) {
         isAuthenticated = true;
         isReadOnlyMode = false;
         showPermissionStatus('🔗 已连接GitHub | 数据实时同步', 'authenticated');
-        const success = await loadAllDataFromGitHub();
-        if (!success) loadDefaultData();
-        return true;
+        
+        try {
+            // 尝试从 GitHub 同步数据
+            const success = await window.dataManager.syncFromGitHub();
+            if (!success) {
+                console.log('GitHub同步失败，使用本地数据');
+            }
+            
+            // 获取所有数据
+            const allData = window.dataManager.getAllData();
+            applyData(allData);
+            
+            // 开始自动同步
+            window.dataManager.startAutoSync();
+            return true;
+        } catch (error) {
+            console.error('认证后数据加载失败:', error);
+            // 加载本地数据作为后备
+            await loadPublicData();
+            return false;
+        }
     } else {
         isAuthenticated = false;
         isReadOnlyMode = true;
         showPermissionStatus('👤 游客模式，只能查看数据', 'guest');
+        
+        // 加载公共数据
         await loadPublicData();
         return false;
     }
 }
 
 async function loadPublicData() {
+    // 如果有 dataManager，优先使用它
+    if (window.dataManager) {
+        try {
+            await window.dataManager.loadPublicData();
+            const allData = window.dataManager.getAllData();
+            applyData(allData);
+            return allData;
+        } catch (error) {
+            console.error('通过dataManager加载公共数据失败:', error);
+            // 继续使用原有的后备方案
+        }
+    }
+    
     const cachedData = localStorage.getItem(LOCAL_STORAGE_KEYS.PUBLIC_DATA_CACHE);
     const cacheTimestamp = localStorage.getItem(LOCAL_STORAGE_KEYS.PUBLIC_DATA_CACHE_TIME);
     const now = Date.now();
@@ -77,6 +141,19 @@ async function loadPublicData() {
 }
 
 async function fetchPublicDataFromGitHub() {
+    // 如果有 dataManager，使用其方法
+    if (window.dataManager) {
+        try {
+            const publicData = await window.dataManager.fetchPublicData();
+            if (publicData) {
+                applyPublicData(publicData, 'github');
+                return publicData;
+            }
+        } catch (error) {
+            console.error('通过dataManager获取GitHub数据失败:', error);
+        }
+    }
+    
     try {
         const baseUrl = 'https://raw.githubusercontent.com/hth554/graduate-research-portal/main/data/';
         const dataFiles = { projects: GITHUB_FILES.PROJECTS, advisors: GITHUB_FILES.ADVISORS, students: GITHUB_FILES.STUDENTS, publications: GITHUB_FILES.PUBLICATIONS, updates: GITHUB_FILES.UPDATES };
@@ -454,45 +531,133 @@ function throttle(func, limit) {
     };
 }
 
-// CRUD 操作（统一模板函数）
-const createCRUD = (dataArray, renderFn, filename, name) => ({
-    add: async (data) => {
-        if (isReadOnlyMode) { showToast(`游客模式不能添加${name}，请先输入Token`, 'warning'); return null; }
-        const newItem = { ...data, id: generateId(), createdAt: getCurrentTimestamp(), updatedAt: getCurrentTimestamp() };
-        dataArray.unshift(newItem);
-        saveToLocalStorage();
-        if (await initializeGitHubToken()) await saveDataToGitHub(filename, dataArray);
-        renderFn();
-        showToast(`${name}添加成功！`, 'success');
-        return newItem;
-    },
-    update: async (id, updatedData) => {
-        if (isReadOnlyMode) { showToast(`游客模式不能更新${name}，请先输入Token`, 'warning'); return null; }
-        const index = dataArray.findIndex(item => item.id == id);
-        if (index !== -1) {
-            dataArray[index] = { ...dataArray[index], ...updatedData, updatedAt: getCurrentTimestamp() };
-            saveToLocalStorage();
-            if (await initializeGitHubToken()) await saveDataToGitHub(filename, dataArray);
-            renderFn();
-            showToast(`${name}更新成功！`, 'success');
-            return dataArray[index];
+// CRUD 操作（使用 DataManager）
+const createCRUD = (dataArray, renderFn, filename, name) => {
+    // 类型映射
+    const typeMap = {
+        '课题': 'projects',
+        '导师': 'advisors', 
+        '学生': 'students',
+        '学术成果': 'publications',
+        '研究近况': 'updates'
+    };
+    
+    const type = typeMap[name];
+    
+    return {
+        add: async (data) => {
+            if (isReadOnlyMode) { 
+                showToast(`游客模式不能添加${name}，请先输入Token`, 'warning'); 
+                requestTokenForAdmin();
+                return null; 
+            }
+            
+            // 检查 dataManager 和 Token
+            if (!window.dataManager || !window.dataManager.hasValidToken()) {
+                showToast(`需要GitHub Token才能添加${name}`, 'warning');
+                if (!window.dataManager.hasValidToken()) {
+                    requestTokenForAdmin();
+                }
+                return null;
+            }
+            
+            try {
+                // 添加创建时间戳
+                const itemWithTimestamp = {
+                    ...data,
+                    createdAt: getCurrentTimestamp(),
+                    updatedAt: getCurrentTimestamp()
+                };
+                
+                const newId = await window.dataManager.addData(type, itemWithTimestamp);
+                showToast(`${name}添加成功！`, 'success');
+                
+                // 更新本地数据数组
+                const newItem = { ...itemWithTimestamp, id: newId };
+                dataArray.unshift(newItem);
+                renderFn();
+                
+                return newItem;
+            } catch (error) {
+                console.error(`添加${name}失败:`, error);
+                showToast(`${name}添加失败: ${error.message}`, 'error');
+                return null;
+            }
+        },
+        
+        update: async (id, updatedData) => {
+            if (isReadOnlyMode) { 
+                showToast(`游客模式不能更新${name}，请先输入Token`, 'warning'); 
+                return null; 
+            }
+            
+            if (!window.dataManager || !window.dataManager.hasValidToken()) {
+                showToast(`需要GitHub Token才能更新${name}`, 'warning');
+                return null;
+            }
+            
+            try {
+                // 添加更新时间戳
+                const itemWithTimestamp = {
+                    ...updatedData,
+                    updatedAt: getCurrentTimestamp()
+                };
+                
+                const success = await window.dataManager.updateData(type, parseInt(id), itemWithTimestamp);
+                if (success) {
+                    showToast(`${name}更新成功！`, 'success');
+                    
+                    // 更新本地数据数组
+                    const index = dataArray.findIndex(item => item.id == id);
+                    if (index !== -1) {
+                        dataArray[index] = { ...dataArray[index], ...itemWithTimestamp };
+                        renderFn();
+                    }
+                    
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error(`更新${name}失败:`, error);
+                showToast(`${name}更新失败: ${error.message}`, 'error');
+                return false;
+            }
+        },
+        
+        delete: async (id) => {
+            if (isReadOnlyMode) { 
+                showToast(`游客模式不能删除${name}，请先输入Token`, 'warning'); 
+                return false; 
+            }
+            
+            if (!window.dataManager || !window.dataManager.hasValidToken()) {
+                showToast(`需要GitHub Token才能删除${name}`, 'warning');
+                return false;
+            }
+            
+            try {
+                const success = await window.dataManager.deleteData(type, parseInt(id));
+                if (success) {
+                    showToast(`${name}已删除`, 'success');
+                    
+                    // 更新本地数据数组
+                    const index = dataArray.findIndex(item => item.id == id);
+                    if (index !== -1) {
+                        dataArray.splice(index, 1);
+                        renderFn();
+                    }
+                    
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error(`删除${name}失败:`, error);
+                showToast(`${name}删除失败: ${error.message}`, 'error');
+                return false;
+            }
         }
-        return null;
-    },
-    delete: async (id) => {
-        if (isReadOnlyMode) { showToast(`游客模式不能删除${name}，请先输入Token`, 'warning'); return false; }
-        const index = dataArray.findIndex(item => item.id == id);
-        if (index !== -1) {
-            dataArray.splice(index, 1);
-            saveToLocalStorage();
-            if (await initializeGitHubToken()) await saveDataToGitHub(filename, dataArray);
-            renderFn();
-            showToast(`${name}已删除`, 'success');
-            return true;
-        }
-        return false;
-    }
-});
+    };
+};
 
 // 创建 CRUD 实例
 const projectCRUD = createCRUD(projectsData, () => renderProjects(currentFilter), GITHUB_FILES.PROJECTS, '课题');
@@ -1278,9 +1443,107 @@ function addAdminButton() {
     else navActions.appendChild(adminBtn);
 }
 
+// 编辑按钮事件处理
+function setupEditButtonEvents() {
+    // 使用事件委托处理所有编辑按钮点击
+    document.addEventListener('click', function(e) {
+        // 处理项目编辑按钮
+        const projectEditBtn = e.target.closest('.project-edit-btn');
+        if (projectEditBtn && !projectEditBtn.classList.contains('disabled')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const projectId = projectEditBtn.getAttribute('data-id');
+            
+            // 检查权限
+            if (!window.dataManager || !window.dataManager.hasValidToken()) {
+                showToast('需要GitHub Token才能编辑', 'warning');
+                requestTokenForAdmin();
+                return;
+            }
+            
+            showEditProjectForm(projectId);
+        }
+        
+        // 处理导师编辑按钮
+        const advisorEditBtn = e.target.closest('.advisor-edit-btn');
+        if (advisorEditBtn && !advisorEditBtn.classList.contains('disabled')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const advisorId = advisorEditBtn.getAttribute('data-id');
+            
+            if (!window.dataManager || !window.dataManager.hasValidToken()) {
+                showToast('需要GitHub Token才能编辑', 'warning');
+                requestTokenForAdmin();
+                return;
+            }
+            
+            showEditAdvisorForm(advisorId);
+        }
+        
+        // 处理学生编辑按钮
+        const studentEditBtn = e.target.closest('.student-edit-btn');
+        if (studentEditBtn && !studentEditBtn.classList.contains('disabled')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const studentId = studentEditBtn.getAttribute('data-id');
+            
+            if (!window.dataManager || !window.dataManager.hasValidToken()) {
+                showToast('需要GitHub Token才能编辑', 'warning');
+                requestTokenForAdmin();
+                return;
+            }
+            
+            showEditStudentForm(studentId);
+        }
+        
+        // 处理学术成果编辑按钮
+        const publicationEditBtn = e.target.closest('.edit-publication-btn');
+        if (publicationEditBtn && !publicationEditBtn.classList.contains('disabled')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const publicationId = publicationEditBtn.getAttribute('data-id');
+            
+            if (!window.dataManager || !window.dataManager.hasValidToken()) {
+                showToast('需要GitHub Token才能编辑', 'warning');
+                requestTokenForAdmin();
+                return;
+            }
+            
+            showEditPublicationForm(publicationId);
+        }
+        
+        // 处理研究近况编辑按钮
+        const updateEditBtn = e.target.closest('.edit-update-btn');
+        if (updateEditBtn && !updateEditBtn.classList.contains('disabled')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const updateId = updateEditBtn.getAttribute('data-id');
+            
+            if (!window.dataManager || !window.dataManager.hasValidToken()) {
+                showToast('需要GitHub Token才能编辑', 'warning');
+                requestTokenForAdmin();
+                return;
+            }
+            
+            showEditUpdateForm(updateId);
+        }
+    });
+}
+
 // 初始化
 async function init() {
     try {
+        // 等待数据管理器初始化
+        if (!window.dataManager) {
+            console.warn('DataManager 未加载，等待1秒重试...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
         await checkAuthentication();
         setupFilterButtons();
         setupThemeToggle();
@@ -1295,10 +1558,25 @@ async function init() {
         addPermissionStyles();
         addDataSourceStyles();
         
+        // 添加编辑按钮事件监听（新增）
+        setupEditButtonEvents();
+        
+        // 监听数据更新事件
+        document.addEventListener('dataUpdated', function(event) {
+            console.log('数据已更新，重新渲染页面');
+            const allData = window.dataManager.getAllData();
+            applyData(allData);
+        });
+        
+        // 监听管理员模式变化
         document.addEventListener('adminModeChanged', function(event) {
             const { editMode, isAdmin } = event.detail;
             if (isAdmin && editMode) {
-                if (isReadOnlyMode) { showToast('需要输入Token才能编辑数据', 'warning'); requestTokenForAdmin(); return; }
+                if (isReadOnlyMode) { 
+                    showToast('需要输入Token才能编辑数据', 'warning'); 
+                    requestTokenForAdmin(); 
+                    return; 
+                }
                 renderProjects(currentFilter);
                 renderAdvisors();
                 renderStudents();
@@ -1314,11 +1592,23 @@ async function init() {
                 if (isAdmin) showToast('已退出编辑模式', 'info');
             }
         });
+        
+        console.log('网站初始化完成');
     } catch (error) {
+        console.error('初始化失败:', error);
         showToast(`初始化失败: ${error.message}`, 'error');
+        
+        // 显示错误信息
         const errorDiv = document.createElement('div');
         errorDiv.style.cssText = 'position: fixed; top: 100px; left: 50%; transform: translateX(-50%); background: #e74c3c; color: white; padding: 20px; border-radius: 8px; z-index: 9999; max-width: 80%; box-shadow: 0 4px 12px rgba(0,0,0,0.2);';
-        errorDiv.innerHTML = `<h3 style="margin-top:0">初始化失败</h3><p><strong>错误信息:</strong> ${error.message}</p><p>请检查控制台获取更多信息</p><button onclick="location.reload()" style="background: white; color: #e74c3c; border: none; padding: 8px 16px; border-radius: 4px; margin-top: 10px; cursor: pointer;">刷新页面</button>`;
+        errorDiv.innerHTML = `
+            <h3 style="margin-top:0">初始化失败</h3>
+            <p><strong>错误信息:</strong> ${error.message}</p>
+            <p>请检查控制台获取更多信息</p>
+            <button onclick="location.reload()" style="background: white; color: #e74c3c; border: none; padding: 8px 16px; border-radius: 4px; margin-top: 10px; cursor: pointer;">
+                刷新页面
+            </button>
+        `;
         document.body.appendChild(errorDiv);
     }
 }
@@ -1460,8 +1750,16 @@ window.labWebsite = {
     addStudent: studentCRUD.add, updateStudent: studentCRUD.update, deleteStudent: studentCRUD.delete,
     addPublication: publicationCRUD.add, updatePublication: publicationCRUD.update, deletePublication: publicationCRUD.delete,
     addUpdate: updateCRUD.add, updateUpdate: updateCRUD.update, deleteUpdate: updateCRUD.delete,
-    loadPublicData, fetchPublicDataFromGitHub, applyPublicData,
     showEditProjectForm, showEditAdvisorForm, showEditStudentForm, showEditPublicationForm, showEditUpdateForm, showAdminPanel,
-    saveAllDataToGitHub, exportAllData,
-    checkAuthentication: async () => checkAuthentication()
+    exportAllData,
+    checkAuthentication: async () => checkAuthentication(),
+    // 新增：数据管理器访问
+    getDataManager: () => window.dataManager,
+    // 新增：手动同步函数
+    syncData: async () => {
+        if (window.dataManager) {
+            return await window.dataManager.manualSync();
+        }
+        return false;
+    }
 };
