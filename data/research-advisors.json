@@ -55,31 +55,7 @@
     "email": "decheng.zhou@hainanu.edu.cn",
     "website": "https://ecology.hainanu.edu.cn/info/1102/10010.htm",
     "avatar": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-    "id": 1766291263620,
-    "createdAt": "2025-12-21",
-    "updatedAt": "2025-12-23T16:42:56.370Z"
-  },
-  {
-    "name": "周德成",
-    "title": "副教授，硕士生/硕士生导师",
-    "field": "城市气象与生态",
-    "bio": "11",
-    "email": "decheng.zhou@hainanu.edu.cn",
-    "website": "https://ecology.hainanu.edu.cn/info/1102/10010.htm",
-    "avatar": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
     "id": 1766290467832,
-    "createdAt": "2025-12-21",
-    "updatedAt": "2025-12-21"
-  },
-  {
-    "name": "周德成",
-    "title": "副教授，硕士生/硕士生导师",
-    "field": "城市气象与生态",
-    "bio": "aaaaaaaaaaaa",
-    "email": "decheng.zhou@hainanu.edu.cn",
-    "website": "https://ecology.hainanu.edu.cn/info/1102/10010.htm",
-    "avatar": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-    "id": 1766290396206,
     "createdAt": "2025-12-21",
     "updatedAt": "2025-12-21"
   },
@@ -94,14 +70,6 @@
     "id": 1766290356841,
     "createdAt": "2025-12-21",
     "updatedAt": "2025-12-21"
-  },
-  {
-    "id": 2,
-    "name": "赵六教授",
-    "avatar": "https://randomuser.me/api/portraits/women/44.jpg",
-    "title": "教授，博士生导师",
-    "field": "自然语言处理",
-    "bio": "在自然语言处理领域有深厚造诣，多项研究成果已产业化。"
   },
   {
     "name": "刘曙光",
