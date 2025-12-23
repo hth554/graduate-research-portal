@@ -9,7 +9,8 @@
     "doi": "10.1234/j.issn.1000-1234.2023.05.002",
     "link": "https://example.com/paper1",
     "createdAt": "2023-05-15",
-    "updatedAt": "2023-10-20"
+    "updatedAt": "2023-10-20",
+    "isDefault": true
   },
   {
     "id": 2,
@@ -21,7 +22,8 @@
     "doi": "10.1109/ICPES.2023.1234567",
     "link": "https://example.com/paper2",
     "createdAt": "2023-08-10",
-    "updatedAt": "2023-10-15"
+    "updatedAt": "2023-10-15",
+    "isDefault": true
   },
   {
     "id": 3,
@@ -32,7 +34,8 @@
     "abstract": "本发明公开了一种高效去除水中重金属离子的纳米复合材料及其制备方法，该材料具有高吸附容量和良好的再生性能，适用于工业废水处理。",
     "link": "https://example.com/patent1",
     "createdAt": "2023-06-20",
-    "updatedAt": "2023-09-25"
+    "updatedAt": "2023-09-25",
+    "isDefault": true
   },
   {
     "id": 4,
@@ -44,6 +47,7 @@
     "doi": "10.1234/j.cnki.1671-9301.2023.03.005",
     "link": "https://example.com/paper3",
     "createdAt": "2023-03-30",
-    "updatedAt": "2023-10-05"
+    "updatedAt": "2023-10-05",
+    "isDefault": true
   }
 ]
