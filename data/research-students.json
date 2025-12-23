@@ -29,5 +29,18 @@
     "field": "人工智能",
     "supervisor": "赵六教授",
     "research": "自然语言处理与机器翻译"
+  },
+  {
+    "name": "李明",
+    "degree": "本科生",
+    "field": "计算机科学与技术",
+    "supervisor": "张明教授",
+    "research": "q",
+    "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    "email": "liming@example.com",
+    "github": "https://github.com/liming",
+    "createdAt": "2025-12-23T16:42:38.604Z",
+    "updatedAt": "2025-12-23T16:42:38.604Z",
+    "id": 1766290409725
   }
 ]
