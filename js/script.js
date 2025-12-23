@@ -1465,21 +1465,3 @@ window.labWebsite = {
     saveAllDataToGitHub, exportAllData,
     checkAuthentication: async () => checkAuthentication()
 };
-// 强制导出所有必要的函数
-if (typeof window !== 'undefined') {
-    // 确保CRUD函数可用
-    window.projectCRUD = projectCRUD;
-    window.advisorCRUD = advisorCRUD;
-    window.studentCRUD = studentCRUD;
-    window.publicationCRUD = publicationCRUD;
-    window.updateCRUD = updateCRUD;
-    
-    // 确保更新函数可用
-    window.updateAdvisor = advisorCRUD.update;
-    window.updateStudent = studentCRUD.update;
-    window.updateProject = projectCRUD.update;
-    window.updatePublication = publicationCRUD.update;
-    window.updateUpdate = updateCRUD.update;
-    
-    console.log('所有CRUD函数已导出到window对象');
-}
