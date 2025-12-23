@@ -26,11 +26,14 @@
   {
     "id": 1,
     "title": "基于深度学习的人脸识别系统",
-    "category": "engineering",
+    "category": "science",
     "description": "本项目研究基于深度学习的人脸识别算法，旨在提高识别准确率和实时性。",
     "advisor": "李四教授",
-    "status": "进行中",
-    "student": "张三"
+    "status": "筹备中",
+    "student": "张三",
+    "statusType": "preparation",
+    "image": "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+    "updatedAt": "2025-12-23T16:51:50.675Z"
   },
   {
     "id": 2,
