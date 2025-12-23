@@ -10,15 +10,10 @@
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
 </head>
 <body>
-    <!-- 导航栏 -->
     <header class="header">
         <div class="container">
             <nav class="navbar">
-                <a href="#" class="logo">
-                    <i class="fas fa-graduation-cap"></i>
-                    <span>学术研究门户</span>
-                </a>
-                
+                <a href="#" class="logo"><i class="fas fa-graduation-cap"></i><span>学术研究门户</span></a>
                 <ul class="nav-menu">
                     <li class="nav-item"><a href="#home" class="nav-link active">首页</a></li>
                     <li class="nav-item"><a href="#projects" class="nav-link">课题展示</a></li>
@@ -26,30 +21,18 @@
                     <li class="nav-item"><a href="#students" class="nav-link">学生介绍</a></li>
                     <li class="nav-item"><a href="#publications" class="nav-link">学术成果</a></li>
                     <li class="nav-item"><a href="#updates" class="nav-link">研究近况</a></li>
-                    <!-- 移除提交课题导航项 -->
-                    <li class="nav-item" id="admin-nav-item">
-                        <a href="#" class="nav-link" id="admin-toggle">
-                            <i class="fas fa-user-shield"></i> 管理
-                        </a>
-                    </li>
+                    <li class="nav-item" id="admin-nav-item"><a href="#" class="nav-link" id="admin-toggle"><i class="fas fa-user-shield"></i> 管理</a></li>
                 </ul>
-                
                 <div class="nav-actions">
-                    <button class="btn btn-outline" id="theme-toggle">
-                        <i class="fas fa-moon"></i>
-                    </button>
-                    <!-- 移除登录和退出按钮 -->
+                    <button class="btn btn-outline" id="theme-toggle"><i class="fas fa-moon"></i></button>
                     <div class="hamburger" id="hamburger">
-                        <span class="bar"></span>
-                        <span class="bar"></span>
-                        <span class="bar"></span>
+                        <span class="bar"></span><span class="bar"></span><span class="bar"></span>
                     </div>
                 </div>
             </nav>
         </div>
     </header>
 
-    <!-- 权限状态栏 -->
     <div class="permission-status" id="permission-status" style="display: none;">
         <div class="container">
             <span id="status-message"></span>
@@ -62,20 +45,13 @@
         </div>
     </div>
 
-    <!-- 首页横幅 -->
     <section class="hero" id="home">
         <div class="container">
             <div class="hero-content">
                 <h1 class="hero-title">研究生课题展示与管理门户</h1>
                 <p class="hero-subtitle">连接研究生、导师与学术资源的一站式数字化桥梁</p>
-                <p class="hero-description">
-                    本平台提供全面的课题信息展示、研究进度跟踪和学术资源整合服务，
-                    旨在促进跨学科研究与学术交流，展示前沿研究方向与创新项目。
-                </p>
-                <div class="hero-actions">
-                    <a href="#projects" class="btn btn-primary">探索课题</a>
-                    <!-- 移除提交课题按钮 -->
-                </div>
+                <p class="hero-description">本平台提供全面的课题信息展示、研究进度跟踪和学术资源整合服务，旨在促进跨学科研究与学术交流，展示前沿研究方向与创新项目。</p>
+                <div class="hero-actions"><a href="#projects" class="btn btn-primary">探索课题</a></div>
             </div>
             <div class="hero-image">
                 <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" alt="学生讨论学术研究">
@@ -83,7 +59,6 @@
         </div>
     </section>
 
-    <!-- 课题展示区 -->
     <section class="section projects-section" id="projects">
         <div class="container">
             <div class="section-header">
@@ -93,7 +68,6 @@
                     <i class="fas fa-edit"></i> 编辑课题
                 </button>
             </div>
-            
             <div class="filters">
                 <button class="filter-btn active" data-filter="all">全部课题</button>
                 <button class="filter-btn" data-filter="engineering">人工智能与大模型</button>
@@ -102,14 +76,10 @@
                 <button class="filter-btn" data-filter="medical">槟榔黄化病</button>
                 <button class="filter-btn" data-filter="medical">生态过程</button>
             </div>
-            
-            <div class="projects-grid" id="projects-grid">
-                <!-- 课题卡片将通过JavaScript动态生成 -->
-            </div>
+            <div class="projects-grid" id="projects-grid"></div>
         </div>
     </section>
 
-    <!-- 导师介绍 -->
     <section class="section advisors-section" id="advisors">
         <div class="container">
             <div class="section-header">
@@ -119,14 +89,10 @@
                     <i class="fas fa-edit"></i> 编辑导师信息
                 </button>
             </div>
-            
-            <div class="advisors-grid" id="advisors-grid">
-                <!-- 导师卡片将通过JavaScript动态生成 -->
-            </div>
+            <div class="advisors-grid" id="advisors-grid"></div>
         </div>
     </section>
 
-    <!-- 学生介绍 -->
     <section class="section students-section" id="students">
         <div class="container">
             <div class="section-header">
@@ -136,14 +102,10 @@
                     <i class="fas fa-edit"></i> 编辑学生信息
                 </button>
             </div>
-            
-            <div class="students-grid" id="students-grid">
-                <!-- 学生卡片将通过JavaScript动态生成 -->
-            </div>
+            <div class="students-grid" id="students-grid"></div>
         </div>
     </section>
 
-    <!-- 学术成果发布 -->
     <section class="section publications-section" id="publications">
         <div class="container">
             <div class="section-header">
@@ -153,14 +115,10 @@
                     <i class="fas fa-edit"></i> 编辑学术成果
                 </button>
             </div>
-            
-            <div class="publications-grid" id="publications-grid">
-                <!-- 学术成果卡片将通过JavaScript动态生成 -->
-            </div>
+            <div class="publications-grid" id="publications-grid"></div>
         </div>
     </section>
 
-    <!-- 研究近况模块 -->
     <section class="section updates-section" id="updates">
         <div class="container">
             <div class="section-header">
@@ -170,25 +128,16 @@
                     <i class="fas fa-edit"></i> 编辑研究近况
                 </button>
             </div>
-            
-            <div class="updates-grid" id="updates-grid">
-                <!-- 近况卡片将通过JavaScript动态生成 -->
-            </div>
+            <div class="updates-grid" id="updates-grid"></div>
         </div>
     </section>
 
-    <!-- 页脚 -->
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
                 <div class="footer-column">
-                    <h3 class="footer-title">
-                        <i class="fas fa-graduation-cap"></i>
-                        学术研究门户
-                    </h3>
-                    <p class="footer-description">
-                        连接研究生、导师与学术资源的一站式数字化桥梁，促进跨学科研究与学术交流。
-                    </p>
+                    <h3 class="footer-title"><i class="fas fa-graduation-cap"></i>学术研究门户</h3>
+                    <p class="footer-description">连接研究生、导师与学术资源的一站式数字化桥梁，促进跨学科研究与学术交流。</p>
                     <div class="social-links">
                         <a href="#" class="social-link"><i class="fab fa-github"></i></a>
                         <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
@@ -196,7 +145,6 @@
                         <a href="#" class="social-link"><i class="fab fa-weixin"></i></a>
                     </div>
                 </div>
-                
                 <div class="footer-column">
                     <h4 class="footer-column-title">快速链接</h4>
                     <ul class="footer-links">
@@ -206,43 +154,33 @@
                         <li><a href="#students">学生介绍</a></li>
                     </ul>
                 </div>
-                
                 <div class="footer-column">
                     <h4 class="footer-column-title">学术资源</h4>
                     <ul class="footer-links">
                         <li><a href="#publications">学术成果</a></li>
                         <li><a href="#updates">研究近况</a></li>
-                        <!-- 移除提交课题链接 -->
                         <li><a href="#">投稿指南</a></li>
                     </ul>
                 </div>
-                
                 <div class="footer-column">
                     <h4 class="footer-column-title">联系我们</h4>
                     <ul class="footer-contact">
-                        <li><i class="fas fa-map-marker-alt"></i> 海南大学海甸校区</li>
+                        <li><i class="fas fa-map-marker-alt"></i> 北京市海淀区学院路37号</li>
                         <li><i class="fas fa-phone"></i> (010) 8231-1234</li>
                         <li><i class="fas fa-envelope"></i> research@university.edu.cn</li>
                     </ul>
                 </div>
             </div>
-            
             <div class="footer-bottom">
                 <p>&copy; 2023 学术研究门户. 版权所有.</p>
                 <p>本网站为研究生课题展示与管理平台，旨在促进学术交流与研究合作。</p>
-                <p id="admin-status" style="font-size: 12px; color: #aaa; margin-top: 10px;">
-                    <!-- 管理员状态显示 -->
-                </p>
+                <p id="admin-status" style="font-size: 12px; color: #aaa; margin-top: 10px;"></p>
             </div>
         </div>
     </footer>
 
-    <!-- 返回顶部按钮 -->
-    <button class="back-to-top" id="backToTop">
-        <i class="fas fa-chevron-up"></i>
-    </button>
+    <button class="back-to-top" id="backToTop"><i class="fas fa-chevron-up"></i></button>
 
-    <!-- 加载 JavaScript 文件（按依赖顺序） -->
     <script src="js/github-issues.js"></script>
     <script src="js/data-manager.js"></script>
     <script src="js/admin-system.js"></script>
