@@ -1,18 +1,5 @@
 [
   {
-    "id": 1,
-    "name": "刘曙光",
-    "title": "教授，博士生导师",
-    "field": "碳循环、水循环、生态系统功能和服务",
-    "bio": "国家海外引进高级人才、中组部 '千人计划' 入选者，与中科院合作证实成熟森林土壤可累积碳，推翻经典理论，成果发表于《SCIENCE》并入选 '中国科学10大进展'；研发 GEMS 生物地球化学循环模型、SkyCenterESM 生态系统服务核算模型，主导完成美国全域生态系统固碳与减排潜力评估。",
-    "avatar": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-    "email": "liusg@example.com",
-    "website": "https://example.com/liusg",
-    "createdAt": "2022-01-10",
-    "updatedAt": "2023-10-20",
-    "isDefault": true
-  },
-  {
     "id": 2,
     "name": "赵淑清",
     "title": "教授，博士生导师",
