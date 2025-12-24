@@ -183,50 +183,47 @@ class GitHubIssuesManager {
             if (publicResp.ok) {
                 const { content } = await publicResp.json();
                 const decodedContent = JSON.parse(decodeURIComponent(escape(atob(content))));
-                console.log(`从 GitHub 公开读取 ${filename} 成功，${decodedContent?.length || 0} 条记录`);
+                console.log(`✅ 从 GitHub 公开读取 ${filename} 成功`);
                 return decodedContent;
             } else if (publicResp.status === 404) {
-                console.log(`GitHub 上不存在 ${filename}`);
-                return null; // 返回 null 表示文件不存在
+                console.log(`ℹ️ GitHub 上不存在 ${filename}`);
+                return null;
             } else {
-                console.warn(`公开读取失败 ${publicResp.status}，尝试带 Token 读取`);
-                throw new Error('Public read failed');
+                console.warn(`⚠️ 公开读取失败 ${publicResp.status}，尝试其他方式`);
             }
         } catch (publicError) {
             console.log(`${filename} 公开读取失败: ${publicError.message}`);
-            
-            // 2. 如果公开读取失败且有 Token，尝试带 Token 读取
-            if (this.hasValidToken()) {
-                console.log(`尝试带 Token 读取 ${filename}...`);
-                try {
-                    const authResp = await fetch(url, {
-                        headers: {
-                            'Authorization': `Bearer ${this.token}`,
-                            'Accept': 'application/vnd.github.v3+json'
-                        }
-                    });
-                    
-                    if (authResp.ok) {
-                        const { content } = await authResp.json();
-                        const decodedContent = JSON.parse(decodeURIComponent(escape(atob(content))));
-                        console.log(`带 Token 读取 ${filename} 成功，${decodedContent?.length || 0} 条记录`);
-                        return decodedContent;
-                    } else if (authResp.status === 404) {
-                        // 文件不存在，返回 null
-                        console.log(`GitHub 上不存在 ${filename} (带 Token)`);
-                        return null;
-                    }
-                    throw new Error(`带 Token 读取失败 ${authResp.status}`);
-                } catch (authError) {
-                    console.error(`带 Token 读取 ${filename} 失败:`, authError);
-                    throw new Error(`无法读取 ${filename}: ${authError.message}`);
-                }
-            }
-            
-            // 3. 既没有公开访问权限，也没有 Token
-            console.log(`既无法公开读取 ${filename}，也没有 Token`);
-            throw new Error(`无法读取 ${filename}，请确保仓库是公开的或提供 GitHub Token`);
         }
+        
+        // 2. 如果公开读取失败但有 Token，尝试带 Token 读取（用于管理员）
+        if (this.hasValidToken()) {
+            console.log(`尝试带 Token 读取 ${filename}...`);
+            try {
+                const authResp = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${this.token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                
+                if (authResp.ok) {
+                    const { content } = await authResp.json();
+                    const decodedContent = JSON.parse(decodeURIComponent(escape(atob(content))));
+                    console.log(`✅ 带 Token 读取 ${filename} 成功`);
+                    return decodedContent;
+                } else if (authResp.status === 404) {
+                    console.log(`ℹ️ GitHub 上不存在 ${filename} (带 Token)`);
+                    return null;
+                }
+                console.warn(`⚠️ 带 Token 读取失败 ${authResp.status}`);
+            } catch (authError) {
+                console.error(`❌ 带 Token 读取 ${filename} 失败:`, authError);
+            }
+        }
+        
+        // 3. 两种方式都失败，返回null（不抛出错误，避免阻断游客模式）
+        console.log(`无法读取 ${filename}，返回 null`);
+        return null;
     }
 
     /* ========== 新增：创建空的 JSON 文件 ========== */
