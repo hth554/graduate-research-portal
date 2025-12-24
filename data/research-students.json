@@ -2,15 +2,15 @@
   {
     "id": 1,
     "name": "张鹏",
-    "degree": "博士研究生",
-    "field": "计算机科学与技术",
-    "supervisor": "张明教授",
+    "degree": "博士后",
+    "field": "城市生态",
+    "supervisor": "赵淑清教授",
     "research": "研究方向为医学图像处理与深度学习，主要研究基于注意力机制的医学图像分割算法。",
     "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
     "email": "liming@example.com",
     "github": "https://github.com/liming",
     "createdAt": "2022-09-01",
-    "updatedAt": "2025-12-24T03:12:07.827Z",
+    "updatedAt": "2025-12-24T03:25:07.367Z",
     "isDefault": true
   },
   {
