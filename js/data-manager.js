@@ -125,18 +125,19 @@ class DataManager {
     
     async fetchPublicData() {
         try {
-            const files =[
-            'research-projects.json', 
-            'research-advisors.json', 
-            'research-students.json', 
-            'research-publications.json', 
-            'research-updates.json'
-        ];
+            const files = [
+                'research-projects.json', 
+                'research-advisors.json', 
+                'research-students.json', 
+                'research-publications.json', 
+                'research-updates.json'
+            ];
             const data = {};
             let successCount = 0;
             
             await Promise.all(files.map(async (filename) => {
                 try {
+                    // 直接使用fetch请求公开数据（无需Token，仓库需设为公开）
                     const response = await fetch(
                         `https://raw.githubusercontent.com/${this.owner}/${this.repo}/main/${filename}`
                     );
@@ -145,13 +146,16 @@ class DataManager {
                         const jsonData = await response.json();
                         data[filename.replace('.json', '')] = jsonData;
                         successCount++;
+                        console.log(`✅ 公开加载 ${filename} 成功`);
                     } else {
                         const key = filename.replace('.json', '');
                         data[key] = this.defaultData[key] || [];
+                        console.warn(`⚠️ 公开加载 ${filename} 失败: ${response.status}`);
                     }
                 } catch (error) {
                     const key = filename.replace('.json', '');
                     data[key] = this.defaultData[key] || [];
+                    console.error(`❌ 公开加载 ${filename} 时出错:`, error);
                 }
             }));
             
