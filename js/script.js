@@ -151,70 +151,65 @@ async function checkAuthentication() {
 }
 
 async function loadPublicData() {
-    debugLog('开始加载公共数据');
+    debugLog('开始加载公共数据（优先尝试实时数据）');
     
-    // 如果有 dataManager，优先使用它
-    if (window.dataManager) {
-        try {
-            await window.dataManager.loadPublicData();
-            const allData = window.dataManager.getAllData();
-            applyData(allData);
-            return allData;
-        } catch (error) {
-            debugError('通过dataManager加载公共数据失败:', error);
-            // 继续使用原有的后备方案
-        }
-    }
-    
+    // 缩短缓存时间为5分钟
     const cachedData = localStorage.getItem(LOCAL_STORAGE_KEYS.PUBLIC_DATA_CACHE);
     const cacheTimestamp = localStorage.getItem(LOCAL_STORAGE_KEYS.PUBLIC_DATA_CACHE_TIME);
     const now = Date.now();
+    const CACHE_VALIDITY = 5 * 60 * 1000; // 5分钟
     
-    if (cachedData && cacheTimestamp && (now - parseInt(cacheTimestamp)) < 30 * 60 * 1000) {
+    if (cachedData && cacheTimestamp && (now - parseInt(cacheTimestamp)) < CACHE_VALIDITY) {
         try {
             applyPublicData(JSON.parse(cachedData), 'cached');
-            showToast('已显示缓存数据', 'info');
+            showToast('已显示缓存数据（5分钟内有效）', 'info');
+            
+            // 异步检查是否有更新的数据
+            setTimeout(() => {
+                fetchPublicDataFromGitHub().catch(err => 
+                    debugLog('后台更新数据失败:', err)
+                );
+            }, 1000);
+            
+            return JSON.parse(cachedData);
         } catch (error) {
-            fetchPublicDataFromGitHub();
+            debugError('缓存数据解析失败，重新拉取:', error);
+            return await fetchPublicDataFromGitHub();
         }
     } else {
-        fetchPublicDataFromGitHub();
+        // 缓存过期或不存在，直接拉取实时数据
+        return await fetchPublicDataFromGitHub();
     }
 }
 
 async function fetchPublicDataFromGitHub() {
-    // 如果有 dataManager，使用其方法
-    if (window.dataManager) {
-        try {
-            const publicData = await window.dataManager.fetchPublicData();
-            if (publicData) {
-                applyPublicData(publicData, 'github');
-                return publicData;
-            }
-        } catch (error) {
-            debugError('通过dataManager获取GitHub数据失败:', error);
-        }
-    }
-    
     try {
         const baseUrl = 'https://raw.githubusercontent.com/hth554/graduate-research-portal/main/data/';
-        const dataFiles = { projects: 'research-projects.json', 
-                            advisors: 'research-advisors.json', 
-                            students: 'research-students.json', 
-                            publications: 'research-publications.json', 
-                            updates: 'research-updates.json' };
+        const dataFiles = { 
+            projects: 'research-projects.json', 
+            advisors: 'research-advisors.json', 
+            students: 'research-students.json', 
+            publications: 'research-publications.json', 
+            updates: 'research-updates.json' 
+        };
         const allData = {};
         let loadedCount = 0;
         
+        // 直接尝试从GitHub公开仓库加载数据（游客模式）
         for (const [key, filename] of Object.entries(dataFiles)) {
             try {
                 const response = await fetch(baseUrl + filename);
                 if (response.ok) {
                     allData[key] = await response.json();
                     loadedCount++;
-                } else allData[key] = [];
+                    debugLog(`成功加载 ${filename}`);
+                } else {
+                    allData[key] = [];
+                    debugError(`加载 ${filename} 失败: ${response.status}`);
+                }
             } catch (error) {
                 allData[key] = [];
+                debugError(`加载 ${filename} 时出错:`, error);
             }
         }
         
@@ -222,10 +217,15 @@ async function fetchPublicDataFromGitHub() {
             localStorage.setItem(LOCAL_STORAGE_KEYS.PUBLIC_DATA_CACHE, JSON.stringify(allData));
             localStorage.setItem(LOCAL_STORAGE_KEYS.PUBLIC_DATA_CACHE_TIME, Date.now().toString());
             applyPublicData(allData, 'github');
-            showToast(`成功加载 ${loadedCount} 个数据文件`, 'success');
+            showToast(`成功加载 ${loadedCount} 个实时数据文件`, 'success');
             return allData;
-        } else throw new Error('所有数据文件加载失败');
+        } else {
+            throw new Error('所有数据文件加载失败');
+        }
     } catch (error) {
+        debugError('从GitHub拉取实时数据失败:', error);
+        
+        // 失败后fallback到缓存/示例数据
         const cachedData = localStorage.getItem(LOCAL_STORAGE_KEYS.PUBLIC_DATA_CACHE);
         const cacheTimestamp = localStorage.getItem(LOCAL_STORAGE_KEYS.PUBLIC_DATA_CACHE_TIME);
         const now = Date.now();
@@ -235,9 +235,12 @@ async function fetchPublicDataFromGitHub() {
                 applyPublicData(JSON.parse(cachedData), 'cached');
                 showToast('网络连接失败，已显示缓存数据', 'warning');
                 return JSON.parse(cachedData);
-            } catch (parseError) {}
+            } catch (parseError) {
+                debugError('解析缓存数据失败:', parseError);
+            }
         }
         
+        // 使用示例数据
         const defaultData = {
             projects: getDefaultProjects(),
             advisors: getDefaultAdvisors(),
