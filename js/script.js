@@ -426,6 +426,7 @@ function saveToLocalStorage() {
     }
 }
 
+// ========== 修复：串行保存到GitHub，避免并发冲突 ==========
 async function saveAllDataToGitHub() {
     if (isReadOnlyMode) { 
         showToast('游客模式不能保存数据到GitHub', 'warning'); 
@@ -438,15 +439,49 @@ async function saveAllDataToGitHub() {
             if (!success) return false;
         }
 
-        await Promise.all([
-            window.githubIssuesManager.writeJsonFile(GITHUB_FILES.PROJECTS, projectsData),
-            window.githubIssuesManager.writeJsonFile(GITHUB_FILES.ADVISORS, advisorsData),
-            window.githubIssuesManager.writeJsonFile(GITHUB_FILES.STUDENTS, studentsData),
-            window.githubIssuesManager.writeJsonFile(GITHUB_FILES.PUBLICATIONS, publicationsData),
-            window.githubIssuesManager.writeJsonFile(GITHUB_FILES.UPDATES, updatesData)
-        ]);
+        // 串行保存，避免并发冲突
+        const files = [
+            { filename: GITHUB_FILES.PROJECTS, data: projectsData },
+            { filename: GITHUB_FILES.ADVISORS, data: advisorsData },
+            { filename: GITHUB_FILES.STUDENTS, data: studentsData },
+            { filename: GITHUB_FILES.PUBLICATIONS, data: publicationsData },
+            { filename: GITHUB_FILES.UPDATES, data: updatesData }
+        ];
 
-        showToast('数据已同步到 GitHub', 'success');
+        const results = {
+            success: [],
+            failed: []
+        };
+
+        // 串行保存每个文件
+        for (const file of files) {
+            try {
+                debugLog(`正在保存 ${file.filename}...`);
+                await window.githubIssuesManager.writeJsonFile(file.filename, file.data);
+                results.success.push(file.filename);
+                debugLog(`✅ ${file.filename} 保存成功`);
+                showToast(`${file.filename} 保存成功`, 'success');
+                
+                // 添加短暂延迟，避免GitHub API限制
+                if (file !== files[files.length - 1]) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            } catch (error) {
+                debugError(`保存 ${file.filename} 失败:`, error);
+                results.failed.push({ filename: file.filename, error: error.message });
+                showToast(`${file.filename} 保存失败: ${error.message}`, 'error');
+                
+                // 如果是一个文件失败，继续保存其他文件
+                continue;
+            }
+        }
+
+        if (results.failed.length > 0) {
+            debugError(`部分文件保存失败: ${results.failed.map(f => f.filename).join(', ')}`);
+            return false;
+        }
+
+        showToast('所有数据已同步到 GitHub', 'success');
         return true;
     } catch (error) {
         showToast(`数据保存失败: ${error.message}`, 'error');
@@ -1772,10 +1807,22 @@ function handleAdminModeChanged(event) {
     }
 }
 
-// 初始化
+// ========== 修复：提前初始化 window.labWebsite 对象，确保渲染函数存在 ==========
 async function init() {
     try {
         debugLog('开始初始化网站...');
+        
+        // 提前初始化 window.labWebsite 对象，确保渲染函数存在
+        window.labWebsite = window.labWebsite || {};
+        
+        // 确保渲染函数已定义（提前绑定）
+        window.labWebsite.renderProjects = function(filter = 'all') {
+            renderProjects(filter);
+        };
+        window.labWebsite.renderAdvisors = renderAdvisors;
+        window.labWebsite.renderStudents = renderStudents;
+        window.labWebsite.renderPublications = renderPublications;
+        window.labWebsite.renderUpdates = renderUpdates;
         
         // 等待必要的全局对象初始化
         if (!window.dataManager) {
@@ -1971,10 +2018,25 @@ if (document.readyState === 'loading') {
     init();
 }
 
-// 导出
+// ========== 修复：完整导出 window.labWebsite 对象，包含所有渲染函数 ==========
 window.labWebsite = {
-    projectsData, advisorsData, studentsData, publicationsData, updatesData,
-    isReadOnlyMode, isAuthenticated,
+    // 数据变量
+    projectsData, 
+    advisorsData, 
+    studentsData, 
+    publicationsData, 
+    updatesData,
+    isReadOnlyMode, 
+    isAuthenticated,
+    
+    // 渲染函数（必须导出）
+    renderProjects,
+    renderAdvisors,
+    renderStudents,
+    renderPublications,
+    renderUpdates,
+    
+    // CRUD操作函数
     addProject: projectCRUD.add, 
     updateProject: projectCRUD.update, 
     deleteProject: projectCRUD.delete,
@@ -1990,8 +2052,17 @@ window.labWebsite = {
     addUpdate: updateCRUD.add, 
     updateUpdate: updateCRUD.update, 
     deleteUpdate: updateCRUD.delete,
-    showEditProjectForm, showEditAdvisorForm, showEditStudentForm, showEditPublicationForm, showEditUpdateForm, showAdminPanel,
+    
+    // 界面函数
+    showEditProjectForm, 
+    showEditAdvisorForm, 
+    showEditStudentForm, 
+    showEditPublicationForm, 
+    showEditUpdateForm, 
+    showAdminPanel,
     exportAllData,
+    
+    // 工具函数
     checkAuthentication: async () => checkAuthentication(),
     getDataManager: () => window.dataManager,
     syncData: async () => {
