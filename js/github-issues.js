@@ -6,8 +6,10 @@ class GitHubIssuesManager {
         this.apiBase = 'https://api.github.com';
         this.issuesUrl = `${this.apiBase}/repos/${this.owner}/${this.repo}/issues`;
         this.token = localStorage.getItem('github_pat_token');
-        this.writeLocks = {}; // 文件级锁：防止同时写入同一文件
-        this.globalWriteLock = false; // 全局锁：防止并发写入
+        this.writeLocks = {};
+        // 文件级锁：防止同时写入同一文件
+        this.globalWriteLock = false;
+        // 全局锁：防止并发写入
     }
 
     /* ========== 原有功能保持不变 ========== */
@@ -128,13 +130,11 @@ class GitHubIssuesManager {
     async writeJsonFile(filename, dataObj) {
         // 1. 检查权限
         if (!this.hasValidToken()) throw new Error('无有效 GitHub Token');
-        
         const path = `data/${filename}`;
         const url = `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${path}`;
         
         // ========== 修复：改进锁机制 ==========
         const fileLockKey = `lock_${filename}`;
-        
         // 检查文件级锁
         if (this.writeLocks[fileLockKey]) {
             throw new Error(`文件 ${filename} 正在被写入，请稍后重试`);
@@ -160,7 +160,6 @@ class GitHubIssuesManager {
                         cache: 'no-cache',
                         signal: AbortSignal.timeout(3000) // 3秒超时，避免阻塞
                     });
-
                     if (getResp.ok) {
                         const respData = await getResp.json();
                         const latestSha = respData.sha;
@@ -184,23 +183,35 @@ class GitHubIssuesManager {
         // 辅助方法：核心写入逻辑（用于重试）
         const coreWrite = async (currentSha) => {
             try {
-                // 写入前预拉取远程最新数据，确保本地数据基于最新版本
-                const latestRemoteData = await this.readJsonFile(filename);
+                // ========== 修复：改为直接覆盖策略 ==========
+                // 不再读取和合并远程数据，直接使用本地数据覆盖
                 let finalData = dataObj;
-
-                // 合并本地与远程数据（避免覆盖远程新增内容，数组类型按ID去重）
-                if (latestRemoteData && Array.isArray(latestRemoteData) && Array.isArray(dataObj)) {
-                    const remoteIds = new Set(latestRemoteData.map(item => item.id));
-                    // 保留远程所有数据 + 本地未存在的数据
-                    finalData = [...latestRemoteData, ...dataObj.filter(item => !remoteIds.has(item.id))];
-                    console.log(`[数据合并] ${filename} 已合并远程 ${latestRemoteData.length} 条数据 + 本地新增数据`);
+                
+                console.log(`[数据覆盖] ${filename} 将使用本地 ${Array.isArray(dataObj) ? dataObj.length : '对象'} 条数据直接覆盖远程数据`);
+                
+                // 如果是数组，确保有id属性以便后续操作
+                if (Array.isArray(finalData)) {
+                    // 确保每个项目都有id（如果没有则生成）
+                    finalData = finalData.map((item, index) => {
+                        if (!item.id && item.id !== 0) {
+                            return { ...item, id: index + 1 };
+                        }
+                        return item;
+                    });
+                    
+                    // 按ID排序，保持一致性
+                    finalData.sort((a, b) => {
+                        if (a.id < b.id) return -1;
+                        if (a.id > b.id) return 1;
+                        return 0;
+                    });
                 }
 
                 // 编码内容（处理中文）
                 const jsonStr = JSON.stringify(finalData, null, 2);
                 const content = btoa(unescape(encodeURIComponent(jsonStr)));
                 const body = JSON.stringify({
-                    message: `portal: 安全更新 ${filename} (${new Date().toLocaleString('zh-CN')})`,
+                    message: `portal: 直接覆盖 ${filename} (${new Date().toLocaleString('zh-CN')})`,
                     content,
                     sha: currentSha,
                     branch: 'main' // 明确指定分支，避免默认分支不匹配
@@ -284,7 +295,6 @@ class GitHubIssuesManager {
                 cache: 'no-cache',
                 signal: AbortSignal.timeout(3000)
             });
-
             if (publicResp.ok) {
                 const { content } = await publicResp.json();
                 const decodedContent = JSON.parse(decodeURIComponent(escape(atob(content))));
@@ -314,7 +324,6 @@ class GitHubIssuesManager {
                     cache: 'no-cache',
                     signal: AbortSignal.timeout(3000)
                 });
-
                 if (authResp.ok) {
                     const { content } = await authResp.json();
                     const decodedContent = JSON.parse(decodeURIComponent(escape(atob(content))));
@@ -338,7 +347,6 @@ class GitHubIssuesManager {
     /* ========== 新增：创建空的 JSON 文件 ========== */
     async createEmptyJsonFile(filename, defaultData = []) {
         if (!this.hasValidToken()) throw new Error('无有效 GitHub Token');
-
         try {
             console.log(`[创建空文件] 开始：${filename}`);
             const result = await this.writeJsonFile(filename, defaultData);
@@ -353,14 +361,12 @@ class GitHubIssuesManager {
     /* ========== 新增：检查仓库是否公开 ========== */
     async checkRepositoryVisibility() {
         const url = `${this.apiBase}/repos/${this.owner}/${this.repo}`;
-
         try {
             const response = await fetch(url, {
                 headers: { 'Accept': 'application/vnd.github.v3+json' },
                 cache: 'no-cache',
                 signal: AbortSignal.timeout(3000)
             });
-
             if (response.ok) {
                 const repoInfo = await response.json();
                 const result = {
@@ -388,14 +394,12 @@ class GitHubIssuesManager {
     /* ========== 新增：检查数据目录是否存在 ========== */
     async checkDataDirectory() {
         const url = `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/data`;
-
         try {
             const response = await fetch(url, {
                 headers: { 'Accept': 'application/vnd.github.v3+json' },
                 cache: 'no-cache',
                 signal: AbortSignal.timeout(3000)
             });
-
             if (response.ok) {
                 const contents = await response.json();
                 const result = {
