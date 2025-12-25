@@ -6,6 +6,7 @@ class GitHubIssuesManager {
         this.apiBase = 'https://api.github.com';
         this.issuesUrl = `${this.apiBase}/repos/${this.owner}/${this.repo}/issues`;
         this.token = localStorage.getItem('github_pat_token');
+        this.writeLock = false; // 并发锁：防止同时写入同一文件
     }
 
     /* ========== 原有功能保持不变 ========== */
@@ -122,133 +123,194 @@ class GitHubIssuesManager {
         localStorage.removeItem('github_pat_token');
     }
 
-    /* ========== 新增：写任意 JSON 文件到仓库（修复缓存问题） ========== */
+    /* ========== 核心修复：写 JSON 文件（SHA 重试+冲突自动处理） ========== */
     async writeJsonFile(filename, dataObj) {
+        // 1. 检查权限和并发锁
         if (!this.hasValidToken()) throw new Error('无有效 GitHub Token');
+        if (this.writeLock) throw new Error(`当前有其他写入操作，请1秒后重试（文件：${filename}）`);
+        
         const path = `data/${filename}`;
         const url = `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${path}`;
         let sha = null;
+        const MAX_RETRY = 2; // 写入冲突时最大重试次数
 
-        // 1. 获取最新 SHA（添加 cache: no-cache 避免缓存旧值，补充错误日志）
-        try {
-            const getResp = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                },
-                cache: 'no-cache' // 关键修复：强制获取最新文件状态，解决 SHA 不匹配
-            });
+        // 辅助方法：获取最新 SHA（带重试）
+        const getLatestSHA = async (retry = 2) => {
+            for (let i = 0; i < retry; i++) {
+                try {
+                    const getResp = await fetch(url, {
+                        headers: {
+                            'Authorization': `Bearer ${this.token}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        },
+                        cache: 'no-cache',
+                        signal: AbortSignal.timeout(3000) // 3秒超时，避免阻塞
+                    });
 
-            if (getResp.ok) {
-                sha = (await getResp.json()).sha;
-                console.log(`✅ 获取 ${filename} 最新 SHA: ${sha.slice(0, 8)}...`);
-            } else if (getResp.status === 404) {
-                console.log(`ℹ️ ${filename} 不存在，将创建新文件`);
-            } else {
-                console.warn(`⚠️ 获取 SHA 失败（状态码: ${getResp.status}），尝试用空 SHA 创建`);
+                    if (getResp.ok) {
+                        const respData = await getResp.json();
+                        const latestSha = respData.sha;
+                        console.log(`[SHA获取][重试${i+1}] 成功：${filename} 的 SHA 为 ${latestSha.slice(0,8)}...`);
+                        return latestSha;
+                    } else if (getResp.status === 404) {
+                        console.log(`[SHA获取][重试${i+1}] ${filename} 不存在，将创建新文件`);
+                        return null;
+                    } else {
+                        console.warn(`[SHA获取][重试${i+1}] 失败（状态码：${getResp.status}）`);
+                    }
+                } catch (err) {
+                    console.warn(`[SHA获取][重试${i+1}] 异常：${err.message}`);
+                }
+                // 重试间隔：100ms（短间隔确保实时性）
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
-        } catch (err) {
-            // 补充错误日志，便于排查网络/权限问题
-            console.error(`❌ 获取 ${filename} SHA 时异常:`, err.message);
-        }
+            throw new Error(`获取 ${filename} 的 SHA 重试${retry}次失败`);
+        };
 
-        // 2. 提交新内容（确保 Content 编码正确）
-        try {
-            const jsonStr = JSON.stringify(dataObj, null, 2);
-            const content = btoa(unescape(encodeURIComponent(jsonStr))); // 处理中文编码
-            const body = JSON.stringify({
-                message: `portal: 更新 ${filename} (${new Date().toLocaleString('zh-CN')})`,
-                content,
-                sha // 若 SHA 获取失败，此处为 null，GitHub 会自动创建新文件
-            });
+        // 辅助方法：核心写入逻辑（用于重试）
+        const coreWrite = async (currentSha) => {
+            try {
+                // 写入前预拉取远程最新数据，确保本地数据基于最新版本
+                const latestRemoteData = await this.readJsonFile(filename);
+                let finalData = dataObj;
 
-            const putResp = await fetch(url, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/vnd.github.v3+json'
-                },
-                body,
-                cache: 'no-cache' // 避免缓存提交请求
-            });
+                // 合并本地与远程数据（避免覆盖远程新增内容，数组类型按ID去重）
+                if (latestRemoteData && Array.isArray(latestRemoteData) && Array.isArray(dataObj)) {
+                    const remoteIds = new Set(latestRemoteData.map(item => item.id));
+                    // 保留远程所有数据 + 本地未存在的数据
+                    finalData = [...latestRemoteData, ...dataObj.filter(item => !remoteIds.has(item.id))];
+                    console.log(`[数据合并] ${filename} 已合并远程 ${latestRemoteData.length} 条数据 + 本地新增数据`);
+                }
 
-            if (!putResp.ok) {
-                const txt = await putResp.text();
-                throw new Error(`写入 GitHub 失败 ${putResp.status}: ${txt}`);
+                // 编码内容（处理中文）
+                const jsonStr = JSON.stringify(finalData, null, 2);
+                const content = btoa(unescape(encodeURIComponent(jsonStr)));
+                const body = JSON.stringify({
+                    message: `portal: 安全更新 ${filename} (${new Date().toLocaleString('zh-CN')})`,
+                    content,
+                    sha: currentSha,
+                    branch: 'main' // 明确指定分支，避免默认分支不匹配
+                });
+
+                // 执行写入
+                const putResp = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${this.token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    body,
+                    cache: 'no-cache',
+                    signal: AbortSignal.timeout(5000) // 5秒超时
+                });
+
+                if (!putResp.ok) {
+                    const errTxt = await putResp.text();
+                    // 捕获 409 冲突，抛出特定错误用于重试
+                    if (putResp.status === 409) {
+                        throw new Error(`[409冲突] ${filename} 的 SHA 已过期，需重新获取`);
+                    }
+                    throw new Error(`写入失败 ${putResp.status}: ${errTxt}`);
+                }
+
+                const result = await putResp.json();
+                console.log(`[写入成功] ${filename} 新 SHA：${result.content.sha.slice(0,8)}...`);
+                return result;
+            } catch (error) {
+                console.error(`[核心写入] 失败：${error.message}`);
+                throw error;
             }
+        };
 
-            const result = await putResp.json();
-            console.log(`✅ ${filename} 写入成功，新 SHA: ${result.content.sha.slice(0, 8)}...`);
-            return result;
-        } catch (error) {
-            console.error(`❌ 写入 ${filename} 失败:`, error);
-            throw error;
+        // 主逻辑：加锁 + 重试写入
+        try {
+            this.writeLock = true; // 开启锁
+            console.log(`[写入开始] ${filename}（最大重试${MAX_RETRY}次）`);
+
+            // 第一次获取 SHA 并写入
+            sha = await getLatestSHA();
+            try {
+                return await coreWrite(sha);
+            } catch (firstErr) {
+                // 若第一次失败且是 409 冲突，重试1次
+                if (firstErr.message.includes('[409冲突]') && MAX_RETRY > 1) {
+                    console.log(`[冲突重试] 第2次尝试写入 ${filename}...`);
+                    const newSha = await getLatestSHA(1); // 重新获取最新 SHA
+                    return await coreWrite(newSha);
+                }
+                throw firstErr; // 非冲突错误直接抛出
+            }
+        } catch (finalErr) {
+            console.error(`[写入最终失败] ${filename}：${finalErr.message}`);
+            throw finalErr;
+        } finally {
+            this.writeLock = false; // 释放锁
+            console.log(`[写入结束] ${filename}（锁已释放）`);
         }
     }
 
-    /* ========== 修改：读任意 JSON 文件（修复缓存+补充异常处理） ========== */
+    /* ========== 修改：读 JSON 文件（强化实时性） ========== */
     async readJsonFile(filename) {
         const path = `data/${filename}`;
         const url = `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${path}`;
 
-        // 1. 公开读取（添加 cache: no-cache + 处理 403 私有仓库问题）
+        // 1. 公开读取（优先实时获取）
         try {
-            console.log(`尝试公开读取 ${filename}...`);
+            console.log(`[读取][公开] 尝试获取 ${filename}...`);
             const publicResp = await fetch(url, {
-                headers: {
-                    'Accept': 'application/vnd.github.v3+json'
-                },
-                cache: 'no-cache' // 关键修复：避免读取缓存的旧文件
+                headers: { 'Accept': 'application/vnd.github.v3+json' },
+                cache: 'no-cache',
+                signal: AbortSignal.timeout(3000)
             });
 
             if (publicResp.ok) {
                 const { content } = await publicResp.json();
                 const decodedContent = JSON.parse(decodeURIComponent(escape(atob(content))));
-                console.log(`✅ 从 GitHub 公开读取 ${filename} 成功`);
+                console.log(`[读取][公开] 成功：${filename}（${JSON.stringify(decodedContent).length} 字节）`);
                 return decodedContent;
             } else if (publicResp.status === 404) {
-                console.log(`ℹ️ GitHub 上不存在 ${filename}`);
+                console.log(`[读取][公开] ${filename} 不存在`);
                 return null;
             } else if (publicResp.status === 403) {
-                // 新增：处理仓库私有导致的无权限问题
-                console.warn(`⚠️ 公开读取 ${filename} 无权限（仓库可能为私有），将尝试带 Token 读取`);
+                console.warn(`[读取][公开] 无权限（仓库私有），切换带 Token 读取`);
             } else {
-                console.warn(`⚠️ 公开读取失败 ${publicResp.status}，尝试其他方式`);
+                console.warn(`[读取][公开] 失败（${publicResp.status}）`);
             }
         } catch (publicError) {
-            console.log(`${filename} 公开读取失败: ${publicError.message}`);
+            console.log(`[读取][公开] 异常：${publicError.message}`);
         }
 
-        // 2. 带 Token 读取（添加 cache: no-cache）
+        // 2. 带 Token 读取（确保有权限）
         if (this.hasValidToken()) {
-            console.log(`尝试带 Token 读取 ${filename}...`);
             try {
+                console.log(`[读取][带Token] 尝试获取 ${filename}...`);
                 const authResp = await fetch(url, {
                     headers: {
                         'Authorization': `Bearer ${this.token}`,
                         'Accept': 'application/vnd.github.v3+json'
                     },
-                    cache: 'no-cache' // 关键修复：避免读取缓存的旧文件
+                    cache: 'no-cache',
+                    signal: AbortSignal.timeout(3000)
                 });
 
                 if (authResp.ok) {
                     const { content } = await authResp.json();
                     const decodedContent = JSON.parse(decodeURIComponent(escape(atob(content))));
-                    console.log(`✅ 带 Token 读取 ${filename} 成功`);
+                    console.log(`[读取][带Token] 成功：${filename}（${JSON.stringify(decodedContent).length} 字节）`);
                     return decodedContent;
                 } else if (authResp.status === 404) {
-                    console.log(`ℹ️ GitHub 上不存在 ${filename} (带 Token)`);
+                    console.log(`[读取][带Token] ${filename} 不存在`);
                     return null;
                 }
-                console.warn(`⚠️ 带 Token 读取失败 ${authResp.status}`);
+                console.warn(`[读取][带Token] 失败（${authResp.status}）`);
             } catch (authError) {
-                console.error(`❌ 带 Token 读取 ${filename} 失败:`, authError);
+                console.error(`[读取][带Token] 异常：${authError.message}`);
             }
         }
 
         // 3. 所有方式失败，返回 null
-        console.log(`无法读取 ${filename}，返回 null`);
+        console.log(`[读取][最终] 无法获取 ${filename}，返回 null`);
         return null;
     }
 
@@ -257,11 +319,12 @@ class GitHubIssuesManager {
         if (!this.hasValidToken()) throw new Error('无有效 GitHub Token');
 
         try {
+            console.log(`[创建空文件] 开始：${filename}`);
             const result = await this.writeJsonFile(filename, defaultData);
-            console.log(`已创建空的 ${filename} 文件`);
+            console.log(`[创建空文件] 成功：${filename}`);
             return result;
         } catch (error) {
-            console.error(`创建 ${filename} 失败:`, error);
+            console.error(`[创建空文件] 失败：${error.message}`);
             throw error;
         }
     }
@@ -272,20 +335,22 @@ class GitHubIssuesManager {
 
         try {
             const response = await fetch(url, {
-                headers: {
-                    'Accept': 'application/vnd.github.v3+json'
-                },
-                cache: 'no-cache' // 避免缓存仓库状态
+                headers: { 'Accept': 'application/vnd.github.v3+json' },
+                cache: 'no-cache',
+                signal: AbortSignal.timeout(3000)
             });
 
             if (response.ok) {
                 const repoInfo = await response.json();
-                return {
+                const result = {
                     isPublic: !repoInfo.private,
                     visibility: repoInfo.private ? 'private' : 'public',
                     name: repoInfo.full_name,
-                    description: repoInfo.description
+                    description: repoInfo.description,
+                    defaultBranch: repoInfo.default_branch // 新增：返回默认分支，避免分支不匹配
                 };
+                console.log(`[仓库检查] 结果：${JSON.stringify(result)}`);
+                return result;
             } else {
                 throw new Error(`无法访问仓库: ${response.status}`);
             }
@@ -305,20 +370,23 @@ class GitHubIssuesManager {
 
         try {
             const response = await fetch(url, {
-                headers: {
-                    'Accept': 'application/vnd.github.v3+json'
-                },
-                cache: 'no-cache' // 避免缓存目录状态
+                headers: { 'Accept': 'application/vnd.github.v3+json' },
+                cache: 'no-cache',
+                signal: AbortSignal.timeout(3000)
             });
 
             if (response.ok) {
                 const contents = await response.json();
-                return {
+                const result = {
                     exists: true,
                     fileCount: Array.isArray(contents) ? contents.length : 0,
-                    files: Array.isArray(contents) ? contents.map(file => file.name) : []
+                    files: Array.isArray(contents) ? contents.map(file => file.name) : [],
+                    lastChecked: new Date().toLocaleString()
                 };
+                console.log(`[目录检查] data 目录存在（${result.fileCount} 个文件）`);
+                return result;
             } else if (response.status === 404) {
+                console.log(`[目录检查] data 目录不存在`);
                 return {
                     exists: false,
                     error: 'data 目录不存在'
