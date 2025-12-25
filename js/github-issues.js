@@ -6,7 +6,8 @@ class GitHubIssuesManager {
         this.apiBase = 'https://api.github.com';
         this.issuesUrl = `${this.apiBase}/repos/${this.owner}/${this.repo}/issues`;
         this.token = localStorage.getItem('github_pat_token');
-        this.writeLock = false; // 并发锁：防止同时写入同一文件
+        this.writeLocks = {}; // 文件级锁：防止同时写入同一文件
+        this.globalWriteLock = false; // 全局锁：防止并发写入
     }
 
     /* ========== 原有功能保持不变 ========== */
@@ -123,14 +124,27 @@ class GitHubIssuesManager {
         localStorage.removeItem('github_pat_token');
     }
 
-    /* ========== 核心修复：写 JSON 文件（SHA 重试+冲突自动处理） ========== */
+    /* ========== 核心修复：写 JSON 文件（改进锁机制） ========== */
     async writeJsonFile(filename, dataObj) {
-        // 1. 检查权限和并发锁
+        // 1. 检查权限
         if (!this.hasValidToken()) throw new Error('无有效 GitHub Token');
-        if (this.writeLock) throw new Error(`当前有其他写入操作，请1秒后重试（文件：${filename}）`);
         
         const path = `data/${filename}`;
         const url = `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${path}`;
+        
+        // ========== 修复：改进锁机制 ==========
+        const fileLockKey = `lock_${filename}`;
+        
+        // 检查文件级锁
+        if (this.writeLocks[fileLockKey]) {
+            throw new Error(`文件 ${filename} 正在被写入，请稍后重试`);
+        }
+        
+        // 检查全局锁
+        if (this.globalWriteLock) {
+            throw new Error(`系统繁忙，有其他写入操作正在进行，请稍后重试`);
+        }
+        
         let sha = null;
         const MAX_RETRY = 2; // 写入冲突时最大重试次数
 
@@ -225,7 +239,10 @@ class GitHubIssuesManager {
 
         // 主逻辑：加锁 + 重试写入
         try {
-            this.writeLock = true; // 开启锁
+            // 设置锁
+            this.writeLocks[fileLockKey] = true;
+            this.globalWriteLock = true;
+            
             console.log(`[写入开始] ${filename}（最大重试${MAX_RETRY}次）`);
 
             // 第一次获取 SHA 并写入
@@ -245,8 +262,12 @@ class GitHubIssuesManager {
             console.error(`[写入最终失败] ${filename}：${finalErr.message}`);
             throw finalErr;
         } finally {
-            this.writeLock = false; // 释放锁
-            console.log(`[写入结束] ${filename}（锁已释放）`);
+            // 释放锁（延迟释放确保安全）
+            setTimeout(() => {
+                delete this.writeLocks[fileLockKey];
+                this.globalWriteLock = false;
+                console.log(`[写入结束] ${filename}（锁已释放）`);
+            }, 2000);
         }
     }
 
