@@ -70,14 +70,30 @@ class DataManager {
         });
         
         document.addEventListener('dataUpdated', () => {
-            if (window.labWebsite) {
-                const currentFilter = localStorage.getItem('project_filter_state') || 'all';
-                window.labWebsite.renderProjects(currentFilter);
-                window.labWebsite.renderAdvisors();
-                window.labWebsite.renderStudents();
-                window.labWebsite.renderPublications();
-                window.labWebsite.renderUpdates();
-            }
+            // ========== 修复：安全调用渲染函数，避免undefined错误 ==========
+            setTimeout(() => {
+                if (window.labWebsite && window.labWebsite.renderProjects) {
+                    try {
+                        const currentFilter = localStorage.getItem('project_filter_state') || 'all';
+                        window.labWebsite.renderProjects(currentFilter);
+                    } catch (error) {
+                        console.warn('调用 renderProjects 时出错:', error);
+                    }
+                } else {
+                    console.warn('window.labWebsite.renderProjects 未定义');
+                }
+                
+                // 安全调用其他渲染函数
+                ['renderAdvisors', 'renderStudents', 'renderPublications', 'renderUpdates'].forEach(funcName => {
+                    if (window.labWebsite && typeof window.labWebsite[funcName] === 'function') {
+                        try {
+                            window.labWebsite[funcName]();
+                        } catch (error) {
+                            console.warn(`调用 ${funcName} 时出错:`, error);
+                        }
+                    }
+                });
+            }, 100);
         });
     }
 
@@ -257,6 +273,7 @@ class DataManager {
         }
     }
 
+    // ========== 修复：串行保存到GitHub，避免并发冲突 ==========
     async syncToGitHub() {
         if (!this.hasValidToken() || !window.githubIssuesManager) {
             if (typeof showToast === 'function') {
@@ -267,21 +284,33 @@ class DataManager {
         }
 
         try {
-            const promises = Object.entries(this.dataFiles).map(async ([type, filename]) => {
+            const results = [];
+            const failedFiles = [];
+            
+            // 串行保存每个文件，避免并发冲突
+            for (const [type, filename] of Object.entries(this.dataFiles)) {
                 try {
+                    console.log(`正在保存 ${filename}...`);
                     await window.githubIssuesManager.writeJsonFile(filename, this.data[type]);
-                    return { filename, success: true };
+                    results.push({ filename, success: true });
+                    console.log(`✅ ${filename} 保存成功`);
+                    
+                    // 添加短暂延迟，避免GitHub API限制
+                    if (filename !== this.dataFiles.updates) {
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
                 } catch (error) {
                     console.error(`保存 ${filename} 到GitHub失败:`, error);
-                    return { filename, success: false, error };
+                    results.push({ filename, success: false, error });
+                    failedFiles.push(filename);
+                    
+                    // 单个文件失败继续尝试其他文件
+                    continue;
                 }
-            });
-
-            const results = await Promise.all(promises);
-            const failed = results.filter(r => !r.success);
+            }
             
-            if (failed.length > 0) {
-                console.error(`部分文件保存失败: ${failed.map(f => f.filename).join(', ')}`);
+            if (failedFiles.length > 0) {
+                console.error(`部分文件保存失败: ${failedFiles.join(', ')}`);
                 this.lastSyncTime = new Date().toISOString();
                 localStorage.setItem('last_sync_time', this.lastSyncTime);
                 return false;
@@ -497,10 +526,40 @@ class DataManager {
         }
     }
 
+    // ========== 修复：dispatchDataUpdated 方法，安全调用渲染函数 ==========
     dispatchDataUpdated() {
         document.dispatchEvent(new CustomEvent('dataUpdated', {
             detail: { timestamp: new Date().toISOString(), dataVersion: this.dataVersion }
         }));
+        
+        // 延迟调用渲染函数，确保页面已加载完成
+        setTimeout(() => {
+            // 确保 labWebsite 对象已初始化
+            window.labWebsite = window.labWebsite || {};
+            
+            // 安全地调用渲染函数
+            if (typeof window.labWebsite.renderProjects === 'function') {
+                const currentFilter = localStorage.getItem('project_filter_state') || 'all';
+                try {
+                    window.labWebsite.renderProjects(currentFilter);
+                } catch (error) {
+                    console.warn('调用 renderProjects 时出错:', error);
+                }
+            } else {
+                console.warn('renderProjects 函数未定义');
+            }
+            
+            // 同样的处理其他渲染函数
+            ['renderAdvisors', 'renderStudents', 'renderPublications', 'renderUpdates'].forEach(funcName => {
+                if (typeof window.labWebsite[funcName] === 'function') {
+                    try {
+                        window.labWebsite[funcName]();
+                    } catch (error) {
+                        console.warn(`调用 ${funcName} 时出错:`, error);
+                    }
+                }
+            });
+        }, 100);
     }
 
     dispatchDataSaved() {
