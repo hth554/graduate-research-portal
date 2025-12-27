@@ -1,4 +1,4 @@
-// js/github-issues.js - GitHub Issues 集成处理（新增写 JSON 能力）
+// js/github-issues.js - GitHub Issues 集成处理（增强写入可靠性）
 class GitHubIssuesManager {
     constructor() {
         this.owner = 'HTH554';
@@ -7,9 +7,8 @@ class GitHubIssuesManager {
         this.issuesUrl = `${this.apiBase}/repos/${this.owner}/${this.repo}/issues`;
         this.token = localStorage.getItem('github_pat_token');
         this.writeLocks = {};
-        // 文件级锁：防止同时写入同一文件
         this.globalWriteLock = false;
-        // 全局锁：防止并发写入
+        this.writeRetryCount = {};
     }
 
     /* ========== 原有功能保持不变 ========== */
@@ -126,97 +125,75 @@ class GitHubIssuesManager {
         localStorage.removeItem('github_pat_token');
     }
 
-    /* ========== 核心修复：写 JSON 文件（改进锁机制） ========== */
-    async writeJsonFile(filename, dataObj) {
+    /* ========== 核心修复：写 JSON 文件（增强版） ========== */
+    async writeJsonFile(filename, dataObj, maxRetries = 3) {
         // 1. 检查权限
-        if (!this.hasValidToken()) throw new Error('无有效 GitHub Token');
+        if (!this.hasValidToken()) {
+            throw new Error('无有效 GitHub Token，请先设置Token');
+        }
+        
         const path = `data/${filename}`;
         const url = `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${path}`;
         
-        // ========== 修复：改进锁机制 ==========
-        const fileLockKey = `lock_${filename}`;
-        // 检查文件级锁
-        if (this.writeLocks[fileLockKey]) {
-            throw new Error(`文件 ${filename} 正在被写入，请稍后重试`);
-        }
-        
-        // 检查全局锁
-        if (this.globalWriteLock) {
-            throw new Error(`系统繁忙，有其他写入操作正在进行，请稍后重试`);
-        }
-        
         let sha = null;
-        const MAX_RETRY = 2; // 写入冲突时最大重试次数
-
-        // 辅助方法：获取最新 SHA（带重试）
-        const getLatestSHA = async (retry = 2) => {
-            for (let i = 0; i < retry; i++) {
-                try {
-                    const getResp = await fetch(url, {
-                        headers: {
-                            'Authorization': `Bearer ${this.token}`,
-                            'Accept': 'application/vnd.github.v3+json'
-                        },
-                        cache: 'no-cache',
-                        signal: AbortSignal.timeout(3000) // 3秒超时，避免阻塞
-                    });
-                    if (getResp.ok) {
-                        const respData = await getResp.json();
-                        const latestSha = respData.sha;
-                        console.log(`[SHA获取][重试${i+1}] 成功：${filename} 的 SHA 为 ${latestSha.slice(0,8)}...`);
-                        return latestSha;
-                    } else if (getResp.status === 404) {
-                        console.log(`[SHA获取][重试${i+1}] ${filename} 不存在，将创建新文件`);
-                        return null;
-                    } else {
-                        console.warn(`[SHA获取][重试${i+1}] 失败（状态码：${getResp.status}）`);
-                    }
-                } catch (err) {
-                    console.warn(`[SHA获取][重试${i+1}] 异常：${err.message}`);
+        let retryCount = 0;
+        let lastError = null;
+        
+        // 辅助方法：获取最新SHA
+        const getLatestSHA = async () => {
+            try {
+                console.log(`[获取SHA] 尝试获取 ${filename} 的最新SHA...`);
+                const getResp = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${this.token}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    cache: 'no-store'
+                });
+                
+                if (getResp.ok) {
+                    const respData = await getResp.json();
+                    const latestSha = respData.sha;
+                    console.log(`[获取SHA] 成功：${filename} 的 SHA 为 ${latestSha.slice(0,8)}...`);
+                    return latestSha;
+                } else if (getResp.status === 404) {
+                    console.log(`[获取SHA] ${filename} 不存在，将创建新文件`);
+                    return null;
+                } else {
+                    const errorText = await getResp.text();
+                    throw new Error(`获取SHA失败 (${getResp.status}): ${errorText}`);
                 }
-                // 重试间隔：100ms（短间隔确保实时性）
-                await new Promise(resolve => setTimeout(resolve, 100));
+            } catch (error) {
+                console.error(`[获取SHA] 失败:`, error);
+                throw error;
             }
-            throw new Error(`获取 ${filename} 的 SHA 重试${retry}次失败`);
         };
 
-        // 辅助方法：核心写入逻辑（用于重试）
-        const coreWrite = async (currentSha) => {
+        // 主循环：带重试的写入
+        while (retryCount < maxRetries) {
             try {
-                // ========== 修复：改为直接覆盖策略 ==========
-                // 不再读取和合并远程数据，直接使用本地数据覆盖
-                let finalData = dataObj;
+                retryCount++;
+                console.log(`[写入尝试 ${retryCount}/${maxRetries}] ${filename}`);
                 
-                console.log(`[数据覆盖] ${filename} 将使用本地 ${Array.isArray(dataObj) ? dataObj.length : '对象'} 条数据直接覆盖远程数据`);
+                // 获取最新SHA
+                sha = await getLatestSHA();
                 
-                // 如果是数组，确保有id属性以便后续操作
-                if (Array.isArray(finalData)) {
-                    // 确保每个项目都有id（如果没有则生成）
-                    finalData = finalData.map((item, index) => {
-                        if (!item.id && item.id !== 0) {
-                            return { ...item, id: index + 1 };
-                        }
-                        return item;
-                    });
-                    
-                    // 按ID排序，保持一致性
-                    finalData.sort((a, b) => {
-                        if (a.id < b.id) return -1;
-                        if (a.id > b.id) return 1;
-                        return 0;
-                    });
-                }
-
-                // 编码内容（处理中文）
-                const jsonStr = JSON.stringify(finalData, null, 2);
+                // 准备提交数据
+                const jsonStr = JSON.stringify(dataObj, null, 2);
                 const content = btoa(unescape(encodeURIComponent(jsonStr)));
+                
+                const commitMessage = `portal: 更新 ${filename} (${new Date().toLocaleString('zh-CN')})`;
+                
                 const body = JSON.stringify({
-                    message: `portal: 直接覆盖 ${filename} (${new Date().toLocaleString('zh-CN')})`,
-                    content,
-                    sha: currentSha,
-                    branch: 'main' // 明确指定分支，避免默认分支不匹配
+                    message: commitMessage,
+                    content: content,
+                    sha: sha, // 如果为null表示创建新文件
+                    branch: 'main'
                 });
-
+                
+                console.log(`[写入请求] 正在提交 ${filename}...`);
+                
                 // 执行写入
                 const putResp = await fetch(url, {
                     method: 'PUT',
@@ -225,61 +202,52 @@ class GitHubIssuesManager {
                         'Content-Type': 'application/json',
                         'Accept': 'application/vnd.github.v3+json'
                     },
-                    body,
-                    cache: 'no-cache',
-                    signal: AbortSignal.timeout(5000) // 5秒超时
+                    body: body
                 });
-
-                if (!putResp.ok) {
-                    const errTxt = await putResp.text();
-                    // 捕获 409 冲突，抛出特定错误用于重试
-                    if (putResp.status === 409) {
-                        throw new Error(`[409冲突] ${filename} 的 SHA 已过期，需重新获取`);
+                
+                if (putResp.ok) {
+                    const result = await putResp.json();
+                    console.log(`✅ [写入成功] ${filename}`);
+                    return result;
+                } else {
+                    const errorText = await putResp.text();
+                    console.error(`[写入失败] 状态码: ${putResp.status}, 错误:`, errorText);
+                    
+                    // 如果是409冲突（SHA过期），等待后重试
+                    if (putResp.status === 409 && retryCount < maxRetries) {
+                        console.log(`[409冲突] SHA已过期，等待1秒后重试...`);
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        continue; // 继续下一次尝试
                     }
-                    throw new Error(`写入失败 ${putResp.status}: ${errTxt}`);
+                    
+                    // 如果是403，可能是权限问题
+                    if (putResp.status === 403) {
+                        throw new Error(`权限不足 (403)。请确保Token有"repo"权限，且仓库不是只读。详细信息: ${errorText}`);
+                    }
+                    
+                    // 如果是404，可能是路径问题
+                    if (putResp.status === 404) {
+                        throw new Error(`文件路径不存在 (404)。请确保data目录存在。`);
+                    }
+                    
+                    // 其他错误
+                    throw new Error(`GitHub API错误 (${putResp.status}): ${errorText}`);
                 }
-
-                const result = await putResp.json();
-                console.log(`[写入成功] ${filename} 新 SHA：${result.content.sha.slice(0,8)}...`);
-                return result;
             } catch (error) {
-                console.error(`[核心写入] 失败：${error.message}`);
-                throw error;
-            }
-        };
-
-        // 主逻辑：加锁 + 重试写入
-        try {
-            // 设置锁
-            this.writeLocks[fileLockKey] = true;
-            this.globalWriteLock = true;
-            
-            console.log(`[写入开始] ${filename}（最大重试${MAX_RETRY}次）`);
-
-            // 第一次获取 SHA 并写入
-            sha = await getLatestSHA();
-            try {
-                return await coreWrite(sha);
-            } catch (firstErr) {
-                // 若第一次失败且是 409 冲突，重试1次
-                if (firstErr.message.includes('[409冲突]') && MAX_RETRY > 1) {
-                    console.log(`[冲突重试] 第2次尝试写入 ${filename}...`);
-                    const newSha = await getLatestSHA(1); // 重新获取最新 SHA
-                    return await coreWrite(newSha);
+                lastError = error;
+                console.warn(`[写入失败，准备重试] ${filename}:`, error.message);
+                
+                if (retryCount >= maxRetries) {
+                    console.error(`❌ [写入最终失败] ${filename}:`, error);
+                    throw error;
                 }
-                throw firstErr; // 非冲突错误直接抛出
+                
+                // 等待后重试
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
-        } catch (finalErr) {
-            console.error(`[写入最终失败] ${filename}：${finalErr.message}`);
-            throw finalErr;
-        } finally {
-            // 释放锁（延迟释放确保安全）
-            setTimeout(() => {
-                delete this.writeLocks[fileLockKey];
-                this.globalWriteLock = false;
-                console.log(`[写入结束] ${filename}（锁已释放）`);
-            }, 2000);
         }
+        
+        throw new Error(`写入 ${filename} 失败，重试 ${maxRetries} 次后仍然失败: ${lastError?.message}`);
     }
 
     /* ========== 修改：读 JSON 文件（强化实时性） ========== */
@@ -374,7 +342,8 @@ class GitHubIssuesManager {
                     visibility: repoInfo.private ? 'private' : 'public',
                     name: repoInfo.full_name,
                     description: repoInfo.description,
-                    defaultBranch: repoInfo.default_branch // 新增：返回默认分支，避免分支不匹配
+                    defaultBranch: repoInfo.default_branch,
+                    permissions: repoInfo.permissions
                 };
                 console.log(`[仓库检查] 结果：${JSON.stringify(result)}`);
                 return result;
@@ -424,6 +393,56 @@ class GitHubIssuesManager {
             return {
                 exists: false,
                 error: error.message
+            };
+        }
+    }
+
+    /* ========== 新增：测试写入功能 ========== */
+    async testWriteFunction() {
+        console.log('=== 开始测试写入功能 ===');
+        
+        const testData = {
+            test: true,
+            message: '这是一个测试文件',
+            timestamp: new Date().toISOString(),
+            purpose: '测试GitHub写入功能是否正常'
+        };
+        
+        try {
+            console.log('1. 检查Token状态:', this.hasValidToken() ? '✅ 有效' : '❌ 无效');
+            
+            if (!this.hasValidToken()) {
+                return { success: false, error: 'Token无效' };
+            }
+            
+            console.log('2. 检查仓库连接...');
+            const repoInfo = await this.checkRepositoryVisibility();
+            console.log('仓库信息:', repoInfo);
+            
+            if (repoInfo.error) {
+                return { success: false, error: `仓库连接失败: ${repoInfo.error}` };
+            }
+            
+            console.log('3. 检查data目录...');
+            const dirInfo = await this.checkDataDirectory();
+            console.log('目录信息:', dirInfo);
+            
+            console.log('4. 测试写入文件...');
+            const result = await this.writeJsonFile('test-write.json', testData, 2);
+            
+            console.log('✅ 测试写入成功:', result);
+            return { 
+                success: true, 
+                message: '写入功能正常',
+                sha: result.content.sha.slice(0, 8) + '...'
+            };
+            
+        } catch (error) {
+            console.error('❌ 测试写入失败:', error);
+            return { 
+                success: false, 
+                error: error.message,
+                details: error
             };
         }
     }
