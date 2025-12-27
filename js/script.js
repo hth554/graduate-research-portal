@@ -300,7 +300,7 @@ function requestTokenForAdmin() {
         const trimmedToken = token.trim();
         if (!trimmedToken.startsWith('ghp_') && !trimmedToken.startsWith('github_pat_')) {
             alert('❌ Token 格式不正确！\n必须以 "ghp_" 或 "github_pat_" 开头。');
-            return;
+            return false;
         }
         
         if (window.githubIssuesManager.setToken(trimmedToken)) {
@@ -312,8 +312,10 @@ function requestTokenForAdmin() {
                 renderAllData();
                 showToast('已成功登录，现在可以编辑和同步数据', 'success');
             });
+            return true;
         }
     }
+    return false;
 }
 
 function clearAuthentication() {
@@ -426,65 +428,153 @@ function saveToLocalStorage() {
     }
 }
 
-// ========== 修复：串行保存到GitHub，避免并发冲突 ==========
+// ========== 修复：保存到GitHub（带详细错误处理和调试功能） ==========
 async function saveAllDataToGitHub() {
     if (isReadOnlyMode) { 
         showToast('游客模式不能保存数据到GitHub', 'warning'); 
         return false; 
     }
+    
     try {
-        if (!window.githubIssuesManager.hasValidToken()) {
+        // 检查Token
+        if (!window.githubIssuesManager || !window.githubIssuesManager.hasValidToken()) {
             showToast('需要GitHub Token才能保存数据', 'warning');
-            const success = await initializeGitHubToken();
-            if (!success) return false;
+            const tokenSuccess = await requestTokenForAdmin();
+            if (!tokenSuccess) return false;
         }
-
-        // 串行保存，避免并发冲突
-        const files = [
-            { filename: GITHUB_FILES.PROJECTS, data: projectsData },
-            { filename: GITHUB_FILES.ADVISORS, data: advisorsData },
-            { filename: GITHUB_FILES.STUDENTS, data: studentsData },
-            { filename: GITHUB_FILES.PUBLICATIONS, data: publicationsData },
-            { filename: GITHUB_FILES.UPDATES, data: updatesData }
-        ];
-
-        const results = {
-            success: [],
-            failed: []
-        };
-
+        
+        // 显示保存中提示
+        const saveToast = showToast('正在保存数据到GitHub...', 'info', 0); // 0表示不自动关闭
+        
+        // 检查仓库连接
+        try {
+            console.log('检查仓库连接...');
+            const repoInfo = await window.githubIssuesManager.checkRepositoryVisibility();
+            console.log('仓库信息:', repoInfo);
+            
+            if (!repoInfo.isPublic && repoInfo.permissions && !repoInfo.permissions.push) {
+                showToast('仓库权限不足，无法写入', 'error');
+                return false;
+            }
+        } catch (repoError) {
+            console.error('检查仓库失败:', repoError);
+            showToast(`无法连接GitHub仓库: ${repoError.message}`, 'error');
+            return false;
+        }
+        
+        // 检查data目录是否存在
+        try {
+            const dirInfo = await window.githubIssuesManager.checkDataDirectory();
+            console.log('data目录信息:', dirInfo);
+            
+            if (!dirInfo.exists) {
+                showToast('data目录不存在，将尝试创建文件...', 'warning');
+                // 如果目录不存在，第一个文件的写入会自动创建
+            }
+        } catch (dirError) {
+            console.log('检查目录时出错:', dirError);
+            // 继续尝试保存，可能目录不存在但可以创建文件
+        }
+        
         // 串行保存每个文件
-        for (const file of files) {
+        const filesToSave = [
+            { name: '课题', filename: GITHUB_FILES.PROJECTS, data: projectsData },
+            { name: '导师', filename: GITHUB_FILES.ADVISORS, data: advisorsData },
+            { name: '学生', filename: GITHUB_FILES.STUDENTS, data: studentsData },
+            { name: '学术成果', filename: GITHUB_FILES.PUBLICATIONS, data: publicationsData },
+            { name: '研究近况', filename: GITHUB_FILES.UPDATES, data: updatesData }
+        ];
+        
+        const results = [];
+        let successCount = 0;
+        let failCount = 0;
+        
+        // 更新保存进度提示
+        const updateProgress = (current, total) => {
+            if (saveToast && saveToast.querySelector('.toast-content span')) {
+                saveToast.querySelector('.toast-content span').textContent = 
+                    `正在保存数据到GitHub... (${current}/${total})`;
+            }
+        };
+        
+        for (let i = 0; i < filesToSave.length; i++) {
+            const file = filesToSave[i];
+            updateProgress(i + 1, filesToSave.length);
+            
             try {
-                debugLog(`正在保存 ${file.filename}...`);
-                await window.githubIssuesManager.writeJsonFile(file.filename, file.data);
-                results.success.push(file.filename);
-                debugLog(`✅ ${file.filename} 保存成功`);
-                showToast(`${file.filename} 保存成功`, 'success');
+                console.log(`正在保存 ${file.name} (${file.filename})...`);
                 
-                // 添加短暂延迟，避免GitHub API限制
-                if (file !== files[files.length - 1]) {
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                // 显示当前文件保存状态
+                showToast(`正在保存${file.name}...`, 'info', 2000);
+                
+                const result = await window.githubIssuesManager.writeJsonFile(file.filename, file.data);
+                results.push({
+                    filename: file.filename,
+                    success: true,
+                    sha: result.content.sha.slice(0, 8) + '...'
+                });
+                successCount++;
+                
+                console.log(`✅ ${file.filename} 保存成功，SHA: ${result.content.sha.slice(0, 8)}...`);
+                
+                // 文件间延迟，避免GitHub API限流
+                if (i < filesToSave.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 800));
                 }
-            } catch (error) {
-                debugError(`保存 ${file.filename} 失败:`, error);
-                results.failed.push({ filename: file.filename, error: error.message });
-                showToast(`${file.filename} 保存失败: ${error.message}`, 'error');
                 
-                // 如果是一个文件失败，继续保存其他文件
+            } catch (fileError) {
+                results.push({
+                    filename: file.filename,
+                    success: false,
+                    error: fileError.message
+                });
+                failCount++;
+                
+                console.error(`❌ 保存 ${file.filename} 失败:`, fileError);
+                
+                // 显示具体错误
+                const errorMsg = fileError.message.includes('权限不足') 
+                    ? `${file.name}保存失败: 权限不足，请检查Token权限`
+                    : `${file.name}保存失败: ${fileError.message.substring(0, 50)}...`;
+                
+                showToast(errorMsg, 'error', 3000);
+                
+                // 单个文件失败继续保存其他文件
                 continue;
             }
         }
-
-        if (results.failed.length > 0) {
-            debugError(`部分文件保存失败: ${results.failed.map(f => f.filename).join(', ')}`);
+        
+        // 关闭保存中提示
+        if (saveToast && saveToast.parentNode) {
+            saveToast.parentNode.removeChild(saveToast);
+        }
+        
+        // 统计结果显示
+        if (failCount === 0) {
+            showToast(`✅ 所有数据已成功保存到GitHub！`, 'success');
+            console.log('✅ 所有文件保存成功:', results);
+            return true;
+        } else if (successCount > 0) {
+            const failFiles = results.filter(r => !r.success).map(r => r.filename);
+            showToast(`部分保存成功 (${successCount}/${results.length})。失败的文件: ${failFiles.join(', ')}`, 'warning');
+            
+            // 显示详细错误信息
+            results.forEach(result => {
+                if (!result.success) {
+                    console.error(`文件 ${result.filename} 保存失败:`, result.error);
+                }
+            });
+            
+            return false;
+        } else {
+            showToast('所有文件保存失败，请检查网络连接和Token权限。', 'error');
+            console.error('所有文件保存失败:', results);
             return false;
         }
-
-        showToast('所有数据已同步到 GitHub', 'success');
-        return true;
+        
     } catch (error) {
-        showToast(`数据保存失败: ${error.message}`, 'error');
+        console.error('保存数据到GitHub失败:', error);
+        showToast(`保存失败: ${error.message}`, 'error');
         return false;
     }
 }
@@ -497,6 +587,94 @@ async function saveDataToGitHub(filename, data) {
     } catch (error) { 
         debugError(`保存数据到GitHub失败:`, error);
         return false; 
+    }
+}
+
+// ========== 新增：带持续时间的Toast函数 ==========
+function showToast(message, type = 'success', duration = 3000) {
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) existingToast.remove();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<div class="toast-content"><i class="fas fa-${getToastIcon(type)}"></i><span>${message}</span></div><button class="toast-close">&times;</button>`;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.classList.add('show'), 10);
+    
+    // 如果duration为0，则不自动关闭
+    if (duration > 0) {
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => { 
+                if (toast.parentNode) toast.parentNode.removeChild(toast); 
+            }, 300);
+        }, duration);
+    }
+    
+    toast.querySelector('.toast-close').addEventListener('click', () => {
+        toast.classList.remove('show');
+        setTimeout(() => { 
+            if (toast.parentNode) toast.parentNode.removeChild(toast); 
+        }, 300);
+    });
+    
+    return toast; // 返回toast元素以便后续操作
+}
+
+// ========== 新增：测试GitHub写入功能 ==========
+async function testGitHubWriteFunction() {
+    console.log('=== 开始测试GitHub写入功能 ===');
+    
+    if (!window.githubIssuesManager) {
+        alert('GitHubIssuesManager未加载');
+        return false;
+    }
+    
+    // 检查Token
+    if (!window.githubIssuesManager.hasValidToken()) {
+        showToast('请先设置GitHub Token', 'warning');
+        const tokenSuccess = await requestTokenForAdmin();
+        if (!tokenSuccess) return false;
+    }
+    
+    // 显示测试中提示
+    showToast('正在测试GitHub写入功能...', 'info');
+    
+    try {
+        const testResult = await window.githubIssuesManager.testWriteFunction();
+        
+        if (testResult.success) {
+            showToast('✅ GitHub写入功能测试成功！', 'success');
+            
+            // 显示详细结果
+            setTimeout(() => {
+                alert(`GitHub写入功能测试成功！\n\n` +
+                      `SHA: ${testResult.sha}\n` +
+                      `测试文件已创建: test-write.json\n\n` +
+                      `现在可以尝试保存数据了。`);
+            }, 500);
+            
+            return true;
+        } else {
+            showToast(`❌ 写入功能测试失败: ${testResult.error}`, 'error');
+            
+            // 显示详细错误
+            setTimeout(() => {
+                alert(`GitHub写入功能测试失败！\n\n` +
+                      `错误: ${testResult.error}\n\n` +
+                      `请检查：\n` +
+                      `1. Token是否有repo权限\n` +
+                      `2. 仓库是否可写入\n` +
+                      `3. 网络连接是否正常`);
+            }, 500);
+            
+            return false;
+        }
+    } catch (error) {
+        console.error('测试失败:', error);
+        showToast(`测试失败: ${error.message}`, 'error');
+        return false;
     }
 }
 
@@ -559,27 +737,6 @@ function formatDate(dateString) {
 function getCategoryName(category) {
     const categoryMap = { 'engineering': '工程科学', 'science': '自然科学', 'humanities': '人文社科', 'medical': '医学健康' };
     return categoryMap[category] || category;
-}
-
-function showToast(message, type = 'success') {
-    const existingToast = document.querySelector('.toast');
-    if (existingToast) existingToast.remove();
-    
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.innerHTML = `<div class="toast-content"><i class="fas fa-${getToastIcon(type)}"></i><span>${message}</span></div><button class="toast-close">&times;</button>`;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => toast.classList.add('show'), 10);
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
-    }, 3000);
-    
-    toast.querySelector('.toast-close').addEventListener('click', () => {
-        toast.classList.remove('show');
-        setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
-    });
 }
 
 function getToastIcon(type) {
@@ -1414,6 +1571,68 @@ function showEditUpdateForm(updateId = null) {
     setupModalClose(modal);
 }
 
+// ========== 新增：添加调试按钮到页面 ==========
+function addDebugTools() {
+    // 如果已有调试按钮，先移除
+    const existingDebugBtn = document.querySelector('.debug-tools');
+    if (existingDebugBtn) existingDebugBtn.remove();
+    
+    const debugContainer = document.createElement('div');
+    debugContainer.className = 'debug-tools';
+    debugContainer.style.cssText = `
+        position: fixed;
+        bottom: 150px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    `;
+    
+    // 测试写入按钮
+    const testWriteBtn = document.createElement('button');
+    testWriteBtn.className = 'btn btn-warning';
+    testWriteBtn.innerHTML = '<i class="fas fa-vial"></i> 测试写入功能';
+    testWriteBtn.title = '测试GitHub写入功能是否正常';
+    testWriteBtn.onclick = testGitHubWriteFunction;
+    
+    // 强制保存按钮
+    const forceSaveBtn = document.createElement('button');
+    forceSaveBtn.className = 'btn btn-danger';
+    forceSaveBtn.innerHTML = '<i class="fas fa-save"></i> 强制保存到GitHub';
+    forceSaveBtn.title = '强制保存所有数据到GitHub（忽略错误）';
+    forceSaveBtn.onclick = async () => {
+        if (confirm('确定要强制保存所有数据到GitHub吗？')) {
+            const success = await saveAllDataToGitHub();
+            if (success) {
+                showToast('强制保存成功！', 'success');
+            }
+        }
+    };
+    
+    // 检查Token按钮
+    const checkTokenBtn = document.createElement('button');
+    checkTokenBtn.className = 'btn btn-info';
+    checkTokenBtn.innerHTML = '<i class="fas fa-key"></i> 检查Token';
+    checkTokenBtn.title = '检查GitHub Token状态';
+    checkTokenBtn.onclick = () => {
+        if (window.githubIssuesManager) {
+            const hasToken = window.githubIssuesManager.hasValidToken();
+            alert(`GitHub Token状态: ${hasToken ? '✅ 有效' : '❌ 无效'}\n\n` +
+                  `Token: ${hasToken ? window.githubIssuesManager.token.substring(0, 10) + '...' : '未设置'}`);
+        }
+    };
+    
+    debugContainer.appendChild(testWriteBtn);
+    debugContainer.appendChild(forceSaveBtn);
+    debugContainer.appendChild(checkTokenBtn);
+    
+    // 仅在管理员模式下显示
+    if (isAuthenticated) {
+        document.body.appendChild(debugContainer);
+    }
+}
+
 // 管理面板
 function showAdminPanel() {
     if (isReadOnlyMode) { 
@@ -1450,6 +1669,7 @@ function showAdminPanel() {
                     <div class="tool-buttons">
                         <button class="btn btn-secondary" id="exportDataBtn"><i class="fas fa-download"></i> 导出数据</button>
                         <button class="btn btn-secondary" id="saveToGitHubBtn"><i class="fab fa-github"></i> 保存到GitHub</button>
+                        <button class="btn btn-warning" id="testGitHubBtn"><i class="fas fa-vial"></i> 测试GitHub写入</button>
                         <button class="btn btn-danger" id="resetDataBtn"><i class="fas fa-redo"></i> 重置为默认数据</button>
                         <button class="btn btn-warning" id="clearTokenBtn"><i class="fas fa-sign-out-alt"></i> 退出登录</button>
                     </div>
@@ -1485,6 +1705,10 @@ function showAdminPanel() {
     modal.querySelector('#saveToGitHubBtn').addEventListener('click', async () => { 
         const success = await saveAllDataToGitHub(); 
         if (success) showToast('数据已保存到GitHub', 'success'); 
+    });
+    modal.querySelector('#testGitHubBtn').addEventListener('click', async () => {
+        closeModal(modal);
+        await testGitHubWriteFunction();
     });
     modal.querySelector('#resetDataBtn').addEventListener('click', resetDataToDefault);
     modal.querySelector('#clearTokenBtn').addEventListener('click', () => { 
@@ -1866,6 +2090,11 @@ async function init() {
         // 监听管理员模式变化
         document.addEventListener('adminModeChanged', handleAdminModeChanged);
         
+        // 如果是管理员，添加调试工具
+        if (isAuthenticated) {
+            setTimeout(() => addDebugTools(), 1000);
+        }
+        
         debugLog('网站初始化完成');
         
     } catch (error) {
@@ -2070,5 +2299,12 @@ window.labWebsite = {
             return await window.dataManager.manualSync();
         }
         return false;
-    }
+    },
+
+    // ===== 新增：GitHub保存和测试函数 =====
+    saveAllDataToGitHub,          // 一次性保存全部数据
+    saveDataToGitHub,             // 单文件保存（保留兼容）
+    requestTokenForAdmin,         // 让管理面板也能触发登录
+    testGitHubWriteFunction,      // 测试GitHub写入功能
+    addDebugTools                 // 添加调试工具
 };
