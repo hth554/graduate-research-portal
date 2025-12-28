@@ -1573,64 +1573,8 @@ function showEditUpdateForm(updateId = null) {
 
 // ========== 新增：添加调试按钮到页面 ==========
 function addDebugTools() {
-    // 如果已有调试按钮，先移除
-    const existingDebugBtn = document.querySelector('.debug-tools');
-    if (existingDebugBtn) existingDebugBtn.remove();
+   
     
-    const debugContainer = document.createElement('div');
-    debugContainer.className = 'debug-tools';
-    debugContainer.style.cssText = `
-        position: fixed;
-        bottom: 150px;
-        right: 20px;
-        z-index: 9999;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    `;
-    
-    // 测试写入按钮
-    const testWriteBtn = document.createElement('button');
-    testWriteBtn.className = 'btn btn-warning';
-    testWriteBtn.innerHTML = '<i class="fas fa-vial"></i> 测试写入功能';
-    testWriteBtn.title = '测试GitHub写入功能是否正常';
-    testWriteBtn.onclick = testGitHubWriteFunction;
-    
-    // 强制保存按钮
-    const forceSaveBtn = document.createElement('button');
-    forceSaveBtn.className = 'btn btn-danger';
-    forceSaveBtn.innerHTML = '<i class="fas fa-save"></i> 强制保存到GitHub';
-    forceSaveBtn.title = '强制保存所有数据到GitHub（忽略错误）';
-    forceSaveBtn.onclick = async () => {
-        if (confirm('确定要强制保存所有数据到GitHub吗？')) {
-            const success = await saveAllDataToGitHub();
-            if (success) {
-                showToast('强制保存成功！', 'success');
-            }
-        }
-    };
-    
-    // 检查Token按钮
-    const checkTokenBtn = document.createElement('button');
-    checkTokenBtn.className = 'btn btn-info';
-    checkTokenBtn.innerHTML = '<i class="fas fa-key"></i> 检查Token';
-    checkTokenBtn.title = '检查GitHub Token状态';
-    checkTokenBtn.onclick = () => {
-        if (window.githubIssuesManager) {
-            const hasToken = window.githubIssuesManager.hasValidToken();
-            alert(`GitHub Token状态: ${hasToken ? '✅ 有效' : '❌ 无效'}\n\n` +
-                  `Token: ${hasToken ? window.githubIssuesManager.token.substring(0, 10) + '...' : '未设置'}`);
-        }
-    };
-    
-    debugContainer.appendChild(testWriteBtn);
-    debugContainer.appendChild(forceSaveBtn);
-    debugContainer.appendChild(checkTokenBtn);
-    
-    // 仅在管理员模式下显示
-    if (isAuthenticated) {
-        document.body.appendChild(debugContainer);
-    }
 }
 
 // 管理面板
