@@ -762,7 +762,7 @@ function updateDataSourceHint(sourceType) {
         hintElement.textContent = `⚪ 缓存数据 (更新于 ${timeString})`;
         hintElement.className = 'data-source-hint cached';
     } else {
-        hintElement.textContent = `📋 示例数据 (更新于 ${timeString})`;
+        hintElement.textContent = `📋  (更新于 ${timeString})`;
         hintElement.className = 'data-source-hint default';
     }
 }
