@@ -6,7 +6,10 @@
     "description": "本课题聚焦人工智能大模型与 GEMS 模型的融合应用，以海南区域为核心研究场景，围绕海洋动力、森林生态两大领域，构建 “模型运行 - AI 部署 - 数据同化 - 实地验证” 的全流程技术体系。",
     "advisor": "刘曙光教授",
     "status": "进行中",
-    "student": ""
+    "student": ""，
+    "image": "https://s41.ax1x.com/2025/12/29/pZtP2RA.png", 
+    "createdAt": "2025-12-25", 
+    "updatedAt": "2025-12-29" 
   },
   {
     "id": 2,
