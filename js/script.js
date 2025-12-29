@@ -1194,11 +1194,11 @@ function showEditProjectForm(projectId = null) {
                     <div class="form-group"><label for="editTitle">课题标题 *</label><input type="text" id="editTitle" value="${project.title}" required></div>
                     <div class="form-group"><label for="editCategory">分类 *</label>
                         <select id="editCategory" required>
-                            <option value="science" ${project.category === 'ai_model' ? 'selected' : ''}>人工智能与大模型</option>
-                            <option value="engineering" ${project.category === 'eco_remote_sensing' ? 'selected' : ''}>生态遥感</option>
-                            <option value="medical" ${project.category === 'urban_ecology' ? 'selected' : ''}>城市生态</option>
-                            <option value="humanities" ${project.category === 'betel_nut_yellowing' ? 'selected' : ''}>槟榔黄化病</option>
-                            <option value="medical" ${project.category === 'eco_process' ? 'selected' : ''}>生态过程</option>
+                            <option value="ai_model" ${project.category === 'ai_model' ? 'selected' : ''}>人工智能与大模型</option>
+                            <option value="eco_remote_sensing" ${project.category === 'eco_remote_sensing' ? 'selected' : ''}>生态遥感</option>
+                            <option value="urban_ecology" ${project.category === 'urban_ecology' ? 'selected' : ''}>城市生态</option>
+                            <option value="betel_nut_yellowing" ${project.category === 'betel_nut_yellowing' ? 'selected' : ''}>槟榔黄化病</option>
+                            <option value="eco_process" ${project.category === 'eco_process' ? 'selected' : ''}>生态过程</option>
                         </select>
                     </div>
                     <div class="form-group"><label for="editDescription">描述 *</label><textarea id="editDescription" rows="4" required>${project.description}</textarea></div>
