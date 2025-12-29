@@ -735,7 +735,13 @@ function formatDate(dateString) {
 }
 
 function getCategoryName(category) {
-    const categoryMap = { 'engineering': '工程科学', 'science': '自然科学', 'humanities': '人文社科', 'medical': '医学健康' };
+    const categoryMap = { 
+        'ai_model': '人工智能与大模型',
+        'eco_remote_sensing': '生态遥感',
+        'urban_ecology': '城市生态',
+        'betel_nut_yellowing': '槟榔黄化病',
+        'eco_process': '生态过程'
+    };
     return categoryMap[category] || category;
 }
 
@@ -1188,10 +1194,11 @@ function showEditProjectForm(projectId = null) {
                     <div class="form-group"><label for="editTitle">课题标题 *</label><input type="text" id="editTitle" value="${project.title}" required></div>
                     <div class="form-group"><label for="editCategory">分类 *</label>
                         <select id="editCategory" required>
-                            <option value="science" ${project.category === 'science' ? 'selected' : ''}>自然科学</option>
-                            <option value="engineering" ${project.category === 'engineering' ? 'selected' : ''}>工程科学</option>
-                            <option value="medical" ${project.category === 'medical' ? 'selected' : ''}>医学健康</option>
-                            <option value="humanities" ${project.category === 'humanities' ? 'selected' : ''}>人文社科</option>
+                            <option value="science" ${project.category === 'ai_model' ? 'selected' : ''}>人工智能与大模型</option>
+                            <option value="engineering" ${project.category === 'eco_remote_sensing' ? 'selected' : ''}>生态遥感</option>
+                            <option value="medical" ${project.category === 'urban_ecology' ? 'selected' : ''}>城市生态</option>
+                            <option value="humanities" ${project.category === 'betel_nut_yellowing' ? 'selected' : ''}>槟榔黄化病</option>
+                            <option value="medical" ${project.category === 'eco_process' ? 'selected' : ''}>生态过程</option>
                         </select>
                     </div>
                     <div class="form-group"><label for="editDescription">描述 *</label><textarea id="editDescription" rows="4" required>${project.description}</textarea></div>
