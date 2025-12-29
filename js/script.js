@@ -975,7 +975,7 @@ function renderProjects(filter = 'all') {
             <div class="project-image">
                 <img src="${project.image}" alt="${project.title}" loading="lazy">
                 <div class="project-status-tag" style="background-color: ${statusColor}20; color: ${statusColor}">${project.status}</div>
-                ${dataSourceInfo.type === 'default' ? '<div class="readonly-badge"></div>' : ''}
+               
             </div>
             <div class="project-content">
                 <span class="project-category">${getCategoryName(project.category)}</span>
@@ -1018,7 +1018,7 @@ function renderAdvisors() {
         advisorCard.className = 'advisor-card';
         advisorCard.setAttribute('data-id', advisor.id);
         advisorCard.innerHTML = `
-            <div class="advisor-avatar"><img src="${advisor.avatar}" alt="${advisor.name}" loading="lazy">${dataSourceInfo.type === 'default' ? '<div class="readonly-badge"></div>' : ''}</div>
+            <div class="advisor-avatar"><img src="${advisor.avatar}" alt="${advisor.name}" loading="lazy"></div>
             <h3 class="advisor-name">${advisor.name}</h3><p class="advisor-title">${advisor.title}</p><p class="advisor-field">${advisor.field}</p>
             <p class="advisor-bio">${advisor.bio}</p>
             <div class="advisor-contact">
@@ -1051,7 +1051,7 @@ function renderStudents() {
         studentCard.className = 'student-card';
         studentCard.setAttribute('data-id', student.id);
         studentCard.innerHTML = `
-            <div class="student-avatar"><img src="${student.avatar}" alt="${student.name}" loading="lazy">${dataSourceInfo.type === 'default' ? '<div class="readonly-badge"></div>' : ''}</div>
+            <div class="student-avatar"><img src="${student.avatar}" alt="${student.name}" loading="lazy"></div>
             <h3 class="student-name">${student.name}</h3><p class="student-degree">${student.degree}</p><p class="student-field">${student.field}</p>
             <p class="student-supervisor"><i class="fas fa-user-tie"></i><span>${student.supervisor}</span></p>
             <p class="student-research">${student.research}</p>
@@ -1087,7 +1087,7 @@ function renderPublications() {
         publicationCard.innerHTML = `
             <div class="publication-header">
                 <span class="publication-type" style="background-color: ${typeColor}20; color: ${typeColor}">${publication.type}</span>
-                ${dataSourceInfo.type === 'default' ? '<span class="readonly-badge"></span>' : ''}
+               
                 <h3 class="publication-title">${publication.title}</h3>
                 <p class="publication-authors"><i class="fas fa-users"></i>${publication.authors}</p>
                 <p class="publication-venue"><i class="fas fa-book"></i>${publication.venue}</p>
@@ -1134,7 +1134,7 @@ function renderUpdates() {
             <div class="update-header">
                 <div class="update-date-wrapper">
                     <span class="update-date" style="background-color: ${typeColor}20; color: ${typeColor}">${formatDate(update.date)}</span>
-                    ${dataSourceInfo.type === 'default' ? '<span class="readonly-badge"></span>' : ''}
+                   
                     <span class="update-type" style="color: ${typeColor}">${update.type}</span>
                 </div>
                 <h3 class="update-title">${update.title}</h3>
