@@ -695,7 +695,7 @@ function getDefaultAdvisors() {
         { id: 1, name: "刘曙光", title: "教授，硕士/博士生导师", field: "碳循环、水循环、生态系统功能和服务", bio: "国家海外引进高级人才、中组部 '千人计划' 入选者，与中科院合作证实成熟森林土壤可累积碳，推翻经典理论，成果发表于《SCIENCE》并入选 '中国科学10大进展'；研发 GEMS 生物地球化学循环模型、SkyCenterESM 生态系统服务核算模型，主导完成美国全域生态系统固碳与减排潜力评估。", avatar: "https://s41.ax1x.com/2025/12/14/pZMqFfI.png", email: "shuguang.liu@hainanu.edu.cn", website: "https://ecology.hainanu.edu.cn/info/1121/5440.html", createdAt: "2022-01-10", updatedAt: "2023-10-20" },
         { id: 2, name: "赵淑清", title: "教授，硕士/博士生导师", field: "城市生态学", bio: "创新性建立了城市化对植被生长影响的理论与定量方法，在 PNAS 发文证实城市环境对植被生长的普遍促进作用，该成果被学界广泛验证应用；提出解释城市化生物多样性梯度的 '热促进和胁迫平衡假说'，构建了我国城市生态系统有机碳储量评估体系，还搭建了北京城乡生态梯度长期研究平台（BES）。", avatar: "https://s41.ax1x.com/2025/12/14/pZMqApt.png", email: "shuqing.zhao@hainanu.edu.cn", website: "https://ecology.hainanu.edu.cn/info/1121/5450.htm", createdAt: "2022-02-15", updatedAt: "2023-09-15" },
         { id: 3, name: "周德成", title: "教授，硕士/博士生导师", field: "城市气象与生态", bio: "海南大学生态学院副教授，曾赴美国地质调查局、农业部林务局等机构任高级访问学者。其核心研究方向为城市气象与生态、全球变化遥感及生态系统模拟，尤聚焦快速城市化热环境效应，目前主持国家自然科学基金面上项目等多项课题。", avatar: "https://s41.ax1x.com/2025/12/14/pZMqn0g.png", email: "decheng.zhou@hainanu.edu.cn", website: "https://ecology.hainanu.edu.cn/info/1121/10520.html", createdAt: "2021-11-20", updatedAt: "2023-08-25" },
-        { id: 4, name: "郑艺", title: "教授，硕士/博士生导师", field: "金融工程，人工智能", bio: "上海交通大学安泰经济与管理学院教授，研究方向为金融科技、风险管理与人工智能，主持国家自然科学基金重点项目3项，出版专著5部。", avatar: "", email: "", website: "", createdAt: "2022-03-05", updatedAt: "2023-10-05" }
+        { id: 4, name: "郑艺", title: "教授，硕士/博士生导师", field: "", bio: "", avatar: "", email: "", website: "", createdAt: "2022-03-05", updatedAt: "2023-10-05" }
     ];
 }
         
