@@ -2,7 +2,7 @@
   {
     "id": 1,
     "title": "人工智能驱动的 GEMS 模型部署、验证与应用",
-    "category": "AI_model",
+    "category": "ai_model",
     "description": "本课题聚焦人工智能大模型与 GEMS 模型的融合应用，以海南区域为核心研究场景，围绕海洋动力、森林生态两大领域，构建 “模型运行 - AI 部署 - 数据同化 - 实地验证” 的全流程技术体系。",
     "advisor": "刘曙光教授",
     "status": "进行中",
