@@ -409,3 +409,176 @@ body.dark-mode .btn-edit:disabled::after { color: #b0bec5; }
     .container { max-width: 100% !important; }
     body { background: white !important; color: black !important; }
 }
+/* ========== 模态框样式（追加到 style.css 末尾） ========== */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: var(--light-color);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 85vh;
+    overflow-y: auto;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal.show .modal-content {
+    transform: translateY(0);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: var(--dark-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: var(--gray-color);
+    transition: color 0.2s;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: var(--error-color);
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-image {
+    width: 100%;
+    height: 250px;
+    overflow: hidden;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.modal-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.modal-info p {
+    margin-bottom: 12px;
+    line-height: 1.6;
+}
+
+.modal-info strong {
+    color: var(--dark-color);
+    min-width: 100px;
+    display: inline-block;
+}
+
+/* 模态框内表单样式 */
+.modal .form-group {
+    margin-bottom: 20px;
+}
+
+.modal .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+.modal .form-group input,
+.modal .form-group textarea,
+.modal .form-group select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid var(--light-gray);
+    border-radius: 8px;
+    font-size: 1rem;
+    background: var(--light-color);
+    color: var(--primary-color);
+    transition: var(--transition);
+}
+
+.modal .form-group input:focus,
+.modal .form-group textarea:focus,
+.modal .form-group select:focus {
+    border-color: var(--secondary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.modal .form-row {
+    display: flex;
+    gap: 20px;
+}
+
+.modal .form-row .form-group {
+    flex: 1;
+}
+
+.modal .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 25px;
+    justify-content: flex-end;
+}
+
+.modal .btn-danger {
+    background-color: var(--error-color);
+    color: white;
+    border: none;
+}
+
+.modal .btn-danger:hover {
+    background-color: #c0392b;
+}
+
+/* 深色模式适配 */
+body.dark-mode .modal-content {
+    background: #2c3e50;
+}
+
+body.dark-mode .modal-header {
+    border-bottom-color: #34495e;
+}
+
+body.dark-mode .modal .form-group input,
+body.dark-mode .modal .form-group textarea,
+body.dark-mode .modal .form-group select {
+    background: #34495e;
+    border-color: #4a6278;
+    color: #ecf0f1;
+}
