@@ -216,9 +216,13 @@ class ModalManager {
         if (isEdit) {
             modal.querySelector('.delete-btn').addEventListener('click', async () => {
                 if (confirm('确定删除此课题？')) {
-                    await DataService.deleteItem('projects', projectId);
-                    Toast.success('课题已删除');
-                    this.closeModal();
+                    try {
+                        await DataService.deleteItem('projects', projectId);
+                        Toast.success('课题已删除');
+                        this.closeModal();
+                    } catch (error) {
+                        Toast.error(`删除失败: ${error.message}`);
+                    }
                 }
             });
         }
@@ -236,14 +240,18 @@ class ModalManager {
                 image: formData.get('image') || 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=500'
             };
 
-            if (isEdit) {
-                await DataService.updateItem('projects', projectId, data);
-                Toast.success('课题已更新');
-            } else {
-                await DataService.addItem('projects', data);
-                Toast.success('课题已添加');
+            try {
+                if (isEdit) {
+                    await DataService.updateItem('projects', projectId, data);
+                    Toast.success('课题已更新');
+                } else {
+                    await DataService.addItem('projects', data);
+                    Toast.success('课题已添加');
+                }
+                this.closeModal();
+            } catch (error) {
+                Toast.error(`保存失败: ${error.message}`);
             }
-            this.closeModal();
         });
     }
 
@@ -312,9 +320,13 @@ class ModalManager {
         if (isEdit) {
             modal.querySelector('.delete-btn').addEventListener('click', async () => {
                 if (confirm('确定删除此导师？')) {
-                    await DataService.deleteItem('advisors', advisorId);
-                    Toast.success('导师已删除');
-                    this.closeModal();
+                    try {
+                        await DataService.deleteItem('advisors', advisorId);
+                        Toast.success('导师已删除');
+                        this.closeModal();
+                    } catch (error) {
+                        Toast.error(`删除失败: ${error.message}`);
+                    }
                 }
             });
         }
@@ -325,14 +337,18 @@ class ModalManager {
             const data = Object.fromEntries(formData.entries());
             data.avatar = data.avatar || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=200';
 
-            if (isEdit) {
-                await DataService.updateItem('advisors', advisorId, data);
-                Toast.success('导师信息已更新');
-            } else {
-                await DataService.addItem('advisors', data);
-                Toast.success('导师已添加');
+            try {
+                if (isEdit) {
+                    await DataService.updateItem('advisors', advisorId, data);
+                    Toast.success('导师信息已更新');
+                } else {
+                    await DataService.addItem('advisors', data);
+                    Toast.success('导师已添加');
+                }
+                this.closeModal();
+            } catch (error) {
+                Toast.error(`保存失败: ${error.message}`);
             }
-            this.closeModal();
         });
     }
 
@@ -413,9 +429,13 @@ class ModalManager {
         if (isEdit) {
             modal.querySelector('.delete-btn').addEventListener('click', async () => {
                 if (confirm('确定删除此学生？')) {
-                    await DataService.deleteItem('students', studentId);
-                    Toast.success('学生已删除');
-                    this.closeModal();
+                    try {
+                        await DataService.deleteItem('students', studentId);
+                        Toast.success('学生已删除');
+                        this.closeModal();
+                    } catch (error) {
+                        Toast.error(`删除失败: ${error.message}`);
+                    }
                 }
             });
         }
@@ -426,14 +446,18 @@ class ModalManager {
             const data = Object.fromEntries(formData.entries());
             data.avatar = data.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200';
 
-            if (isEdit) {
-                await DataService.updateItem('students', studentId, data);
-                Toast.success('学生信息已更新');
-            } else {
-                await DataService.addItem('students', data);
-                Toast.success('学生已添加');
+            try {
+                if (isEdit) {
+                    await DataService.updateItem('students', studentId, data);
+                    Toast.success('学生信息已更新');
+                } else {
+                    await DataService.addItem('students', data);
+                    Toast.success('学生已添加');
+                }
+                this.closeModal();
+            } catch (error) {
+                Toast.error(`保存失败: ${error.message}`);
             }
-            this.closeModal();
         });
     }
 
@@ -504,9 +528,13 @@ class ModalManager {
         if (isEdit) {
             modal.querySelector('.delete-btn').addEventListener('click', async () => {
                 if (confirm('确定删除此成果？')) {
-                    await DataService.deleteItem('publications', pubId);
-                    Toast.success('成果已删除');
-                    this.closeModal();
+                    try {
+                        await DataService.deleteItem('publications', pubId);
+                        Toast.success('成果已删除');
+                        this.closeModal();
+                    } catch (error) {
+                        Toast.error(`删除失败: ${error.message}`);
+                    }
                 }
             });
         }
@@ -516,14 +544,18 @@ class ModalManager {
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
 
-            if (isEdit) {
-                await DataService.updateItem('publications', pubId, data);
-                Toast.success('成果已更新');
-            } else {
-                await DataService.addItem('publications', data);
-                Toast.success('成果已添加');
+            try {
+                if (isEdit) {
+                    await DataService.updateItem('publications', pubId, data);
+                    Toast.success('成果已更新');
+                } else {
+                    await DataService.addItem('publications', data);
+                    Toast.success('成果已添加');
+                }
+                this.closeModal();
+            } catch (error) {
+                Toast.error(`保存失败: ${error.message}`);
             }
-            this.closeModal();
         });
     }
 
@@ -588,9 +620,13 @@ class ModalManager {
         if (isEdit) {
             modal.querySelector('.delete-btn').addEventListener('click', async () => {
                 if (confirm('确定删除此近况？')) {
-                    await DataService.deleteItem('updates', updateId);
-                    Toast.success('近况已删除');
-                    this.closeModal();
+                    try {
+                        await DataService.deleteItem('updates', updateId);
+                        Toast.success('近况已删除');
+                        this.closeModal();
+                    } catch (error) {
+                        Toast.error(`删除失败: ${error.message}`);
+                    }
                 }
             });
         }
@@ -603,14 +639,18 @@ class ModalManager {
             const selectedProject = projects.find(p => p.title === data.project);
             data.projectId = selectedProject ? selectedProject.id : null;
 
-            if (isEdit) {
-                await DataService.updateItem('updates', updateId, data);
-                Toast.success('近况已更新');
-            } else {
-                await DataService.addItem('updates', data);
-                Toast.success('近况已添加');
+            try {
+                if (isEdit) {
+                    await DataService.updateItem('updates', updateId, data);
+                    Toast.success('近况已更新');
+                } else {
+                    await DataService.addItem('updates', data);
+                    Toast.success('近况已添加');
+                }
+                this.closeModal();
+            } catch (error) {
+                Toast.error(`保存失败: ${error.message}`);
             }
-            this.closeModal();
         });
     }
 
