@@ -15,7 +15,7 @@
   },
   {
     "id": 2,
-    "name": "王芳",
+    "name": "1",
     "degree": "硕士研究生",
     "field": "电气工程",
     "supervisor": "李华教授",
@@ -24,7 +24,7 @@
     "email": "wangfang@example.com",
     "github": "https://github.com/wangfang",
     "createdAt": "2023-03-10",
-    "updatedAt": "2023-09-20",
+    "updatedAt": "2026-04-15",
     "isDefault": true
   },
   {
