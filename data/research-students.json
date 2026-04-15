@@ -15,16 +15,16 @@
   },
   {
     "id": 2,
-    "name": "王芳",
-    "degree": "硕士研究生",
+    "name": "王",
+    "degree": "博士后",
     "field": "电气工程",
-    "supervisor": "李华教授",
+    "supervisor": "1",
     "research": "研究方向为智能电网优化控制，主要研究可再生能源微电网的调度策略与稳定性分析。",
     "avatar": "https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
     "email": "wangfang@example.com",
     "github": "https://github.com/wangfang",
     "createdAt": "2023-03-10",
-    "updatedAt": "2023-09-20",
+    "updatedAt": "2026-04-15",
     "isDefault": true
   },
   {
