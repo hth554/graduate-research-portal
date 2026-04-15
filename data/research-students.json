@@ -40,19 +40,5 @@
     "createdAt": "2021-11-15",
     "updatedAt": "2023-08-30",
     "isDefault": true
-  },
-  {
-    "id": 4,
-    "name": "刘洋",
-    "degree": "硕士研究生",
-    "field": "金融工程",
-    "supervisor": "赵伟教授",
-    "research": "研究方向为金融科技与风险管理，主要研究基于深度学习的金融市场预测模型。",
-    "avatar": "https://images.unsplash.com/photo-1507591064344-4c6ce005b128?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-    "email": "liuyang@example.com",
-    "github": "https://github.com/liuyang",
-    "createdAt": "2023-02-20",
-    "updatedAt": "2023-10-10",
-    "isDefault": true
   }
 ]
