@@ -352,14 +352,14 @@ class ModalManager {
         });
     }
 
-    // ========== 学生编辑 ==========
+    // ========== 学生编辑（已移除 GitHub 输入框） ==========
 
     showStudentEditor(studentId = null) {
         const students = DataService.getData('students');
         const student = studentId ? students.find(s => s.id == studentId) : {
             name: '', degree: '硕士研究生', field: '', supervisor: '', research: '',
             avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
-            email: '', github: ''
+            email: ''
         };
         const isEdit = !!studentId;
 
@@ -398,15 +398,9 @@ class ModalManager {
                         <label>研究方向 *</label>
                         <textarea name="research" rows="3" required>${this.escapeHtml(student.research)}</textarea>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>邮箱</label>
-                            <input type="email" name="email" value="${this.escapeHtml(student.email || '')}">
-                        </div>
-                        <div class="form-group">
-                            <label>GitHub</label>
-                            <input type="url" name="github" value="${this.escapeHtml(student.github || '')}">
-                        </div>
+                    <div class="form-group">
+                        <label>邮箱</label>
+                        <input type="email" name="email" value="${this.escapeHtml(student.email || '')}">
                     </div>
                     <div class="form-group">
                         <label>头像 URL</label>
