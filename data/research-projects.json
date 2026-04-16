@@ -33,18 +33,6 @@
     "statusType": "preparation",
     "status": "筹备中",
     "image": "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=500",
-    "id": 3,
-    "createdAt": "2026-04-16",
-    "updatedAt": "2026-04-16"
-  },
-  {
-    "title": "q'q",
-    "category": "ai_model",
-    "description": "q'q",
-    "advisor": "q'q",
-    "statusType": "preparation",
-    "status": "筹备中",
-    "image": "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=500",
     "id": 4,
     "createdAt": "2026-04-16",
     "updatedAt": "2026-04-16"
