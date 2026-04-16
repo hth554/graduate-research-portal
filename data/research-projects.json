@@ -48,17 +48,5 @@
     "id": 4,
     "createdAt": "2026-04-16",
     "updatedAt": "2026-04-16"
-  },
-  {
-    "title": "11",
-    "category": "ai_model",
-    "description": "11",
-    "advisor": "11",
-    "statusType": "preparation",
-    "status": "筹备中",
-    "image": "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=500",
-    "id": 5,
-    "createdAt": "2026-04-16",
-    "updatedAt": "2026-04-16"
   }
 ]
