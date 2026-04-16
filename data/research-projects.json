@@ -26,46 +26,13 @@
     "updatedAt": "2025-12-29"
   },
   {
-    "title": "测试项目_1776330512933",
+    "title": "测试项目_1776330515036",
     "category": "science",
     "description": "这是一个自动化测试项目，验证写入功能",
     "advisor": "测试导师",
     "statusType": "preparation",
     "image": "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=500",
     "id": 3,
-    "createdAt": "2026-04-16",
-    "updatedAt": "2026-04-16"
-  },
-  {
-    "title": "测试项目_1776330513008",
-    "category": "science",
-    "description": "这是一个自动化测试项目，验证写入功能",
-    "advisor": "测试导师",
-    "statusType": "preparation",
-    "image": "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=500",
-    "id": 4,
-    "createdAt": "2026-04-16",
-    "updatedAt": "2026-04-16"
-  },
-  {
-    "title": "测试项目_1776330513080",
-    "category": "science",
-    "description": "这是一个自动化测试项目，验证写入功能",
-    "advisor": "测试导师",
-    "statusType": "preparation",
-    "image": "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=500",
-    "id": 5,
-    "createdAt": "2026-04-16",
-    "updatedAt": "2026-04-16"
-  },
-  {
-    "title": "测试项目_1776330513149",
-    "category": "science",
-    "description": "这是一个自动化测试项目，验证写入功能",
-    "advisor": "测试导师",
-    "statusType": "preparation",
-    "image": "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=500",
-    "id": 6,
     "createdAt": "2026-04-16",
     "updatedAt": "2026-04-16"
   }
