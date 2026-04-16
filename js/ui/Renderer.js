@@ -416,7 +416,6 @@ class Renderer {
                 <p class="student-research">${this.escapeHtml(this.truncate(student.research, 100))}</p>
                 <div class="student-contact">
                     ${student.email ? `<a href="mailto:${student.email}"><i class="fas fa-envelope"></i></a>` : ''}
-                    ${student.github ? `<a href="${student.github}" target="_blank"><i class="fab fa-github"></i></a>` : ''}
                     ${hasToken ? `
                         <button data-edit-type="student" data-id="${student.id}" style="background:none;border:none;cursor:pointer;" title="编辑学生">
                             <i class="fas fa-edit"></i>
