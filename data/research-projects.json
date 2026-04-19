@@ -35,5 +35,17 @@
     "id": 3,
     "createdAt": "2026-04-19",
     "updatedAt": "2026-04-19"
+  },
+  {
+    "title": "生态系统水分利用效率对城市化的响应",
+    "category": "urban_ecology",
+    "description": "生态系统水分利用效率对城市化的响应",
+    "advisor": "赵淑清",
+    "statusType": "in-progress",
+    "status": "进行中",
+    "image": "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=500",
+    "id": 4,
+    "createdAt": "2026-04-19",
+    "updatedAt": "2026-04-19"
   }
 ]
