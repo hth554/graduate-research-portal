@@ -23,5 +23,17 @@
     "id": 2,
     "createdAt": "2026-04-19",
     "updatedAt": "2026-04-19"
+  },
+  {
+    "title": "城市化对土壤微生物功能多样性及生态系统多功能性的影响机制",
+    "category": "urban_ecology",
+    "description": "城市化对土壤微生物功能多样性及生态系统多功能性的影响机制",
+    "advisor": "刘曙光教授",
+    "statusType": "in-progress",
+    "status": "进行中",
+    "image": "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=500",
+    "id": 3,
+    "createdAt": "2026-04-19",
+    "updatedAt": "2026-04-19"
   }
 ]
