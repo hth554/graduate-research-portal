@@ -58,5 +58,17 @@
     "id": 5,
     "createdAt": "2026-05-24",
     "updatedAt": "2026-05-24"
+  },
+  {
+    "type": "期刊论文",
+    "title": "Comparison of multiple satellite-derived products for assessing vegetation productivity and evapotranspiration in Nepal: Toward understanding carbon and water coupling in a mountainous region",
+    "authors": "Jiaxin Song, Decheng Zhou, Lu Hao, Jingfeng Xiao, Xing Li, Liangxia Zhang, Ge Sun",
+    "venue": "Forest Ecosystems, 15, 100423 (2026)",
+    "abstract": "Mountain ecosystems are highly sensitive to climate change, as they regulate carbon–water dynamics that underpin critical ecosystem services. Satellite remote sensing serves as a powerful tool for large-scale monitoring in mountainous regions where ground-based measurements are scarce. However, it remains unclear how satellite-derived gross primary productivity (GPP) and evapotranspiration (ET) vary with elevation and the magnitude of discrepancies across different datasets. This case study focuses on Nepal to systematically investigate the spatiotemporal consistency of six GPP products (EC-LUE, GOSIF, MODIS, MuSyQ, PML_v2, and VPM) and three ET products (ETMonitor, MODIS, and PML_v2) during 2001–2016, with validation against eddy covariance flux measurements. Our results indicate that no single dataset outperforms others across all elevational gradients. Based on the relatively superior datasets (VPM for GPP and PML_v2 for ET), we reveal a strong elevation dependence of GPP, ET, and water use efficiency (WUE = GPP/ET): The highest multi-year mean values are observed in lowland regions (<200 m), and the greatest interannual variability occurs in midland zones (1,000–3,000 m). Across most datasets, GPP and ET exhibit consistent upward trends, accompanied by a concurrent decline in WUE. Notably, at the pixel scale, only 11.2%, 33.3%, and 0.5% of terrestrial areas show consistent long-term trends in GPP, ET, and WUE, respectively. Such inconsistencies significantly hinder efforts to elucidate carbon–water coupling processes in mountainous ecosystems. Our findings indicate that sustained increases in vegetation productivity may exacerbate hydrological water loss in Nepal, while also underscoring the urgent need for targeted improvements to satellite-derived products.",
+    "doi": "10.1016/j.fecs.2026.100423",
+    "link": "https://doi.org/10.1016/j.fecs.2026.100423",
+    "id": 6,
+    "createdAt": "2026-05-24",
+    "updatedAt": "2026-05-24"
   }
 ]
