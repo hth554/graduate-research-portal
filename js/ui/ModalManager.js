@@ -563,7 +563,7 @@ class ModalManager {
         };
         const isEdit = !!updateId;
 
-        const updateTypes = ['项目进展', '学术活动', '科研资助', '技术转化', '学生荣誉', '产学研合作'];
+        const updateTypes = ['项目进展', '学术活动', '科研资助', '团建活动', '荣誉', '产学研合作'];
 
         const content = `
             <div class="modal-header">
