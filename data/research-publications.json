@@ -46,5 +46,17 @@
     "id": 4,
     "createdAt": "2026-05-24",
     "updatedAt": "2026-05-24"
+  },
+  {
+    "type": "期刊论文",
+    "title": "Tree size-dependent effects of tree diversity on aboveground biomass during development in subtropical coniferous forests",
+    "authors": "Yu Zhu, Chen Wang, Jiajia Wang, Quanlin Li, Liangjun Zhu, Meifang Zhao, Fei Gao, Zhao Wang, Shuguang Liu",
+    "venue": "Carbon Balance and Management, 21, 36 (2026)",
+    "abstract": "The biodiversity and ecosystem functioning (BEF) relationships can offer insights for management of forest plantations. Most evidences on BEF relationships from field observations and experiments focus on short-term (≤ 50 years) forest development. However, how tree diversity and aboveground biomass co-evolve during long-term development remain poorly understood. Addressing this knowledge gap can improve the diversity-based management for long-term forest carbon sequestration. We employed a process-based Ecosystem Demography model (ED-2.2) to simulate three categories of forest attributes over approximately one century (2004–2100) in subtropical coniferous forests in China. These included: (1) three plant functional type (PFT) diversity metrics (Simpson, Shannon-Wiener, and Pielou evenness metrics); (2) three structural diversity metrics for DBH [standard deviation (SD), coefficient of variation (CV), and Gini coefficient (Gini)]; as well as (3) aboveground biomass stock (AGBS) and production (AGBP). The modeling results were evaluated using observations from forest inventory. The results showed that (1) PFT diversity (particularly Simpson's and Shannon-Wiener diversity) and structural diversity (notably the SD and Gini for DBH) generally exhibited approximately U-shaped and hump-shaped trajectories, respectively. AGBS increased gradually before slightly declining, while AGBP rose rapidly then entered gradual decline. Notably, seasonal warming and precipitation stress may lead to severe tree mortality, potentially altering long-term trajectories of tree diversity and AGBS/AGBP in subtropical coniferous forests. The BEF relationships generally strengthened over time during approximately one century. Among the six tree diversity metrics, SD (95%) and Gini (79%) for DBH demonstrated the highest proportion of significant BEF relationships across years. (2) The stand density and mean tree size relationships generally followed the Yoda's power law (∼1.44 vs. ∼1.50). The significant effects of stand density on BEF relationships were predominantly negative and concentrated in the first half period of simulation. In contrast, the significant effects of mean tree size on BEF relationships were primarily positive, especially in the first half period. Mean tree size emerged as a stronger driver of BEF relationships than stand density, with significant effects detected in 67% vs. 56% of cases, respectively. To some extent, mean tree size and stand density modulated the long-term BEF relationships. This study provides insights on how tree diversity and aboveground biomass co-evolve during forest succession using modelling evidence, highlighting the importance of tree size-dependent processes in shaping BEF relationships during forest development.",
+    "doi": "10.1186/s13021-025-00388-z",
+    "link": "https://doi.org/10.1186/s13021-025-00388-z",
+    "id": 5,
+    "createdAt": "2026-05-24",
+    "updatedAt": "2026-05-24"
   }
 ]
