@@ -34,17 +34,5 @@
     "id": 3,
     "createdAt": "2026-05-24",
     "updatedAt": "2026-05-24"
-  },
-  {
-    "type": "期刊论文",
-    "title": "Biodiversity–carbon relationships diverge in forests dominated by different species within the same plant functional type",
-    "authors": "Chen Wang, Yu Zhu, Shuguang Liu",
-    "venue": "Journal of Ecology, 114, e70337 (2026)",
-    "abstract": "1. Theoretical and experimental evidence suggests that tree biodiversity enhances forest ecosystem functioning. However, whether these relationships hold within forest types dominated by different species of the same plant functional type remains unclear. 2. We analysed 772 plots in subtropical China, contrasting high- and low-carbon-sequestration plantations of Cunninghamia lanceolata and Pinus massoniana along a chronosequence, to explore causal links among above-ground carbon storage (AGC), biodiversity, stand structure and environmental factors. 3. We found that the effects of biodiversity on AGC varied across forest types. Specifically, species diversity and functional diversity enhanced AGC in high-carbon-sequestration C. lanceolata plantations, whereas species and functional diversity of co-occurring broadleaf species had negative effects. In high-carbon-sequestration P. massoniana plantations, phylogenetic diversity and diameter at breast height (DBH) variation positively influenced AGC, outweighing the negative effects of species diversity. Low-carbon-sequestration plantations exhibited weak or non-significant biodiversity–AGC relationships. Additionally, soil attributes directly reduced AGC in low-carbon-sequestration C. lanceolata plantations, indicating nutrient limitations under intensive management. 4. Synthesis. We demonstrate that biodiversity–ecosystem functioning relationships diverge among forest types dominated by different species within the same plant functional type and that biodiversity effects on AGC vary across these plantations. In soil-limited conifer plantations (C. lanceolata), increasing species diversity enhances AGC, whereas in light-demanding conifer plantations (P. massoniana), phylogenetic diversity and DBH variation, capturing species similarity and niche occupancy, better explain AGC than species or functional diversity. We advocate for tailored management strategies that consider dominant tree species identity to optimise biodiversity and carbon sequestration.",
-    "doi": "10.1111/1365-2745.70337",
-    "link": "https://doi.org/10.1111/1365-2745.70337",
-    "id": 4,
-    "createdAt": "2026-05-24",
-    "updatedAt": "2026-05-24"
   }
 ]
