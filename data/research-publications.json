@@ -22,29 +22,5 @@
     "id": 2,
     "createdAt": "2026-05-24",
     "updatedAt": "2026-05-24"
-  },
-  {
-    "type": "期刊论文",
-    "title": "Urbanization reshapes soil microbial diversity: Regime shifts from resource limitation to environmental stress",
-    "authors": "Chen Dai, Shuqing Zhao, Peng Zhang, Zhi Cao, Shuguang Liu",
-    "venue": "Cities, 175, 107241 (2026)",
-    "abstract": "The urban soil microbiome is a pivotal yet enigmatic component of terrestrial ecosystems, particularly in the tropics, global hotspots of both urbanization and biodiversity. Here we conducted dense field measurements, integrating 16S rRNA sequencing and physicochemical analyses to evaluate soil microbial responses along the impervious surface gradient in a tropical city (Haikou, China). We found that microbial biomass carbon, nitrogen, and phosphorus, along with key carbon- and phosphorus- acquiring enzyme activities, declined significantly with increasing urbanization intensity. In contrast, microbial α-diversity followed a pronounced unimodal relationship with urbanization intensity, peaking at approximately 50% Impervious Surface Area. Beyond this threshold, increasing urbanization led to significant biotic homogenization and a marked simplification of microbial co-occurrence networks, indicating erosion of ecological complexity and potential ecosystem resilience. Partial Least Squares Structural Equation Modeling further revealed a distinct divergence in the mechanisms governing microbial communities above and below the ecological threshold. Urbanization effects shifted from indirect promotion of microbial biomass and indirect suppression of diversity at low levels to a direct suppressive effect on diversity beyond the critical threshold. These findings demonstrate a threshold-dependent shift from indirect soil nutrients mediated facilitation to direct urbanization-driven suppression of microbial diversity. These findings may provide a conceptual basis for differentiated management strategies across urbanization gradients in tropical ecosystems.",
-    "doi": "10.1016/j.cities.2026.107241",
-    "link": "https://doi.org/10.1016/j.cities.2026.107241",
-    "id": 3,
-    "createdAt": "2026-05-24",
-    "updatedAt": "2026-05-24"
-  },
-  {
-    "type": "期刊论文",
-    "title": "Urbanization reshapes soil microbial diversity: Regime shifts from resource limitation to environmental stress",
-    "authors": "Chen Dai, Shuqing Zhao, Peng Zhang, Zhi Cao, Shuguang Liu",
-    "venue": "Cities, 175, 107241 (2026)",
-    "abstract": "The urban soil microbiome is a pivotal yet enigmatic component of terrestrial ecosystems, particularly in the tropics, global hotspots of both urbanization and biodiversity. Here we conducted dense field measurements, integrating 16S rRNA sequencing and physicochemical analyses to evaluate soil microbial responses along the impervious surface gradient in a tropical city (Haikou, China). We found that microbial biomass carbon, nitrogen, and phosphorus, along with key carbon- and phosphorus- acquiring enzyme activities, declined significantly with increasing urbanization intensity. In contrast, microbial α-diversity followed a pronounced unimodal relationship with urbanization intensity, peaking at approximately 50% Impervious Surface Area. Beyond this threshold, increasing urbanization led to significant biotic homogenization and a marked simplification of microbial co-occurrence networks, indicating erosion of ecological complexity and potential ecosystem resilience. Partial Least Squares Structural Equation Modeling further revealed a distinct divergence in the mechanisms governing microbial communities above and below the ecological threshold. Urbanization effects shifted from indirect promotion of microbial biomass and indirect suppression of diversity at low levels to a direct suppressive effect on diversity beyond the critical threshold. These findings demonstrate a threshold-dependent shift from indirect soil nutrients mediated facilitation to direct urbanization-driven suppression of microbial diversity. These findings may provide a conceptual basis for differentiated management strategies across urbanization gradients in tropical ecosystems.",
-    "doi": "10.1016/j.cities.2026.107241",
-    "link": "https://doi.org/10.1016/j.cities.2026.107241",
-    "id": 4,
-    "createdAt": "2026-05-24",
-    "updatedAt": "2026-05-24"
   }
 ]
