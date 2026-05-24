@@ -22,5 +22,17 @@
     "id": 2,
     "createdAt": "2026-05-24",
     "updatedAt": "2026-05-24"
+  },
+  {
+    "type": "期刊论文",
+    "title": "A decadal urban ecological observations from China: Urban forest environmental change and implications",
+    "authors": "Shuqing Zhao, Decheng Zhou, Chen Yang, Lu Yang, Pengke Shen, Zhiyu Xu, Zhengrong Liu, Miao Huang, Wenping Yuan, Shuguang Liu",
+    "venue": "Science of The Total Environment",
+    "abstract": "Long-term ecological observations are invaluable for studying ecological processes, surprises, and effects. They are equally, if not more, crucial for understanding the science and implications of rapidly urbanizing cities, yet they remain surprisingly rare. Here we establish a long-term ecological observatory network consisting of six forest sites along the urban-rural gradient in Beijing, China (BEON), and present a decade-long analysis of nine environmental indicators from 2013 to 2023. Urbanization imprints a distinct, heterogeneous signature: multi-year means of key factors vary markedly over short distances, including CO₂ (405.3-536.5 ppm), O₃ (24.4-31.8 μg m⁻³), wind speed (0.05-0.19 m s⁻¹), air temperature (13.1-15.9 °C), soil temperature (12.2-16.8 °C), air humidity (50-55%), and soil moisture (20-28%). While urban core sites generally exhibit higher CO₂, O₃, temperatures, and soil moisture (with lower humidity and wind speeds), site-specific traits (e.g., vegetation, topography, human activity) drive significant deviations from physical urban-rural gradients. Temporally, consistent diurnal and intra-annual cycles coexist with inconsistent inter-annual trends, and special periods (e.g., Chinese New Year, 2014 APEC Summit) reveal context-dependent shifts—CO₂/temperature declines and O₃ increases. These findings underscore urbanization's profound, heterogeneous impacts on forest microenvironment and validate the necessity of long-term urban ecological networks.",
+    "doi": "10.1016/j.scitotenv.2025.180590",
+    "link": "https://doi.org/10.1016/j.scitotenv.2025.180590",
+    "id": 3,
+    "createdAt": "2026-05-24",
+    "updatedAt": "2026-05-24"
   }
 ]
