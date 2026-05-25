@@ -47,5 +47,17 @@
     "id": 4,
     "createdAt": "2026-04-19",
     "updatedAt": "2026-04-19"
+  },
+  {
+    "title": "数字校园",
+    "category": "urban_ecology",
+    "description": "海南大学坐落于海南自贸港核心区域，其校园生态建设不仅关乎自身的可持续发展，更承载着为全国热带地区生态研究提供样本的使命。数字校园清晰揭示校园“哪里种了什么树”以及“这些树的生物量分布规律”，为生态效益评估、碳汇计算和绿化规划提供直观的空间量化依据。",
+    "advisor": "赵淑清",
+    "statusType": "preparation",
+    "status": "筹备中",
+    "image": "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=500",
+    "id": 5,
+    "createdAt": "2026-05-25",
+    "updatedAt": "2026-05-25"
   }
 ]
